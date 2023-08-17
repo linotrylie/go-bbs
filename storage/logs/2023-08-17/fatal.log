@@ -1,0 +1,1 @@
+[free-bns]2023/08/17 - 11:50:17.592	[31mfatal[0m	D:/Code/GoFreeBns/main.go:37	ListenAndServe err: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
