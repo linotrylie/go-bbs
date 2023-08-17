@@ -8,12 +8,12 @@ type Thread_top struct {
 }
 
 func (*Thread_top) TableName() string {
-	return "thread_top"
+	return "bbs_thread_top"
 }
 
 // Location .
 func (obj *Thread_top) Location() map[string]interface{} {
-	return map[string]interface{}{"Tid": obj.Tid}
+	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .

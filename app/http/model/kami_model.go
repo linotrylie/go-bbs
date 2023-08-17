@@ -10,12 +10,12 @@ type Kami struct {
 }
 
 func (*Kami) TableName() string {
-	return "kami"
+	return "bbs_kami"
 }
 
 // Location .
 func (obj *Kami) Location() map[string]interface{} {
-	return map[string]interface{}{"Kahao": obj.Kahao}
+	return map[string]interface{}{"kahao": obj.Kahao}
 }
 
 // GetChanges .

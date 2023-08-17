@@ -12,12 +12,12 @@ type Notice struct {
 }
 
 func (*Notice) TableName() string {
-	return "notice"
+	return "bbs_notice"
 }
 
 // Location .
 func (obj *Notice) Location() map[string]interface{} {
-	return map[string]interface{}{"Nid": obj.Nid}
+	return map[string]interface{}{"nid": obj.Nid}
 }
 
 // GetChanges .

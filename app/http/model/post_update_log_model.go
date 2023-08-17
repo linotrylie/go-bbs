@@ -11,12 +11,12 @@ type Post_update_log struct {
 }
 
 func (*Post_update_log) TableName() string {
-	return "post_update_log"
+	return "bbs_post_update_log"
 }
 
 // Location .
 func (obj *Post_update_log) Location() map[string]interface{} {
-	return map[string]interface{}{"Logid": obj.Logid}
+	return map[string]interface{}{"logid": obj.Logid}
 }
 
 // GetChanges .

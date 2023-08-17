@@ -9,12 +9,12 @@ type Thread_digest struct {
 }
 
 func (*Thread_digest) TableName() string {
-	return "thread_digest"
+	return "bbs_thread_digest"
 }
 
 // Location .
 func (obj *Thread_digest) Location() map[string]interface{} {
-	return map[string]interface{}{"Tid": obj.Tid}
+	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .

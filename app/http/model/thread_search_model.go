@@ -8,12 +8,12 @@ type Thread_search struct {
 }
 
 func (*Thread_search) TableName() string {
-	return "thread_search"
+	return "bbs_thread_search"
 }
 
 // Location .
 func (obj *Thread_search) Location() map[string]interface{} {
-	return map[string]interface{}{"Tid": obj.Tid}
+	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .

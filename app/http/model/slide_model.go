@@ -11,12 +11,12 @@ type Slide struct {
 }
 
 func (*Slide) TableName() string {
-	return "slide"
+	return "bbs_slide"
 }
 
 // Location .
 func (obj *Slide) Location() map[string]interface{} {
-	return map[string]interface{}{"Slideid": obj.Slideid}
+	return map[string]interface{}{"slideid": obj.Slideid}
 }
 
 // GetChanges .

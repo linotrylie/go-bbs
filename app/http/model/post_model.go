@@ -24,12 +24,12 @@ type Post struct {
 }
 
 func (*Post) TableName() string {
-	return "post"
+	return "bbs_post"
 }
 
 // Location .
 func (obj *Post) Location() map[string]interface{} {
-	return map[string]interface{}{"Pid": obj.Pid}
+	return map[string]interface{}{"pid": obj.Pid}
 }
 
 // GetChanges .

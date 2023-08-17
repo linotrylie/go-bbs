@@ -8,12 +8,12 @@ type Cache struct {
 }
 
 func (*Cache) TableName() string {
-	return "cache"
+	return "bbs_cache"
 }
 
 // Location .
 func (obj *Cache) Location() map[string]interface{} {
-	return map[string]interface{}{"K": obj.K}
+	return map[string]interface{}{"k": obj.K}
 }
 
 // GetChanges .

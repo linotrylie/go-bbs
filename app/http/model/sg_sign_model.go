@@ -13,12 +13,12 @@ type Sg_sign struct {
 }
 
 func (*Sg_sign) TableName() string {
-	return "sg_sign"
+	return "bbs_sg_sign"
 }
 
 // Location .
 func (obj *Sg_sign) Location() map[string]interface{} {
-	return map[string]interface{}{"Uid": obj.Uid}
+	return map[string]interface{}{"uid": obj.Uid}
 }
 
 // GetChanges .

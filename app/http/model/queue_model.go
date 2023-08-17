@@ -8,12 +8,12 @@ type Queue struct {
 }
 
 func (*Queue) TableName() string {
-	return "queue"
+	return "bbs_queue"
 }
 
 // Location .
 func (obj *Queue) Location() map[string]interface{} {
-	return map[string]interface{}{"Queueid": obj.Queueid, "V": obj.V}
+	return map[string]interface{}{"queueid": obj.Queueid, "v": obj.V}
 }
 
 // GetChanges .

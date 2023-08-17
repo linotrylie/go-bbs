@@ -8,12 +8,12 @@ type Kv struct {
 }
 
 func (*Kv) TableName() string {
-	return "kv"
+	return "bbs_kv"
 }
 
 // Location .
 func (obj *Kv) Location() map[string]interface{} {
-	return map[string]interface{}{"K": obj.K}
+	return map[string]interface{}{"k": obj.K}
 }
 
 // GetChanges .

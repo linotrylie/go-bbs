@@ -8,12 +8,12 @@ type Gg_favorite_thread struct {
 }
 
 func (*Gg_favorite_thread) TableName() string {
-	return "gg_favorite_thread"
+	return "bbs_gg_favorite_thread"
 }
 
 // Location .
 func (obj *Gg_favorite_thread) Location() map[string]interface{} {
-	return map[string]interface{}{"Favid": obj.Favid}
+	return map[string]interface{}{"favid": obj.Favid}
 }
 
 // GetChanges .

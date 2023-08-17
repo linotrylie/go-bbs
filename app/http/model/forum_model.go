@@ -26,12 +26,12 @@ type Forum struct {
 }
 
 func (*Forum) TableName() string {
-	return "forum"
+	return "bbs_forum"
 }
 
 // Location .
 func (obj *Forum) Location() map[string]interface{} {
-	return map[string]interface{}{"Fid": obj.Fid}
+	return map[string]interface{}{"fid": obj.Fid}
 }
 
 // GetChanges .

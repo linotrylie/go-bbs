@@ -34,12 +34,12 @@ type User struct {
 }
 
 func (*User) TableName() string {
-	return "user"
+	return "bbs_user"
 }
 
 // Location .
 func (obj *User) Location() map[string]interface{} {
-	return map[string]interface{}{"Uid": obj.Uid}
+	return map[string]interface{}{"uid": obj.Uid}
 }
 
 // GetChanges .

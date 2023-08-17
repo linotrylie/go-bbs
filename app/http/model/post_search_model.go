@@ -8,12 +8,12 @@ type Post_search struct {
 }
 
 func (*Post_search) TableName() string {
-	return "post_search"
+	return "bbs_post_search"
 }
 
 // Location .
 func (obj *Post_search) Location() map[string]interface{} {
-	return map[string]interface{}{"Pid": obj.Pid}
+	return map[string]interface{}{"pid": obj.Pid}
 }
 
 // GetChanges .

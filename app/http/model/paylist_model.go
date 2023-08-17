@@ -13,12 +13,12 @@ type Paylist struct {
 }
 
 func (*Paylist) TableName() string {
-	return "paylist"
+	return "bbs_paylist"
 }
 
 // Location .
 func (obj *Paylist) Location() map[string]interface{} {
-	return map[string]interface{}{"Plid": obj.Plid}
+	return map[string]interface{}{"plid": obj.Plid}
 }
 
 // GetChanges .

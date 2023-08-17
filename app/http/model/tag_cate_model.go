@@ -12,12 +12,12 @@ type Tag_cate struct {
 }
 
 func (*Tag_cate) TableName() string {
-	return "tag_cate"
+	return "bbs_tag_cate"
 }
 
 // Location .
 func (obj *Tag_cate) Location() map[string]interface{} {
-	return map[string]interface{}{"Cateid": obj.Cateid}
+	return map[string]interface{}{"cateid": obj.Cateid}
 }
 
 // GetChanges .

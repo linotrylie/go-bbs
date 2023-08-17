@@ -14,12 +14,12 @@ type Modlog struct {
 }
 
 func (*Modlog) TableName() string {
-	return "modlog"
+	return "bbs_modlog"
 }
 
 // Location .
 func (obj *Modlog) Location() map[string]interface{} {
-	return map[string]interface{}{"Logid": obj.Logid}
+	return map[string]interface{}{"logid": obj.Logid}
 }
 
 // GetChanges .

@@ -10,7 +10,7 @@ type Post_like struct {
 }
 
 func (*Post_like) TableName() string {
-	return "post_like"
+	return "bbs_post_like"
 }
 
 // Location .

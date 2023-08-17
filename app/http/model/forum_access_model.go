@@ -12,12 +12,12 @@ type Forum_access struct {
 }
 
 func (*Forum_access) TableName() string {
-	return "forum_access"
+	return "bbs_forum_access"
 }
 
 // Location .
 func (obj *Forum_access) Location() map[string]interface{} {
-	return map[string]interface{}{"Fid": obj.Fid, "Gid": obj.Gid}
+	return map[string]interface{}{"fid": obj.Fid, "gid": obj.Gid}
 }
 
 // GetChanges .

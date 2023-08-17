@@ -8,12 +8,12 @@ type Invite struct {
 }
 
 func (*Invite) TableName() string {
-	return "invite"
+	return "bbs_invite"
 }
 
 // Location .
 func (obj *Invite) Location() map[string]interface{} {
-	return map[string]interface{}{"Uid": obj.Uid}
+	return map[string]interface{}{"uid": obj.Uid}
 }
 
 // GetChanges .

@@ -11,12 +11,12 @@ type Friendlink struct {
 }
 
 func (*Friendlink) TableName() string {
-	return "friendlink"
+	return "bbs_friendlink"
 }
 
 // Location .
 func (obj *Friendlink) Location() map[string]interface{} {
-	return map[string]interface{}{"Linkid": obj.Linkid}
+	return map[string]interface{}{"linkid": obj.Linkid}
 }
 
 // GetChanges .

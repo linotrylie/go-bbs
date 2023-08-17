@@ -7,12 +7,12 @@ type Git_tags_thread struct {
 }
 
 func (*Git_tags_thread) TableName() string {
-	return "git_tags_thread"
+	return "bbs_git_tags_thread"
 }
 
 // Location .
 func (obj *Git_tags_thread) Location() map[string]interface{} {
-	return map[string]interface{}{"Tid": obj.Tid, "Tagid": obj.Tagid}
+	return map[string]interface{}{"tagid": obj.Tagid, "tid": obj.Tid}
 }
 
 // GetChanges .

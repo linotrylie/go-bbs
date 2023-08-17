@@ -8,12 +8,12 @@ type Mypost struct {
 }
 
 func (*Mypost) TableName() string {
-	return "mypost"
+	return "bbs_mypost"
 }
 
 // Location .
 func (obj *Mypost) Location() map[string]interface{} {
-	return map[string]interface{}{"Uid": obj.Uid, "Pid": obj.Pid}
+	return map[string]interface{}{"pid": obj.Pid, "uid": obj.Uid}
 }
 
 // GetChanges .

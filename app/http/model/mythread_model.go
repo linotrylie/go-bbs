@@ -7,12 +7,12 @@ type Mythread struct {
 }
 
 func (*Mythread) TableName() string {
-	return "mythread"
+	return "bbs_mythread"
 }
 
 // Location .
 func (obj *Mythread) Location() map[string]interface{} {
-	return map[string]interface{}{"Uid": obj.Uid, "Tid": obj.Tid}
+	return map[string]interface{}{"uid": obj.Uid, "tid": obj.Tid}
 }
 
 // GetChanges .

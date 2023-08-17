@@ -13,12 +13,12 @@ type User_pay struct {
 }
 
 func (*User_pay) TableName() string {
-	return "user_pay"
+	return "bbs_user_pay"
 }
 
 // Location .
 func (obj *User_pay) Location() map[string]interface{} {
-	return map[string]interface{}{"Cid": obj.Cid}
+	return map[string]interface{}{"cid": obj.Cid}
 }
 
 // GetChanges .

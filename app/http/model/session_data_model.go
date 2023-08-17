@@ -8,12 +8,12 @@ type Session_data struct {
 }
 
 func (*Session_data) TableName() string {
-	return "session_data"
+	return "bbs_session_data"
 }
 
 // Location .
 func (obj *Session_data) Location() map[string]interface{} {
-	return map[string]interface{}{"Sid": obj.Sid}
+	return map[string]interface{}{"sid": obj.Sid}
 }
 
 // GetChanges .

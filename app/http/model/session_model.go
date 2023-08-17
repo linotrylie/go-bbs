@@ -14,12 +14,12 @@ type Session struct {
 }
 
 func (*Session) TableName() string {
-	return "session"
+	return "bbs_session"
 }
 
 // Location .
 func (obj *Session) Location() map[string]interface{} {
-	return map[string]interface{}{"Sid": obj.Sid}
+	return map[string]interface{}{"sid": obj.Sid}
 }
 
 // GetChanges .

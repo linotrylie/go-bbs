@@ -33,12 +33,12 @@ type Auction struct {
 }
 
 func (*Auction) TableName() string {
-	return "auction"
+	return "bbs_auction"
 }
 
 // Location .
 func (obj *Auction) Location() map[string]interface{} {
-	return map[string]interface{}{"Id": obj.Id}
+	return map[string]interface{}{"id": obj.Id}
 }
 
 // GetChanges .

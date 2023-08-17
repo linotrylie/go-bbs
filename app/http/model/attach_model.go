@@ -22,12 +22,12 @@ type Attach struct {
 }
 
 func (*Attach) TableName() string {
-	return "attach"
+	return "bbs_attach"
 }
 
 // Location .
 func (obj *Attach) Location() map[string]interface{} {
-	return map[string]interface{}{"Aid": obj.Aid}
+	return map[string]interface{}{"aid": obj.Aid}
 }
 
 // GetChanges .

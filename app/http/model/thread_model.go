@@ -35,12 +35,12 @@ type Thread struct {
 }
 
 func (*Thread) TableName() string {
-	return "thread"
+	return "bbs_thread"
 }
 
 // Location .
 func (obj *Thread) Location() map[string]interface{} {
-	return map[string]interface{}{"Tid": obj.Tid}
+	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .

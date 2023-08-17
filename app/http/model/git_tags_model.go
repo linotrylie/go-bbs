@@ -8,12 +8,12 @@ type Git_tags struct {
 }
 
 func (*Git_tags) TableName() string {
-	return "git_tags"
+	return "bbs_git_tags"
 }
 
 // Location .
 func (obj *Git_tags) Location() map[string]interface{} {
-	return map[string]interface{}{"Tagid": obj.Tagid}
+	return map[string]interface{}{"tagid": obj.Tagid}
 }
 
 // GetChanges .

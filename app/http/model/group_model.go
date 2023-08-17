@@ -26,12 +26,12 @@ type Group struct {
 }
 
 func (*Group) TableName() string {
-	return "group"
+	return "bbs_group"
 }
 
 // Location .
 func (obj *Group) Location() map[string]interface{} {
-	return map[string]interface{}{"Gid": obj.Gid}
+	return map[string]interface{}{"gid": obj.Gid}
 }
 
 // GetChanges .

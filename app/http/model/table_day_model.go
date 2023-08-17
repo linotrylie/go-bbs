@@ -12,12 +12,12 @@ type Table_day struct {
 }
 
 func (*Table_day) TableName() string {
-	return "table_day"
+	return "bbs_table_day"
 }
 
 // Location .
 func (obj *Table_day) Location() map[string]interface{} {
-	return map[string]interface{}{"Year": obj.Year, "Month": obj.Month, "Day": obj.Day, "Table": obj.Table}
+	return map[string]interface{}{"table": obj.Table, "year": obj.Year, "month": obj.Month, "day": obj.Day}
 }
 
 // GetChanges .

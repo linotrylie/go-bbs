@@ -9,7 +9,7 @@ type Haya_favorite struct {
 }
 
 func (*Haya_favorite) TableName() string {
-	return "haya_favorite"
+	return "bbs_haya_favorite"
 }
 
 // Location .

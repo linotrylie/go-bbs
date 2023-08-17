@@ -19,12 +19,12 @@ type Ipaccess struct {
 }
 
 func (*Ipaccess) TableName() string {
-	return "ipaccess"
+	return "bbs_ipaccess"
 }
 
 // Location .
 func (obj *Ipaccess) Location() map[string]interface{} {
-	return map[string]interface{}{"Ip": obj.Ip}
+	return map[string]interface{}{"ip": obj.Ip}
 }
 
 // GetChanges .

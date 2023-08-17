@@ -193,8 +193,8 @@ func (t *Table2Struct) Run() error {
 		if t.realNameMethod != "" {
 			structContent += fmt.Sprintf("func (*%s) %s() string {\n",
 				tableName, t.realNameMethod)
-			structContent += fmt.Sprintf("%sreturn \"%s\"\n",
-				tab(depth), tableRealName)
+			structContent += fmt.Sprintf("%sreturn \"%s%s\"\n",
+				tab(depth), t.prefix, tableRealName)
 			structContent += "}\n\n"
 		}
 
@@ -206,7 +206,7 @@ func (t *Table2Struct) Run() error {
 			if locationStr != "" {
 				locationStr += ","
 			}
-			locationStr += fmt.Sprintf(`"%s":obj.%s`, k, v)
+			locationStr += fmt.Sprintf(`"%s":obj.%s`, strings.ToLower(k), v)
 		}
 		structContent += fmt.Sprintf(`return map[string]interface{}{%s}`+"\n", locationStr)
 		structContent += "}\n"
