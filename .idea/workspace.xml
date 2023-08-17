@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0ee3b3b1-f3e5-4ad1-84d2-ce4de6baf776" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/app/console/kernel.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/console/test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/http/model/main/converter/table2struct.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/http/model/main/generate.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/initialize/crontab.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/GoFreeBns.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/exceptions/errors.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/exceptions/errors.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/api/auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/api/auth.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/api/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/api/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/backend/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/backend/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/backend/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/backend/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/base.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/base.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/common/captcha.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/common/captcha.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/common/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/common/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/frontend/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/frontend/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/frontend/home.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/frontend/home.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/frontend/thread.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/frontend/thread.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/middleware/cors.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/middleware/cors.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/middleware/recovery.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/middleware/recovery.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/model/captcha_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/captcha_model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/model/requests/captcha.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/requests/captcha.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/model/response/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/response/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/model/response/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/response/response.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/service/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/service/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/auto_code.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/auto_code.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/captcha.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/captcha.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/db_list.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/db_list.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/email.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/excel.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/excel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/jwt.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/jwt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_aliyun.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_aliyun.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_aws.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_aws.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_huawei.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_huawei.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_local.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_local.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_qiniu.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_qiniu.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/oss_tencent.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/oss_tencent.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/redis.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/redis.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/timer.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/timer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/zap.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/zap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/internal/constant.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/internal/constant.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/internal/file_rotatelogs.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/internal/file_rotatelogs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/internal/zap.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/internal/zap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/viper.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/viper.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/zap.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/zap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/global/global.go" beforeDir="false" afterPath="$PROJECT_DIR$/global/global.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/gorm.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/gorm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/gorm_mysql.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/gorm_mysql.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/internal/gorm.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/internal/gorm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/internal/logger.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/internal/logger.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/other.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/other.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/plugin.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/plugin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/redis.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/redis.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/session.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/session.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initialize/views.go" beforeDir="false" afterPath="$PROJECT_DIR$/initialize/views.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/api/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/api/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/api/sys_email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/api/sys_email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/config/email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/config/email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/global/gloabl.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/global/gloabl.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/model/response/email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/model/response/email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/router/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/router/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/router/sys_email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/router/sys_email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/service/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/service/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/service/sys_email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/service/sys_email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugin/email/utils/email.go" beforeDir="false" afterPath="$PROJECT_DIR$/plugin/email/utils/email.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/api/auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/api/auth.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/api/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/api/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/backend/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/backend/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/backend/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/backend/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/common/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/common/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/common/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/common/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/frontend/enter.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/frontend/enter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/frontend/home.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/frontend/home.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/router/frontend/thread.go" beforeDir="false" afterPath="$PROJECT_DIR$/router/frontend/thread.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/logs/2023-08-17/info.log" beforeDir="false" afterPath="$PROJECT_DIR$/storage/logs/2023-08-17/info.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/captcha/redis.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/captcha/redis.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/directory.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/directory.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/human_duration.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/human_duration.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/os.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/os.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/plugin/plugin.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/plugin/plugin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/plugin/plugin_uinx.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/plugin/plugin_uinx.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/sliceutil/slice_finder.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/sliceutil/slice_finder.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://C:/Program Files/Go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/gohouse/converter@v0.0.3/table2struct.go" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2U7ODSwqvOTTu1KiOTjned8Gjbx" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "H:/gocode/go-bbs",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="H:\gocode\go-bbs\app\http\model\main" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="go build GoFreeBns/app/http/model/main" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="go-bbs" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="GoFreeBns/app/http/model/main" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/app/http/model/main/generate.go" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go 构建.go build GoFreeBns/app/http/model/main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+</project>
