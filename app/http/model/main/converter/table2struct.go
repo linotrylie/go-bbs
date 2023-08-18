@@ -123,6 +123,72 @@ func (t *Table2Struct) Config(c *T2tConfig) *Table2Struct {
 	t.config = c
 	return t
 }
+func (t *Table2Struct) RunEntity() error {
+	if t.config == nil {
+		t.config = new(T2tConfig)
+	}
+	// 链接mysql, 获取db对象
+	t.dialMysql()
+	if t.err != nil {
+		return t.err
+	}
+
+	// 获取表和字段的shcema
+	tableColumns, err := t.getColumns()
+	if err != nil {
+		return err
+	}
+
+	//fmt.Println(tableColumns)
+
+	// 包名
+	var packageName string
+	if t.packageName == "" {
+		packageName = "package entity\n\n"
+	} else {
+		packageName = fmt.Sprintf("package %s\n\n", t.packageName)
+	}
+	packageName += `import "GoFreeBns/app/http/model"`
+	packageName += "\n"
+	// 组装struct
+	var structContent string
+	for tableRealName, _ := range tableColumns {
+		// 去除前缀
+		if t.prefix != "" {
+			tableRealName = tableRealName[len(t.prefix):]
+		}
+		tableName := tableRealName
+		switch len(tableName) {
+		case 0:
+		case 1:
+			tableName = strings.ToUpper(tableName[0:1])
+		default:
+			// 字符长度大于1时
+			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
+		}
+		structContent += "type " + tableName + "Entity struct {\n"
+		structContent += fmt.Sprintf("model.%s\n", tableName)
+		structContent += "}"
+		// 写入文件struct
+		var savePath = t.savePath
+		// 是否指定保存路径
+		//if savePath == "" {
+		savePath += strings.ToLower(tableName) + ".go"
+		//}
+		filePath := fmt.Sprintf("%s", savePath)
+		f, err := os.Create(filePath)
+		if err != nil {
+			fmt.Println("Can not write file")
+			return err
+		}
+		defer f.Close()
+		f.WriteString(packageName + structContent)
+		cmd := exec.Command("gofmt", "-w", filePath)
+		cmd.Run()
+		structContent = ""
+	}
+	return nil
+}
 
 func (t *Table2Struct) Run() error {
 	if t.config == nil {

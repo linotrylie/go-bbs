@@ -4,49 +4,16 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0ee3b3b1-f3e5-4ad1-84d2-ce4de6baf776" name="更改" comment="生成模型文件,引入定时cron,">
+    <list default="true" id="fd63c228-eae4-4c21-b522-6cac8fc7a101" name="变更" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/go-bbs.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/attach_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/attach_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/auction_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/auction_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/cache_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/cache_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/forum_access_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/forum_access_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/forum_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/forum_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/friendlink_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/friendlink_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/gg_favorite_thread_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/gg_favorite_thread_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/git_tags_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/git_tags_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/git_tags_thread_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/git_tags_thread_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/group_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/group_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/haya_favorite_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/haya_favorite_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/invite_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/invite_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/ipaccess_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/ipaccess_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/kami_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/kami_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/kv_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/kv_model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/controllers/backend/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/controllers/backend/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/http/model/main/converter/table2struct.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/main/converter/table2struct.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/modlog_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/modlog_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/mypost_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/mypost_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/mythread_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/mythread_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/notice_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/notice_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/paylist_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/paylist_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/post_like_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/post_like_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/post_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/post_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/post_search_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/post_search_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/post_update_log_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/post_update_log_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/queue_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/queue_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/session_data_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/session_data_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/session_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/session_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/sg_sign_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/sg_sign_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/sg_sign_set_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/sg_sign_set_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/slide_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/slide_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/table_day_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/table_day_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/tag_cate_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/tag_cate_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/tag_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/tag_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/tag_thread_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/tag_thread_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/thread_digest_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/thread_digest_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/thread_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/thread_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/thread_search_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/thread_search_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/thread_top_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/thread_top_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/user_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/user_model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/http/model/user_pay_model.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/user_pay_model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/http/model/main/generate.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/http/model/main/generate.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,45 +27,43 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file://C:/Program Files/Go" />
+  <component name="GOROOT" url="file://C:/Program Files (x86)/Go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/gohouse/converter@v0.0.3/table2struct.go" root0="SKIP_INSPECTION" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2U7ODSwqvOTTu1KiOTjned8Gjbx" />
+  <component name="ProjectId" id="2U9Fr525aXzGbkiHUD4oCHHZeqi" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultGoTemplateProperty": "Go File",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "H:/gocode/go-bbs",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)"
-  }
-}]]></component>
-  <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="H:\gocode\go-bbs\app\http\model\main" />
-    </key>
+  <component name="PropertiesComponent">
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="go.formatter.settings.were.checked" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go 构建.go build GoFreeBns">
+    <configuration name="go build GoFreeBns" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="GoFreeBns" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="GoFreeBns" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <method v="2" />
+    </configuration>
     <configuration name="go build GoFreeBns/app/http/model/main" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
-      <module name="go-bbs" />
+      <module name="GoFreeBns" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
       <package value="GoFreeBns/app/http/model/main" />
@@ -108,6 +73,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go 构建.go build GoFreeBns" />
         <item itemvalue="Go 构建.go build GoFreeBns/app/http/model/main" />
       </list>
     </recent_temporary>
@@ -116,11 +82,18 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="生成模型文件,引入定时cron," />
-    <option name="LAST_COMMIT_MESSAGE" value="生成模型文件,引入定时cron," />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VgoProject">
-    <settings-migrated>true</settings-migrated>
+    <integration-enabled>true</integration-enabled>
   </component>
 </project>

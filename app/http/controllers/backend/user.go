@@ -1,9 +1,11 @@
 package backend
 
 import (
+	"GoFreeBns/app/http/model"
+	"GoFreeBns/app/http/model/response"
 	"GoFreeBns/global"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type UserController struct {
@@ -11,9 +13,9 @@ type UserController struct {
 
 func (controller *UserController) Index(ctx *gin.Context) {
 	result := map[string]interface{}{}
-	global.DB.Table("bbs_user").Where("id = ?", 1).Take(&result)
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "hello bns",
-		"user":    result,
-	})
+	user := model.User{Uid: 3}
+	global.DB.Table("bbs_user").Where("uid = ?", 1).Take(&result)
+	global.DB.First(&user)
+	fmt.Println(user)
+	response.OkWithDetailed(user, "success", ctx)
 }
