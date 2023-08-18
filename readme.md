@@ -8,6 +8,8 @@
  - air 热加载
  - ozzo-validation 验证库
  - ginview 模板库
+ - robfig-cron 定时任务
+ - gohouse/converter gorm结构体生成工具
 
 ### 目录说明
 - app

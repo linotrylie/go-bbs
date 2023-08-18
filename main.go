@@ -19,7 +19,8 @@ func main() {
 	global.LOG = core.Zap()
 	initialize.Redis()
 	initialize.OtherInit()
-
+	initialize.InitCrontab()
+	//defer cron.Stop()
 	global.DB = initialize.Gorm()
 	router := initialize.Routers()
 	initialize.InitViews(router) //加载模板渲染库
@@ -37,6 +38,7 @@ func main() {
 			global.LOG.Fatal(msg)
 		}
 	}()
+
 	// 优雅重启
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
