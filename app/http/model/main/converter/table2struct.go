@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/duke-git/lancet/v2/strutil"
 	_ "github.com/go-sql-driver/mysql"
 	"os"
 	"os/exec"
@@ -123,6 +124,82 @@ func (t *Table2Struct) Config(c *T2tConfig) *Table2Struct {
 	t.config = c
 	return t
 }
+
+func (t *Table2Struct) RunRequest() error {
+	if t.config == nil {
+		t.config = new(T2tConfig)
+	}
+	// 链接mysql, 获取db对象
+	t.dialMysql()
+	if t.err != nil {
+		return t.err
+	}
+
+	// 获取表和字段的shcema
+	tableColumns, err := t.getColumns()
+	if err != nil {
+		return err
+	}
+
+	//fmt.Println(tableColumns)
+
+	// 包名
+	var packageName string
+	if t.packageName == "" {
+		packageName = "package model\n\n"
+	} else {
+		packageName = fmt.Sprintf("package %s\n\n", t.packageName)
+	}
+	// 组装struct
+	var structContent string
+	for tableRealName, item := range tableColumns {
+		// 去除前缀
+		if t.prefix != "" {
+			tableRealName = tableRealName[len(t.prefix):]
+		}
+		tableName := strutil.CamelCase(tableRealName)
+		switch len(tableName) {
+		case 0:
+		case 1:
+			tableName = strings.ToUpper(tableName[0:1])
+		default:
+			// 字符长度大于1时
+			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
+		}
+		depth := 1
+		structContent += "type " + tableName + "Request struct {\n"
+		for _, v := range item {
+			v.Tag = "`" + ` json:"` + strings.ToLower(v.ColumnName) + `"` + "`"
+			// 字段注释
+			var clumnComment string
+			if v.ColumnComment != "" {
+				clumnComment = fmt.Sprintf(" // %s", v.ColumnComment)
+			}
+			structContent += fmt.Sprintf("%s%s %s %s%s\n",
+				tab(depth), v.ColumnName, v.Type, v.Tag, clumnComment)
+		}
+		structContent += tab(depth-1) + "}\n\n"
+		// 写入文件struct
+		var savePath = t.savePath
+		// 是否指定保存路径
+		//if savePath == "" {
+		savePath += strings.ToLower(tableName) + "_request.go"
+		//}
+		filePath := fmt.Sprintf("%s", savePath)
+		f, err := os.Create(filePath)
+		if err != nil {
+			fmt.Println("Can not write file")
+			return err
+		}
+		defer f.Close()
+		f.WriteString(packageName + structContent)
+		cmd := exec.Command("gofmt", "-w", filePath)
+		cmd.Run()
+		structContent = ""
+	}
+	return nil
+}
+
 func (t *Table2Struct) RunEntity() error {
 	if t.config == nil {
 		t.config = new(T2tConfig)
@@ -157,7 +234,7 @@ func (t *Table2Struct) RunEntity() error {
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
 		}
-		tableName := tableRealName
+		tableName := strutil.CamelCase(tableRealName)
 		switch len(tableName) {
 		case 0:
 		case 1:
@@ -173,7 +250,7 @@ func (t *Table2Struct) RunEntity() error {
 		var savePath = t.savePath
 		// 是否指定保存路径
 		//if savePath == "" {
-		savePath += strings.ToLower(tableName) + ".go"
+		savePath += strings.ToLower(tableRealName) + "_entity.go"
 		//}
 		filePath := fmt.Sprintf("%s", savePath)
 		f, err := os.Create(filePath)
@@ -223,7 +300,7 @@ func (t *Table2Struct) Run() error {
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
 		}
-		tableName := tableRealName
+		tableName := strutil.CamelCase(tableRealName)
 		primaryStructMap := map[string]string{}
 		switch len(tableName) {
 		case 0:
@@ -289,7 +366,7 @@ func (t *Table2Struct) Run() error {
 		var savePath = t.savePath
 		// 是否指定保存路径
 		//if savePath == "" {
-		savePath += strings.ToLower(tableName) + "_model.go"
+		savePath += strings.ToLower(tableRealName) + "_model.go"
 		//}
 		filePath := fmt.Sprintf("%s", savePath)
 		f, err := os.Create(filePath)

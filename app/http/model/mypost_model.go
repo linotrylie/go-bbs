@@ -13,7 +13,7 @@ func (*Mypost) TableName() string {
 
 // Location .
 func (obj *Mypost) Location() map[string]interface{} {
-	return map[string]interface{}{"pid": obj.Pid, "uid": obj.Uid}
+	return map[string]interface{}{"uid": obj.Uid, "pid": obj.Pid}
 }
 
 // GetChanges .

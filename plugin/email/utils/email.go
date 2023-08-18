@@ -59,7 +59,6 @@ func send(to []string, subject string, body string) error {
 	host := global.GlobalConfig.Host
 	port := global.GlobalConfig.Port
 	isSSL := global.GlobalConfig.IsSSL
-
 	auth := smtp.PlainAuth("", from, secret, host)
 	e := email.NewEmail()
 	if nickname != "" {

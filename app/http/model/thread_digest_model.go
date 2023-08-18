@@ -1,6 +1,6 @@
 package model
 
-type Thread_digest struct {
+type ThreadDigest struct {
 	changes map[string]interface{}
 	Fid     int `gorm:"column:fid" json:"fid"`
 	Tid     int `gorm:"primaryKey;column:tid" json:"tid"`
@@ -8,17 +8,17 @@ type Thread_digest struct {
 	Digest  int `gorm:"column:digest" json:"digest"`
 }
 
-func (*Thread_digest) TableName() string {
+func (*ThreadDigest) TableName() string {
 	return "bbs_thread_digest"
 }
 
 // Location .
-func (obj *Thread_digest) Location() map[string]interface{} {
+func (obj *ThreadDigest) Location() map[string]interface{} {
 	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .
-func (obj *Thread_digest) GetChanges() map[string]interface{} {
+func (obj *ThreadDigest) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -31,7 +31,7 @@ func (obj *Thread_digest) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Thread_digest) Update(name string, value interface{}) {
+func (obj *ThreadDigest) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

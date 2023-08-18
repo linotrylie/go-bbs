@@ -1,6 +1,6 @@
 package model
 
-type Sg_sign struct {
+type SgSign struct {
 	changes      map[string]interface{}
 	Id           int    `gorm:"column:id" json:"id"`                     // ID
 	Uid          int    `gorm:"primaryKey;column:uid" json:"uid"`        // 用户ID
@@ -12,17 +12,17 @@ type Sg_sign struct {
 	User         string `gorm:"column:user" json:"user"`                 // 签到用户
 }
 
-func (*Sg_sign) TableName() string {
+func (*SgSign) TableName() string {
 	return "bbs_sg_sign"
 }
 
 // Location .
-func (obj *Sg_sign) Location() map[string]interface{} {
+func (obj *SgSign) Location() map[string]interface{} {
 	return map[string]interface{}{"uid": obj.Uid}
 }
 
 // GetChanges .
-func (obj *Sg_sign) GetChanges() map[string]interface{} {
+func (obj *SgSign) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -35,7 +35,7 @@ func (obj *Sg_sign) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Sg_sign) Update(name string, value interface{}) {
+func (obj *SgSign) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

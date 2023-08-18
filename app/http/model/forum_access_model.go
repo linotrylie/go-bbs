@@ -1,6 +1,6 @@
 package model
 
-type Forum_access struct {
+type ForumAccess struct {
 	changes     map[string]interface{}
 	Fid         int `gorm:"primaryKey;column:fid" json:"fid"`
 	Gid         int `gorm:"primaryKey;column:gid" json:"gid"`
@@ -11,17 +11,17 @@ type Forum_access struct {
 	Allowdown   int `gorm:"column:allowdown" json:"allowdown"`
 }
 
-func (*Forum_access) TableName() string {
+func (*ForumAccess) TableName() string {
 	return "bbs_forum_access"
 }
 
 // Location .
-func (obj *Forum_access) Location() map[string]interface{} {
+func (obj *ForumAccess) Location() map[string]interface{} {
 	return map[string]interface{}{"fid": obj.Fid, "gid": obj.Gid}
 }
 
 // GetChanges .
-func (obj *Forum_access) GetChanges() map[string]interface{} {
+func (obj *ForumAccess) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func (obj *Forum_access) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Forum_access) Update(name string, value interface{}) {
+func (obj *ForumAccess) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

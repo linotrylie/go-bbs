@@ -3,6 +3,7 @@ module GoFreeBns
 go 1.20
 
 require (
+	github.com/duke-git/lancet/v2 v2.2.4
 	github.com/foolin/goview v0.3.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-contrib/sessions v0.0.5

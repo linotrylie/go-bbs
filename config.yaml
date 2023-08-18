@@ -2,10 +2,10 @@
 
 # jwt configuration
 jwt:
-  signing-key: qmPlus
+  signing-key: freebns
   expires-time: 7d
   buffer-time: 1d
-  issuer: qmPlus
+  issuer: freebns
 # zap logger configuration
 zap:
   level: info
@@ -27,11 +27,11 @@ redis:
 email:
   to: xxx@qq.com
   port: 465
-  from: xxx@163.com
+  from: lll2669877481@163.com
   host: smtp.163.com
   is-ssl: true
-  secret: xxx
-  nickname: test
+  secret: ZXENDGUOMAZDTGIH
+  nickname: free-bns中文社区
 
 # system configuration
 system:
@@ -55,6 +55,7 @@ captcha:
   img-height: 80
   open-captcha: 0 # 0代表一直开启，大于0代表限制次数
   open-captcha-timeout: 3600 # open-captcha大于0时才生效
+  is-email-or-pic: 0 # 是否开启邮箱或图片验证码 0 全部 1 仅图片验证码 2 仅邮箱验证码
 
 Database:
   LogZap: true

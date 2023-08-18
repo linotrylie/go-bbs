@@ -1,22 +1,22 @@
 package model
 
-type Git_tags_thread struct {
+type GitTagsThread struct {
 	changes map[string]interface{}
 	Tagid   int `gorm:"primaryKey;column:tagid" json:"tagid"`
 	Tid     int `gorm:"primaryKey;column:tid" json:"tid"`
 }
 
-func (*Git_tags_thread) TableName() string {
+func (*GitTagsThread) TableName() string {
 	return "bbs_git_tags_thread"
 }
 
 // Location .
-func (obj *Git_tags_thread) Location() map[string]interface{} {
+func (obj *GitTagsThread) Location() map[string]interface{} {
 	return map[string]interface{}{"tagid": obj.Tagid, "tid": obj.Tid}
 }
 
 // GetChanges .
-func (obj *Git_tags_thread) GetChanges() map[string]interface{} {
+func (obj *GitTagsThread) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (obj *Git_tags_thread) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Git_tags_thread) Update(name string, value interface{}) {
+func (obj *GitTagsThread) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

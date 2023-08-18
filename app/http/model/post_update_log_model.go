@@ -1,6 +1,6 @@
 package model
 
-type Post_update_log struct {
+type PostUpdateLog struct {
 	changes    map[string]interface{}
 	Logid      int    `gorm:"primaryKey;column:logid" json:"logid"`
 	Pid        int    `gorm:"column:pid" json:"pid"`
@@ -10,17 +10,17 @@ type Post_update_log struct {
 	Uid        int    `gorm:"column:uid" json:"uid"`
 }
 
-func (*Post_update_log) TableName() string {
+func (*PostUpdateLog) TableName() string {
 	return "bbs_post_update_log"
 }
 
 // Location .
-func (obj *Post_update_log) Location() map[string]interface{} {
+func (obj *PostUpdateLog) Location() map[string]interface{} {
 	return map[string]interface{}{"logid": obj.Logid}
 }
 
 // GetChanges .
-func (obj *Post_update_log) GetChanges() map[string]interface{} {
+func (obj *PostUpdateLog) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -33,7 +33,7 @@ func (obj *Post_update_log) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Post_update_log) Update(name string, value interface{}) {
+func (obj *PostUpdateLog) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

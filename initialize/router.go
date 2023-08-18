@@ -14,9 +14,8 @@ import (
 func Routers() *gin.Engine {
 	Router := gin.Default()
 	InstallPlugin(Router)
-	Router.Use(gin.Logger())
-	Router.Use(gin.Recovery())
-	Router.Use(middleware.Cors())
+
+	Router.Use(gin.Logger(), middleware.Cors(), middleware.Recovery())
 
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup
 	backendRouter := router.AllRouterGroupMain.BackendRouterGroup
@@ -60,7 +59,6 @@ func Routers() *gin.Engine {
 		})
 		backend := PrivateGroup.Group("backend", mw)
 		backendRouter.InitUserRouter(backend)
-
 	}
 
 	return Router

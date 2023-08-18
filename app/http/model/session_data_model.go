@@ -1,23 +1,23 @@
 package model
 
-type Session_data struct {
+type SessionData struct {
 	changes  map[string]interface{}
 	Sid      string `gorm:"primaryKey;column:sid" json:"sid"`
 	LastDate int    `gorm:"column:lastdate" json:"lastdate"`
 	Data     string `gorm:"column:data" json:"data"`
 }
 
-func (*Session_data) TableName() string {
+func (*SessionData) TableName() string {
 	return "bbs_session_data"
 }
 
 // Location .
-func (obj *Session_data) Location() map[string]interface{} {
+func (obj *SessionData) Location() map[string]interface{} {
 	return map[string]interface{}{"sid": obj.Sid}
 }
 
 // GetChanges .
-func (obj *Session_data) GetChanges() map[string]interface{} {
+func (obj *SessionData) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ func (obj *Session_data) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Session_data) Update(name string, value interface{}) {
+func (obj *SessionData) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}
