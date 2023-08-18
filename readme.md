@@ -1,5 +1,5 @@
-#FreeBns-BBS
-###当前集成了哪些golang开发组件
+# FreeBns-BBS
+### 当前集成了哪些golang开发组件
  - gin
  - gorm
  - redis
