@@ -13,7 +13,8 @@ func (com *CommonRouter) InitCommonRouter(Router *gin.RouterGroup) {
 	captchaContr := controllers.AllRouterGroupApp.CommonGroup.CaptchaController
 	{
 		captcha.GET("pic-captcha", captchaContr.Captcha)
-		captcha.POST("verify-captcha", captchaContr.CaptchaVerify)
+		captcha.POST("verify-pic-captcha", captchaContr.PicCaptchaVerify)
 		captcha.GET("email-captcha", captchaContr.EmailCaptcha)
+		captcha.POST("verify-email-captcha", captchaContr.EmailCaptchaVerify)
 	}
 }

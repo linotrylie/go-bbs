@@ -39,8 +39,11 @@ func main() {
 	Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 	// 执行
 	Run()*/
-	err := t2t.Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("D:\\Code\\GoFreeBns\\app\\entity\\").
+	err := t2t.Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\entity\\").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunEntity()
+	/*err := t2t.Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\http\\model\\requests\\").
+	Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
+	RunRequest()*/
 	fmt.Println(err)
 }

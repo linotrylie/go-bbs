@@ -6,6 +6,7 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.8+incompatible
 	github.com/aws/aws-sdk-go v1.44.327
 	github.com/flipped-aurora/gin-vue-admin/server v0.0.0-20230819032944-3d0a22b8881c
+	github.com/duke-git/lancet/v2 v2.2.4
 	github.com/foolin/goview v0.3.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-contrib/sessions v0.0.5

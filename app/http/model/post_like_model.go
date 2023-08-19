@@ -1,6 +1,6 @@
 package model
 
-type Post_like struct {
+type PostLike struct {
 	changes    map[string]interface{}
 	Tid        int `gorm:"column:tid" json:"tid"`               // 帖子ID
 	Pid        int `gorm:"column:pid" json:"pid"`               // 回帖ID
@@ -9,17 +9,17 @@ type Post_like struct {
 	CreateIp   int `gorm:"column:createip" json:"createip"`     // 添加IP
 }
 
-func (*Post_like) TableName() string {
+func (*PostLike) TableName() string {
 	return "bbs_post_like"
 }
 
 // Location .
-func (obj *Post_like) Location() map[string]interface{} {
+func (obj *PostLike) Location() map[string]interface{} {
 	return map[string]interface{}{}
 }
 
 // GetChanges .
-func (obj *Post_like) GetChanges() map[string]interface{} {
+func (obj *PostLike) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (obj *Post_like) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Post_like) Update(name string, value interface{}) {
+func (obj *PostLike) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

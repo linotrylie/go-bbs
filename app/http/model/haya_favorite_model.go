@@ -1,6 +1,6 @@
 package model
 
-type Haya_favorite struct {
+type HayaFavorite struct {
 	changes    map[string]interface{}
 	Tid        int `gorm:"column:tid" json:"tid"`               // 帖子ID
 	Uid        int `gorm:"column:uid" json:"uid"`               // 用户ID
@@ -8,17 +8,17 @@ type Haya_favorite struct {
 	CreateIp   int `gorm:"column:createip" json:"createip"`     // 添加IP
 }
 
-func (*Haya_favorite) TableName() string {
+func (*HayaFavorite) TableName() string {
 	return "bbs_haya_favorite"
 }
 
 // Location .
-func (obj *Haya_favorite) Location() map[string]interface{} {
+func (obj *HayaFavorite) Location() map[string]interface{} {
 	return map[string]interface{}{}
 }
 
 // GetChanges .
-func (obj *Haya_favorite) GetChanges() map[string]interface{} {
+func (obj *HayaFavorite) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -31,7 +31,7 @@ func (obj *Haya_favorite) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Haya_favorite) Update(name string, value interface{}) {
+func (obj *HayaFavorite) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

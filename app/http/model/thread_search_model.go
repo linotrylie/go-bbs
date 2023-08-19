@@ -1,23 +1,23 @@
 package model
 
-type Thread_search struct {
+type ThreadSearch struct {
 	changes map[string]interface{}
 	Fid     int    `gorm:"column:fid" json:"fid"`
 	Tid     int    `gorm:"primaryKey;column:tid" json:"tid"`
 	Message string `gorm:"column:message" json:"message"`
 }
 
-func (*Thread_search) TableName() string {
+func (*ThreadSearch) TableName() string {
 	return "bbs_thread_search"
 }
 
 // Location .
-func (obj *Thread_search) Location() map[string]interface{} {
+func (obj *ThreadSearch) Location() map[string]interface{} {
 	return map[string]interface{}{"tid": obj.Tid}
 }
 
 // GetChanges .
-func (obj *Thread_search) GetChanges() map[string]interface{} {
+func (obj *ThreadSearch) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ func (obj *Thread_search) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Thread_search) Update(name string, value interface{}) {
+func (obj *ThreadSearch) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

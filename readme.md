@@ -1,5 +1,5 @@
-#FreeBns-BBS
-###当前集成了哪些golang开发组件
+# FreeBns-BBS
+### 当前集成了哪些golang开发组件
  - gin
  - gorm
  - redis
@@ -10,6 +10,8 @@
  - ginview 模板库
  - robfig-cron 定时任务
  - gohouse/converter gorm结构体生成工具
+ - jordan-wright/email  邮件服务
+ - oss云存储
 
 ### 目录说明
 - app

@@ -1,6 +1,6 @@
 package model
 
-type Table_day struct {
+type TableDay struct {
 	changes    map[string]interface{}
 	Year       int    `gorm:"primaryKey;column:year" json:"year"`   // 年
 	Month      int    `gorm:"primaryKey;column:month" json:"month"` // 月
@@ -11,17 +11,17 @@ type Table_day struct {
 	Count      int    `gorm:"column:count" json:"count"`            // 总数
 }
 
-func (*Table_day) TableName() string {
+func (*TableDay) TableName() string {
 	return "bbs_table_day"
 }
 
 // Location .
-func (obj *Table_day) Location() map[string]interface{} {
-	return map[string]interface{}{"table": obj.Table, "year": obj.Year, "month": obj.Month, "day": obj.Day}
+func (obj *TableDay) Location() map[string]interface{} {
+	return map[string]interface{}{"year": obj.Year, "month": obj.Month, "day": obj.Day, "table": obj.Table}
 }
 
 // GetChanges .
-func (obj *Table_day) GetChanges() map[string]interface{} {
+func (obj *TableDay) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func (obj *Table_day) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *Table_day) Update(name string, value interface{}) {
+func (obj *TableDay) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}

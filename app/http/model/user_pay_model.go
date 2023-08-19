@@ -1,6 +1,6 @@
 package model
 
-type User_pay struct {
+type UserPay struct {
 	changes    map[string]interface{}
 	Cid        int    `gorm:"primaryKey;column:cid" json:"cid"`
 	Uid        int    `gorm:"column:uid" json:"uid"`
@@ -12,17 +12,17 @@ type User_pay struct {
 	Time       int    `gorm:"column:time" json:"time"`
 }
 
-func (*User_pay) TableName() string {
+func (*UserPay) TableName() string {
 	return "bbs_user_pay"
 }
 
 // Location .
-func (obj *User_pay) Location() map[string]interface{} {
+func (obj *UserPay) Location() map[string]interface{} {
 	return map[string]interface{}{"cid": obj.Cid}
 }
 
 // GetChanges .
-func (obj *User_pay) GetChanges() map[string]interface{} {
+func (obj *UserPay) GetChanges() map[string]interface{} {
 	if obj.changes == nil {
 		return nil
 	}
@@ -35,7 +35,7 @@ func (obj *User_pay) GetChanges() map[string]interface{} {
 }
 
 // Update .
-func (obj *User_pay) Update(name string, value interface{}) {
+func (obj *UserPay) Update(name string, value interface{}) {
 	if obj.changes == nil {
 		obj.changes = make(map[string]interface{})
 	}
