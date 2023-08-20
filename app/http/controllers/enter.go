@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"GoFreeBns/app/http/controllers/api"
-	"GoFreeBns/app/http/controllers/backend"
-	"GoFreeBns/app/http/controllers/common"
-	"GoFreeBns/app/http/controllers/frontend"
+	"go-bbs/app/http/controllers/api"
+	"go-bbs/app/http/controllers/backend"
+	"go-bbs/app/http/controllers/common"
+	"go-bbs/app/http/controllers/frontend"
 )
 
 type AllRouterGroup struct {

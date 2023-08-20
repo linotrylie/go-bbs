@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"GoFreeBns/app/http/controllers"
 	"github.com/gin-gonic/gin"
+	"go-bbs/app/http/controllers"
 )
 
 type UserRouter struct {

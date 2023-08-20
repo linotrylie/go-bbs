@@ -1,12 +1,12 @@
 package main
 
 import (
-	"GoFreeBns/core"
-	"GoFreeBns/global"
-	"GoFreeBns/initialize"
-	"GoFreeBns/utils"
 	"context"
 	"fmt"
+	"go-bbs/core"
+	"go-bbs/global"
+	"go-bbs/initialize"
+	"go-bbs/utils"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,7 +20,6 @@ func main() {
 	initialize.Redis()
 	initialize.OtherInit()
 	initialize.InitCrontab()
-	//defer cron.Stop()
 	global.DB = initialize.Gorm()
 	router := initialize.Routers()
 	initialize.InitViews(router) //加载模板渲染库

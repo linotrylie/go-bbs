@@ -1,9 +1,9 @@
 package initialize
 
 import (
-	"GoFreeBns/global"
-	"GoFreeBns/utils"
 	"github.com/songzhibin97/gkit/cache/local_cache"
+	"go-bbs/global"
+	"go-bbs/utils"
 )
 
 func OtherInit() {

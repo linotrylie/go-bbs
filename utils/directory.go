@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"GoFreeBns/global"
 	"errors"
+	"go-bbs/global"
 	"go.uber.org/zap"
 	"os"
 )

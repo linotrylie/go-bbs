@@ -1,10 +1,10 @@
 package core
 
 import (
-	"GoFreeBns/core/internal"
-	"GoFreeBns/global"
-	"GoFreeBns/utils"
 	"fmt"
+	"go-bbs/core/internal"
+	"go-bbs/global"
+	"go-bbs/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"

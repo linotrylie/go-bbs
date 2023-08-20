@@ -1,16 +1,16 @@
 package common
 
 import (
-	"GoFreeBns/app/exceptions"
-	"GoFreeBns/app/http/model"
-	"GoFreeBns/app/http/model/requests"
-	"GoFreeBns/app/http/model/response"
-	"GoFreeBns/global"
 	"github.com/duke-git/lancet/v2/compare"
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/duke-git/lancet/v2/random"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
+	"go-bbs/app/exceptions"
+	"go-bbs/app/http/model"
+	"go-bbs/app/http/model/requests"
+	"go-bbs/app/http/model/response"
+	"go-bbs/global"
 	"go.uber.org/zap"
 	"time"
 )

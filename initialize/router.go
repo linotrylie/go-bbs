@@ -1,11 +1,11 @@
 package initialize
 
 import (
-	"GoFreeBns/app/http/middleware"
-	"GoFreeBns/router"
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
+	"go-bbs/app/http/middleware"
+	"go-bbs/router"
 	"html/template"
 	"net/http"
 	"time"

@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"GoFreeBns/global"
 	"fmt"
+	"go-bbs/global"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"time"

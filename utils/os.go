@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"GoFreeBns/utils/sliceutil"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-bbs/utils/sliceutil"
 	"runtime"
 	"strings"
 )

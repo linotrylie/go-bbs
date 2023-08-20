@@ -1,9 +1,9 @@
 package email
 
 import (
-	"GoFreeBns/plugin/email/global"
-	"GoFreeBns/plugin/email/router"
 	"github.com/gin-gonic/gin"
+	"go-bbs/plugin/email/global"
+	"go-bbs/plugin/email/router"
 )
 
 type emailPlugin struct{}

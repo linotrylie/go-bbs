@@ -1,11 +1,11 @@
 package api
 
 import (
-	"GoFreeBns/app/http/model/response"
-	"GoFreeBns/global"
-	emailresponse "GoFreeBns/plugin/email/model/response"
-	"GoFreeBns/plugin/email/service"
 	"github.com/gin-gonic/gin"
+	"go-bbs/app/http/model/response"
+	"go-bbs/global"
+	emailresponse "go-bbs/plugin/email/model/response"
+	"go-bbs/plugin/email/service"
 	"go.uber.org/zap"
 )
 

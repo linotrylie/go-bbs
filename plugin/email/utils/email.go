@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"GoFreeBns/plugin/email/global"
 	"crypto/tls"
 	"fmt"
+	"go-bbs/plugin/email/global"
 	"net/smtp"
 	"strings"
 

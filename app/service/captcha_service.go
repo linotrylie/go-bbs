@@ -1,13 +1,13 @@
 package service
 
 import (
-	"GoFreeBns/app/http/model/requests"
-	"GoFreeBns/global"
-	"GoFreeBns/utils"
 	"github.com/duke-git/lancet/v2/compare"
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
+	"go-bbs/app/http/model/requests"
+	"go-bbs/global"
+	"go-bbs/utils"
 	"time"
 )
 

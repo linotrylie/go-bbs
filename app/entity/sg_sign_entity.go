@@ -1,6 +1,6 @@
 package entity
 
-import "GoFreeBns/app/http/model"
+import "go-bbs/app/http/model"
 
 type SgSignEntity struct {
 	model.SgSign

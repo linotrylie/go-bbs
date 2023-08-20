@@ -1,6 +1,6 @@
 package entity
 
-import "GoFreeBns/app/http/model"
+import "go-bbs/app/http/model"
 
 type SlideEntity struct {
 	model.Slide

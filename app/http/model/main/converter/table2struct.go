@@ -225,7 +225,7 @@ func (t *Table2Struct) RunEntity() error {
 	} else {
 		packageName = fmt.Sprintf("package %s\n\n", t.packageName)
 	}
-	packageName += `import "GoFreeBns/app/http/model"`
+	packageName += `import "go-bbs/app/http/model"`
 	packageName += "\n"
 	// 组装struct
 	var structContent string

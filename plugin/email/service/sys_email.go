@@ -1,6 +1,6 @@
 package service
 
-import "GoFreeBns/plugin/email/utils"
+import "go-bbs/plugin/email/utils"
 
 type EmailService struct{}
 

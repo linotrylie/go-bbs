@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"GoFreeBns/global"
 	"github.com/gin-gonic/gin"
+	"go-bbs/global"
 	"net/http"
 )
 

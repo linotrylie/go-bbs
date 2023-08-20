@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"GoFreeBns/global"
+	"go-bbs/global"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"

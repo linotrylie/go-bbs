@@ -1,8 +1,8 @@
 package router
 
 import (
-	"GoFreeBns/plugin/email/api"
 	"github.com/gin-gonic/gin"
+	"go-bbs/plugin/email/api"
 )
 
 type EmailRouter struct{}

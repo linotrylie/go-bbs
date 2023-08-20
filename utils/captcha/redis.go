@@ -1,9 +1,9 @@
 package captcha
 
 import (
-	"GoFreeBns/global"
 	"context"
 	"github.com/mojocn/base64Captcha"
+	"go-bbs/global"
 	"go.uber.org/zap"
 	"time"
 )

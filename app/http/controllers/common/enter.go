@@ -1,6 +1,6 @@
 package common
 
-import emailServ "GoFreeBns/plugin/email/service"
+import emailServ "go-bbs/plugin/email/service"
 
 type CommonGroup struct {
 	CaptchaController

@@ -1,10 +1,10 @@
 package initialize
 
 import (
-	"GoFreeBns/global"
-	"GoFreeBns/plugin/email"
-	"GoFreeBns/utils/plugin"
 	"github.com/gin-gonic/gin"
+	"go-bbs/global"
+	"go-bbs/plugin/email"
+	"go-bbs/utils/plugin"
 )
 
 func PluginInit(group *gin.RouterGroup, Plugin ...plugin.Plugin) {

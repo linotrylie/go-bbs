@@ -1,8 +1,8 @@
 package initialize
 
 import (
-	"GoFreeBns/app/console"
 	"fmt"
+	"go-bbs/app/console"
 )
 
 func InitCrontab() {

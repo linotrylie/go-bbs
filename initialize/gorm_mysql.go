@@ -1,9 +1,9 @@
 package initialize
 
 import (
-	"GoFreeBns/config"
-	"GoFreeBns/global"
 	"fmt"
+	"go-bbs/config"
+	"go-bbs/global"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

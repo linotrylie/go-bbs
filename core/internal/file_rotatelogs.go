@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"GoFreeBns/global"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"go-bbs/global"
 	"go.uber.org/zap/zapcore"
 	"os"
 	"path"

@@ -1,6 +1,6 @@
 package api
 
-import "GoFreeBns/app/service"
+import "go-bbs/app/service"
 
 type ApiGroup struct {
 	AuthController

@@ -1,10 +1,10 @@
 package initialize
 
 import (
-	"GoFreeBns/global"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"go-bbs/global"
 )
 
 func Session(Router *gin.RouterGroup) {

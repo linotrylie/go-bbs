@@ -1,10 +1,10 @@
 package core
 
 import (
-	"GoFreeBns/global"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"go-bbs/global"
 	"path/filepath"
 )
 

@@ -1,5 +1,5 @@
 package global
 
-import "GoFreeBns/config"
+import "go-bbs/config"
 
 var GlobalConfig = new(config.Email)

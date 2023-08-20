@@ -1,10 +1,10 @@
 package router
 
 import (
-	"GoFreeBns/router/api"
-	"GoFreeBns/router/backend"
-	"GoFreeBns/router/common"
-	"GoFreeBns/router/frontend"
+	"go-bbs/router/api"
+	"go-bbs/router/backend"
+	"go-bbs/router/common"
+	"go-bbs/router/frontend"
 )
 
 type AllRouterGroup struct {

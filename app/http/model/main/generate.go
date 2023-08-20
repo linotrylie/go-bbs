@@ -1,8 +1,8 @@
 package main
 
 import (
-	"GoFreeBns/app/http/model/main/converter"
 	"fmt"
+	"go-bbs/app/http/model/main/converter"
 )
 
 func main() {

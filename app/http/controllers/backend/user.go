@@ -1,11 +1,11 @@
 package backend
 
 import (
-	"GoFreeBns/app/http/model"
-	"GoFreeBns/app/http/model/response"
-	"GoFreeBns/global"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-bbs/app/http/model"
+	"go-bbs/app/http/model/response"
+	"go-bbs/global"
 )
 
 type UserController struct {

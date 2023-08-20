@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"GoFreeBns/global"
 	"fmt"
+	"go-bbs/global"
 	"gorm.io/gorm/logger"
 )
 

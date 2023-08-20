@@ -1,11 +1,10 @@
 package global
 
 import (
-	"GoFreeBns/config"
 	"github.com/gin-contrib/sessions"
-	"github.com/redis/go-redis/v9"
 	"github.com/songzhibin97/gkit/cache/local_cache"
 	"github.com/spf13/viper"
+	"go-bbs/config"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	// 导入session存储引擎
