@@ -5,6 +5,7 @@ import (
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go-bbs/app/http/middleware"
 	"go-bbs/router"
 	"html/template"
@@ -29,6 +30,13 @@ func Routers() *gin.Engine {
 		)
 	}))
 	Router.Use(middleware.Cors(), middleware.Recovery())
+
+	///////////普罗米修斯添加到中间件////////////////////
+	var p = &Prometheus{}
+	registerPrometheus(p, "go-bbs", ":8080")
+	Router.Use(newPrometheusHandle(p))
+	///////////普罗米修斯添加到中间件////////////////////
+
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup
 	backendRouter := router.AllRouterGroupMain.BackendRouterGroup
 	commonRouter := router.AllRouterGroupMain.CommonRouterGroup
@@ -36,14 +44,17 @@ func Routers() *gin.Engine {
 
 	Router.GET("/", func(context *gin.Context) {
 	})
+
+	Router.GET("/metrics", PromHandler(promhttp.Handler()))
+
 	Router.GET("/favicon.ico", func(context *gin.Context) {
 	})
 	//公共路由组件 不需要鉴权
 	PublicGroup := Router.Group("/")
 	{
 		// 健康监测
-		PublicGroup.GET("/dong", func(c *gin.Context) {
-			c.JSON(http.StatusOK, "ok")
+		PublicGroup.GET("/ding", func(c *gin.Context) {
+			c.JSON(http.StatusOK, "dong")
 		})
 	}
 	{

@@ -2,8 +2,10 @@ package respository
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/duke-git/lancet/v2/random"
 	"github.com/redis/go-redis/v9"
 	"go-bbs/app/http/model"
@@ -122,7 +124,19 @@ func (p *Pager) Execute(db *gorm.DB, object interface{}) (e error) {
 	return
 }
 
-//事务
+// 事务
+func TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
+		defer func() {
+			if err := recover(); err != nil {
+				e = errors.New(fmt.Sprint(err))
+				global.LOG.Error(e.Error(), zap.Error(e))
+			}
+		}()
+		e = fun()
+		return
+	}, opts...)
+}
 
 //////////////Redis///////////////////////////
 
@@ -134,7 +148,7 @@ func SaveInRedis(model model.Model) (e error) {
 		return e
 	}
 	resStr := string(resByte)
-	global.REDIS.Set(context.Background(), redisKey, resStr, time.Duration(random.RandInt(100000, 999999))*time.Second)
+	global.REDIS.Set(context.Background(), redisKey, resStr, time.Duration(random.RandInt(7200, 999999))*time.Second)
 	return nil
 }
 
