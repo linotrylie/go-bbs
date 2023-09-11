@@ -7,6 +7,7 @@
 *.dylib
 .idea/
 storage/logs
+storage/tmp
 # Test binary, built with `go test -c`
 *.test
 

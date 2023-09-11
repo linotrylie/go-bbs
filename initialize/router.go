@@ -29,7 +29,8 @@ func Routers() *gin.Engine {
 			param.ErrorMessage,
 		)
 	}))
-	Router.Use(middleware.Cors(), middleware.Recovery())
+
+	Router.Use(middleware.Cors(), middleware.Recovery(), middleware.RateLimitMiddleware())
 
 	///////////普罗米修斯添加到中间件////////////////////
 	var p = &Prometheus{}
