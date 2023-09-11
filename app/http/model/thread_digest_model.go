@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type ThreadDigest struct {
 	changes map[string]interface{}
 	Fid     int `gorm:"column:fid" json:"fid"`
@@ -15,6 +19,11 @@ func (*ThreadDigest) TableName() string {
 // Location .
 func (obj *ThreadDigest) Location() map[string]interface{} {
 	return map[string]interface{}{"tid": obj.Tid}
+}
+
+// Redis Key .
+func (obj *ThreadDigest) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Tid)
 }
 
 // GetChanges .

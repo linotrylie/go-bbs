@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Modlog struct {
 	changes    map[string]interface{}
 	Logid      int    `gorm:"primaryKey;column:logid" json:"logid"`
@@ -9,7 +13,7 @@ type Modlog struct {
 	Subject    string `gorm:"column:subject" json:"subject"`
 	Comment    string `gorm:"column:comment" json:"comment"`
 	Rmbs       int    `gorm:"column:rmbs" json:"rmbs"`
-	CreateDate int    `gorm:"column:createdate" json:"createdate"`
+	CreateDate int    `gorm:"column:create_date" json:"create_date"`
 	Action     string `gorm:"column:action" json:"action"`
 }
 
@@ -20,6 +24,11 @@ func (*Modlog) TableName() string {
 // Location .
 func (obj *Modlog) Location() map[string]interface{} {
 	return map[string]interface{}{"logid": obj.Logid}
+}
+
+// Redis Key .
+func (obj *Modlog) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Logid)
 }
 
 // GetChanges .

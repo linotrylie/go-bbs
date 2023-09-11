@@ -1,12 +1,16 @@
 package model
 
+import (
+	"fmt"
+)
+
 type PostUpdateLog struct {
 	changes    map[string]interface{}
 	Logid      int    `gorm:"primaryKey;column:logid" json:"logid"`
 	Pid        int    `gorm:"column:pid" json:"pid"`
 	Reason     string `gorm:"column:reason" json:"reason"`
 	Message    string `gorm:"column:message" json:"message"`
-	CreateDate int    `gorm:"column:createdate" json:"createdate"`
+	CreateDate int    `gorm:"column:create_date" json:"create_date"`
 	Uid        int    `gorm:"column:uid" json:"uid"`
 }
 
@@ -17,6 +21,11 @@ func (*PostUpdateLog) TableName() string {
 // Location .
 func (obj *PostUpdateLog) Location() map[string]interface{} {
 	return map[string]interface{}{"logid": obj.Logid}
+}
+
+// Redis Key .
+func (obj *PostUpdateLog) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Logid)
 }
 
 // GetChanges .

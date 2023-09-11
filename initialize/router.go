@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"fmt"
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
@@ -12,11 +13,22 @@ import (
 )
 
 func Routers() *gin.Engine {
-	Router := gin.Default()
+	Router := gin.New()
 	InstallPlugin(Router)
-
-	Router.Use(gin.Logger(), middleware.Cors(), middleware.Recovery())
-
+	Router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+			param.ClientIP,
+			param.TimeStamp.Format(time.DateTime),
+			param.Method,
+			param.Path,
+			param.Request.Proto,
+			param.StatusCode,
+			param.Latency,
+			param.Request.UserAgent(),
+			param.ErrorMessage,
+		)
+	}))
+	Router.Use(middleware.Cors(), middleware.Recovery())
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup
 	backendRouter := router.AllRouterGroupMain.BackendRouterGroup
 	commonRouter := router.AllRouterGroupMain.CommonRouterGroup

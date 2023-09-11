@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Attach struct {
 	changes     map[string]interface{}
 	Aid         int    `gorm:"primaryKey;column:aid" json:"aid"`
@@ -12,7 +16,7 @@ type Attach struct {
 	Filename    string `gorm:"column:filename" json:"filename"`
 	Orgfilename string `gorm:"column:orgfilename" json:"orgfilename"`
 	Filetype    string `gorm:"column:filetype" json:"filetype"`
-	CreateDate  int    `gorm:"column:createdate" json:"createdate"`
+	CreateDate  int    `gorm:"column:create_date" json:"create_date"`
 	Comment     string `gorm:"column:comment" json:"comment"`
 	Downloads   int    `gorm:"column:downloads" json:"downloads"`
 	Credits     int    `gorm:"column:credits" json:"credits"`
@@ -28,6 +32,11 @@ func (*Attach) TableName() string {
 // Location .
 func (obj *Attach) Location() map[string]interface{} {
 	return map[string]interface{}{"aid": obj.Aid}
+}
+
+// Redis Key .
+func (obj *Attach) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Aid)
 }
 
 // GetChanges .

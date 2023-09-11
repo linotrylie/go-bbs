@@ -1,11 +1,15 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Friendlink struct {
 	changes    map[string]interface{}
 	Linkid     int    `gorm:"primaryKey;column:linkid" json:"linkid"`
 	Type       int    `gorm:"column:type" json:"type"`
 	Rank       int    `gorm:"column:rank" json:"rank"`
-	CreateDate int    `gorm:"column:createdate" json:"createdate"`
+	CreateDate int    `gorm:"column:create_date" json:"create_date"`
 	Name       string `gorm:"column:name" json:"name"`
 	Url        string `gorm:"column:url" json:"url"`
 }
@@ -17,6 +21,11 @@ func (*Friendlink) TableName() string {
 // Location .
 func (obj *Friendlink) Location() map[string]interface{} {
 	return map[string]interface{}{"linkid": obj.Linkid}
+}
+
+// Redis Key .
+func (obj *Friendlink) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Linkid)
 }
 
 // GetChanges .

@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"github.com/redis/go-redis/v9"
 	"go-bbs/global"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"

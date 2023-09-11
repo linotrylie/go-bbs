@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type PostSearch struct {
 	changes map[string]interface{}
 	Fid     int    `gorm:"column:fid" json:"fid"`
@@ -14,6 +18,11 @@ func (*PostSearch) TableName() string {
 // Location .
 func (obj *PostSearch) Location() map[string]interface{} {
 	return map[string]interface{}{"pid": obj.Pid}
+}
+
+// Redis Key .
+func (obj *PostSearch) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Pid)
 }
 
 // GetChanges .

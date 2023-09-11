@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Group struct {
 	changes         map[string]interface{}
 	Gid             int    `gorm:"primaryKey;column:gid" json:"gid"`
@@ -32,6 +36,11 @@ func (*Group) TableName() string {
 // Location .
 func (obj *Group) Location() map[string]interface{} {
 	return map[string]interface{}{"gid": obj.Gid}
+}
+
+// Redis Key .
+func (obj *Group) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Gid)
 }
 
 // GetChanges .

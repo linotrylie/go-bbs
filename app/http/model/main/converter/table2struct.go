@@ -318,9 +318,9 @@ func (t *Table2Struct) Run() error {
 			//column := v.Tag
 			if v.Primary == "PRI" {
 				primaryStructMap[v.ColumnName] = v.ColumnName
-				v.Tag = "`" + `gorm:"primaryKey;column:` + strings.ToLower(v.ColumnName) + `"` + ` json:"` + strings.ToLower(v.ColumnName) + `"` + "`"
+				v.Tag = "`" + `gorm:"primaryKey;column:` + strings.ToLower(v.Tag) + `"` + ` json:"` + strings.ToLower(v.Tag) + `"` + "`"
 			} else {
-				v.Tag = "`" + `gorm:"column:` + strings.ToLower(v.ColumnName) + `"` + ` json:"` + strings.ToLower(v.ColumnName) + `"` + "`"
+				v.Tag = "`" + `gorm:"column:` + strings.ToLower(v.Tag) + `"` + ` json:"` + strings.ToLower(v.Tag) + `"` + "`"
 			}
 			// 字段注释
 			var clumnComment string
@@ -353,13 +353,36 @@ func (t *Table2Struct) Run() error {
 		}
 		structContent += fmt.Sprintf(`return map[string]interface{}{%s}`+"\n", locationStr)
 		structContent += "}\n"
+
+		structContent += "// Redis Key .\n"
+		structContent += fmt.Sprintf("func (obj *%s) RedisKey() string {\n", tableName)
+		redisKeyStr := " obj.TableName() "
+		if len(primaryStructMap) == 0 {
+			redisKeyStr += ` + "_" + ` + `fmt.Sprintf("%v",time.Now().Unix())`
+		} else {
+			for _, v := range primaryStructMap {
+				if redisKeyStr != "" {
+					redisKeyStr += ""
+				}
+				redisKeyStr += ` + "_" + ` + `fmt.Sprintf("%v"` + fmt.Sprintf(`,obj.%s)`, v)
+			}
+		}
+		redisKeyStr += "\n"
+		structContent += fmt.Sprintf("return %s", redisKeyStr)
+		structContent += "}\n"
+
 		structContent += fmt.Sprintf("// GetChanges .\nfunc (obj *%s) GetChanges() map[string]interface{} {\n\tif obj.changes == nil {\n\t\treturn nil\n\t}\n\tresult := make(map[string]interface{})\n\tfor k, v := range obj.changes {\n\t\tresult[k] = v\n\t}\n\tobj.changes = nil\n\treturn result\n}\n\n// Update .\nfunc (obj *%s) Update(name string, value interface{}) {\n\tif obj.changes == nil {\n\t\tobj.changes = make(map[string]interface{})\n\t}\n\tobj.changes[name] = value\n}", tableName, tableName)
 		fmt.Println(structContent)
-
+		//return nil
 		// 如果有引入 time.Time, 则需要引入 time 包
 		var importContent string
+
 		if strings.Contains(structContent, "time.Time") {
-			importContent = "import \"time\"\n\n"
+			importContent = "import (\"fmt\"\n\"time\"\n)\n"
+		} else if strings.Contains(structContent, "time.Now()") {
+			importContent = "import (\"fmt\"\n\"time\"\n)\n"
+		} else {
+			importContent = "import (\"fmt\"\n)\n"
 		}
 
 		// 写入文件struct
@@ -375,9 +398,7 @@ func (t *Table2Struct) Run() error {
 			return err
 		}
 		defer f.Close()
-
 		f.WriteString(packageName + importContent + structContent)
-
 		cmd := exec.Command("gofmt", "-w", filePath)
 		cmd.Run()
 		structContent = ""
@@ -483,12 +504,12 @@ func (t *Table2Struct) getColumns(table ...string) (tableColumns map[string][]co
 			//} else {
 			//}
 		}
-		if t.enableJsonTag {
+		/*if t.enableJsonTag {
 			//col.Json = fmt.Sprintf("`json:\"%s\" %s:\"%s\"`", col.Json, t.config.TagKey, col.Json)
 			col.Tag = fmt.Sprintf("`%s:\"%s\" json:\"%s\"`", t.tagKey, col.Tag, col.Tag)
 		} else {
 			col.Tag = fmt.Sprintf("`%s:\"%s\"`", t.tagKey, col.Tag)
-		}
+		}*/
 		//columns = append(columns, col)
 		if _, ok := tableColumns[col.TableName]; !ok {
 			tableColumns[col.TableName] = []column{}

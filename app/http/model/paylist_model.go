@@ -1,12 +1,16 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Paylist struct {
 	changes    map[string]interface{}
 	Plid       int `gorm:"primaryKey;column:plid" json:"plid"`
-	Tid        int `gorm:"column:tid" json:"tid"`               // tid
-	Uid        int `gorm:"column:uid" json:"uid"`               // uid
-	Num        int `gorm:"column:num" json:"num"`               // pay_anycredit_num
-	CreditType int `gorm:"column:credittype" json:"credittype"` // 1exp_2gold_3rmb
+	Tid        int `gorm:"column:tid" json:"tid"`                 // tid
+	Uid        int `gorm:"column:uid" json:"uid"`                 // uid
+	Num        int `gorm:"column:num" json:"num"`                 // pay_anycredit_num
+	CreditType int `gorm:"column:credit_type" json:"credit_type"` // 1exp_2gold_3rmb
 	Type       int `gorm:"column:type" json:"type"`
 	Rate       int `gorm:"column:rate" json:"rate"`
 	Paytime    int `gorm:"column:paytime" json:"paytime"` // time
@@ -19,6 +23,11 @@ func (*Paylist) TableName() string {
 // Location .
 func (obj *Paylist) Location() map[string]interface{} {
 	return map[string]interface{}{"plid": obj.Plid}
+}
+
+// Redis Key .
+func (obj *Paylist) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Plid)
 }
 
 // GetChanges .

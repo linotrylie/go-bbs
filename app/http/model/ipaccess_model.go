@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Ipaccess struct {
 	changes     map[string]interface{}
 	Ip          int `gorm:"primaryKey;column:ip" json:"ip"`
@@ -10,7 +14,7 @@ type Ipaccess struct {
 	Posts       int `gorm:"column:posts" json:"posts"`
 	Attachs     int `gorm:"column:attachs" json:"attachs"`
 	Attachsizes int `gorm:"column:attachsizes" json:"attachsizes"`
-	LastDate    int `gorm:"column:lastdate" json:"lastdate"`
+	LastDate    int `gorm:"column:last_date" json:"last_date"`
 	Actions     int `gorm:"column:actions" json:"actions"`
 	Action1     int `gorm:"column:action1" json:"action1"`
 	Action2     int `gorm:"column:action2" json:"action2"`
@@ -25,6 +29,11 @@ func (*Ipaccess) TableName() string {
 // Location .
 func (obj *Ipaccess) Location() map[string]interface{} {
 	return map[string]interface{}{"ip": obj.Ip}
+}
+
+// Redis Key .
+func (obj *Ipaccess) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Ip)
 }
 
 // GetChanges .

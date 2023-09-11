@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Mypost struct {
 	changes map[string]interface{}
 	Uid     int `gorm:"primaryKey;column:uid" json:"uid"`
@@ -14,6 +18,11 @@ func (*Mypost) TableName() string {
 // Location .
 func (obj *Mypost) Location() map[string]interface{} {
 	return map[string]interface{}{"uid": obj.Uid, "pid": obj.Pid}
+}
+
+// Redis Key .
+func (obj *Mypost) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Uid) + "_" + fmt.Sprintf("%v", obj.Pid)
 }
 
 // GetChanges .

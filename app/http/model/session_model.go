@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Session struct {
 	changes   map[string]interface{}
 	Sid       string `gorm:"primaryKey;column:sid" json:"sid"`
@@ -10,7 +14,7 @@ type Session struct {
 	Useragent string `gorm:"column:useragent" json:"useragent"`
 	Data      string `gorm:"column:data" json:"data"`
 	Bigdata   int    `gorm:"column:bigdata" json:"bigdata"`
-	LastDate  int    `gorm:"column:lastdate" json:"lastdate"`
+	LastDate  int    `gorm:"column:last_date" json:"last_date"`
 }
 
 func (*Session) TableName() string {
@@ -20,6 +24,11 @@ func (*Session) TableName() string {
 // Location .
 func (obj *Session) Location() map[string]interface{} {
 	return map[string]interface{}{"sid": obj.Sid}
+}
+
+// Redis Key .
+func (obj *Session) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Sid)
 }
 
 // GetChanges .

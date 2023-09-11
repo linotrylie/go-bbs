@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Cache struct {
 	changes map[string]interface{}
 	K       string `gorm:"primaryKey;column:k" json:"k"`
@@ -14,6 +18,11 @@ func (*Cache) TableName() string {
 // Location .
 func (obj *Cache) Location() map[string]interface{} {
 	return map[string]interface{}{"k": obj.K}
+}
+
+// Redis Key .
+func (obj *Cache) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.K)
 }
 
 // GetChanges .

@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Mythread struct {
 	changes map[string]interface{}
 	Uid     int `gorm:"primaryKey;column:uid" json:"uid"`
@@ -13,6 +17,11 @@ func (*Mythread) TableName() string {
 // Location .
 func (obj *Mythread) Location() map[string]interface{} {
 	return map[string]interface{}{"uid": obj.Uid, "tid": obj.Tid}
+}
+
+// Redis Key .
+func (obj *Mythread) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Uid) + "_" + fmt.Sprintf("%v", obj.Tid)
 }
 
 // GetChanges .

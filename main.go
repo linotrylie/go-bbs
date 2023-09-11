@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -17,10 +18,14 @@ import (
 func main() {
 	global.VP = core.Viper()
 	global.LOG = core.Zap()
+	global.DB = initialize.Gorm()
+	if global.DB == nil {
+		global.LOG.Fatal("DB dont work!")
+		return
+	}
 	initialize.Redis()
 	initialize.OtherInit()
 	initialize.InitCrontab()
-	global.DB = initialize.Gorm()
 	router := initialize.Routers()
 	initialize.InitViews(router) //加载模板渲染库
 	srv := &http.Server{
@@ -31,6 +36,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
+	fmt.Println(runtime.NumCPU())
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {

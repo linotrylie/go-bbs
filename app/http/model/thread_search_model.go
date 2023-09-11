@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type ThreadSearch struct {
 	changes map[string]interface{}
 	Fid     int    `gorm:"column:fid" json:"fid"`
@@ -14,6 +18,11 @@ func (*ThreadSearch) TableName() string {
 // Location .
 func (obj *ThreadSearch) Location() map[string]interface{} {
 	return map[string]interface{}{"tid": obj.Tid}
+}
+
+// Redis Key .
+func (obj *ThreadSearch) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Tid)
 }
 
 // GetChanges .

@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Slide struct {
 	changes   map[string]interface{}
 	Slideid   int    `gorm:"primaryKey;column:slideid" json:"slideid"`
@@ -17,6 +21,11 @@ func (*Slide) TableName() string {
 // Location .
 func (obj *Slide) Location() map[string]interface{} {
 	return map[string]interface{}{"slideid": obj.Slideid}
+}
+
+// Redis Key .
+func (obj *Slide) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Slideid)
 }
 
 // GetChanges .

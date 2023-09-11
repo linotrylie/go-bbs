@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type TagCate struct {
 	changes      map[string]interface{}
 	Cateid       int    `gorm:"primaryKey;column:cateid" json:"cateid"`
@@ -18,6 +22,11 @@ func (*TagCate) TableName() string {
 // Location .
 func (obj *TagCate) Location() map[string]interface{} {
 	return map[string]interface{}{"cateid": obj.Cateid}
+}
+
+// Redis Key .
+func (obj *TagCate) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Cateid)
 }
 
 // GetChanges .

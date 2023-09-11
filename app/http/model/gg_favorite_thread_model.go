@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type GgFavoriteThread struct {
 	changes map[string]interface{}
 	Favid   int `gorm:"primaryKey;column:favid" json:"favid"`
@@ -14,6 +18,11 @@ func (*GgFavoriteThread) TableName() string {
 // Location .
 func (obj *GgFavoriteThread) Location() map[string]interface{} {
 	return map[string]interface{}{"favid": obj.Favid}
+}
+
+// Redis Key .
+func (obj *GgFavoriteThread) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Favid)
 }
 
 // GetChanges .

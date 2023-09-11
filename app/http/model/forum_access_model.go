@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type ForumAccess struct {
 	changes     map[string]interface{}
 	Fid         int `gorm:"primaryKey;column:fid" json:"fid"`
@@ -18,6 +22,11 @@ func (*ForumAccess) TableName() string {
 // Location .
 func (obj *ForumAccess) Location() map[string]interface{} {
 	return map[string]interface{}{"fid": obj.Fid, "gid": obj.Gid}
+}
+
+// Redis Key .
+func (obj *ForumAccess) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Fid) + "_" + fmt.Sprintf("%v", obj.Gid)
 }
 
 // GetChanges .

@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type SgSign struct {
 	changes      map[string]interface{}
 	Id           int    `gorm:"column:id" json:"id"`                     // ID
@@ -19,6 +23,11 @@ func (*SgSign) TableName() string {
 // Location .
 func (obj *SgSign) Location() map[string]interface{} {
 	return map[string]interface{}{"uid": obj.Uid}
+}
+
+// Redis Key .
+func (obj *SgSign) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Uid)
 }
 
 // GetChanges .

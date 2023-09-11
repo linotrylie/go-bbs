@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type Kami struct {
 	changes map[string]interface{}
 	Kahao   int    `gorm:"primaryKey;column:kahao" json:"kahao"`
@@ -16,6 +20,11 @@ func (*Kami) TableName() string {
 // Location .
 func (obj *Kami) Location() map[string]interface{} {
 	return map[string]interface{}{"kahao": obj.Kahao}
+}
+
+// Redis Key .
+func (obj *Kami) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Kahao)
 }
 
 // GetChanges .

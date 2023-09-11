@@ -1,1 +1,0 @@
-[free-bns]2023/08/17 - 23:13:12.962	[31merror[0m	H:/gocode/go-bbs/initialize/redis.go:19	redis connect ping failed, err:	{"error": "dial tcp 127.0.0.1:6379: connectex: No connection could be made because the target machine actively refused it."}

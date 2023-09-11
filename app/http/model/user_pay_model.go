@@ -1,5 +1,9 @@
 package model
 
+import (
+	"fmt"
+)
+
 type UserPay struct {
 	changes    map[string]interface{}
 	Cid        int    `gorm:"primaryKey;column:cid" json:"cid"`
@@ -7,7 +11,7 @@ type UserPay struct {
 	Status     int    `gorm:"column:status" json:"status"`
 	Num        int    `gorm:"column:num" json:"num"`
 	Type       int    `gorm:"column:type" json:"type"`
-	CreditType int    `gorm:"column:credittype" json:"credittype"`
+	CreditType int    `gorm:"column:credit_type" json:"credit_type"`
 	Code       string `gorm:"column:code" json:"code"`
 	Time       int    `gorm:"column:time" json:"time"`
 }
@@ -19,6 +23,11 @@ func (*UserPay) TableName() string {
 // Location .
 func (obj *UserPay) Location() map[string]interface{} {
 	return map[string]interface{}{"cid": obj.Cid}
+}
+
+// Redis Key .
+func (obj *UserPay) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Cid)
 }
 
 // GetChanges .

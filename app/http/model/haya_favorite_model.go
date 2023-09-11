@@ -1,11 +1,16 @@
 package model
 
+import (
+	"fmt"
+	"time"
+)
+
 type HayaFavorite struct {
 	changes    map[string]interface{}
-	Tid        int `gorm:"column:tid" json:"tid"`               // 帖子ID
-	Uid        int `gorm:"column:uid" json:"uid"`               // 用户ID
-	CreateDate int `gorm:"column:createdate" json:"createdate"` // 添加时间
-	CreateIp   int `gorm:"column:createip" json:"createip"`     // 添加IP
+	Tid        int `gorm:"column:tid" json:"tid"`                 // 帖子ID
+	Uid        int `gorm:"column:uid" json:"uid"`                 // 用户ID
+	CreateDate int `gorm:"column:create_date" json:"create_date"` // 添加时间
+	CreateIp   int `gorm:"column:create_ip" json:"create_ip"`     // 添加IP
 }
 
 func (*HayaFavorite) TableName() string {
@@ -15,6 +20,11 @@ func (*HayaFavorite) TableName() string {
 // Location .
 func (obj *HayaFavorite) Location() map[string]interface{} {
 	return map[string]interface{}{}
+}
+
+// Redis Key .
+func (obj *HayaFavorite) RedisKey() string {
+	return obj.TableName() + "_" + fmt.Sprintf("%v", time.Now().Unix())
 }
 
 // GetChanges .
