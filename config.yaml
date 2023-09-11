@@ -42,7 +42,7 @@ system:
   use-redis: false # 使用redis
   use-multipoint: false
   # IP限制次数 一个小时15000次
-  iplimit-count: 15000
+  iplimit-count: 1500
   #  IP限制一个小时
   iplimit-time: 3600
   #  路由全局前缀

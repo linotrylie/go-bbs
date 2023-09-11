@@ -8,8 +8,7 @@ import (
 )
 
 func Session(Router *gin.RouterGroup) {
-	global.Cookie = cookie.NewStore([]byte("freebns"))
-	session := sessions.Sessions("freebns", global.Cookie)
+	global.Cookie = cookie.NewStore([]byte("free-bns"))
+	session := sessions.Sessions("free-bns", global.Cookie)
 	Router.Use(session)
-	global.Session = sessions.Default(&gin.Context{})
 }

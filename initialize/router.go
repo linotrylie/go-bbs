@@ -30,7 +30,7 @@ func Routers() *gin.Engine {
 		)
 	}))
 
-	Router.Use(middleware.Cors(), middleware.Recovery(), middleware.RateLimitMiddleware())
+	Router.Use(middleware.Cors(), middleware.Recovery(), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
 
 	///////////普罗米修斯添加到中间件////////////////////
 	var p = &Prometheus{}
@@ -63,7 +63,7 @@ func Routers() *gin.Engine {
 		frontendRouter.InitThreadRouter(PublicGroup)
 		frontendRouter.InitHomeRouter(PublicGroup)
 	}
-
+	Session(PublicGroup)
 	PrivateGroup := Router.Group("/s")
 	{
 		api := PrivateGroup.Group("api")
@@ -84,6 +84,6 @@ func Routers() *gin.Engine {
 		backend := PrivateGroup.Group("backend", mw)
 		backendRouter.InitUserRouter(backend)
 	}
-
+	Session(PrivateGroup)
 	return Router
 }
