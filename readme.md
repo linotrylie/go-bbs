@@ -1,9 +1,9 @@
 # FreeBns-BBS
 ### 当前集成了哪些golang开发组件
- - gin
- - gorm
- - redis
- - zap
+ - gin http框架
+ - gorm 数据库操作
+ - redis 缓存组件
+ - zap 日志
  - lancet开发工具函数库
  - air 热加载
  - ozzo-validation 验证库
@@ -12,6 +12,7 @@
  - gohouse/converter gorm结构体生成工具
  - jordan-wright/email  邮件服务
  - oss云存储
+ - promethus 服务监控
 
 ### 目录说明
 - app
