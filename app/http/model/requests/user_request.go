@@ -1,5 +1,9 @@
 package requests
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation"
+)
+
 type UserRequest struct {
 	Uid           int    ` json:"uid"`         // 用户编号
 	Gid           int    ` json:"gid"`         // 用户组编号
@@ -30,4 +34,17 @@ type UserRequest struct {
 	EmailV        string ` json:"emailv"`
 	Digests       int    ` json:"digests"`
 	Digests3      int    ` json:"digests3"`
+}
+
+type UserLogin struct {
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+	CaptchaVerify
+}
+
+func (param *UserLogin) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Username, validation.Required, validation.Length(4, 32)),
+		validation.Field(&param.Password, validation.Required, validation.Length(4, 32)),
+	)
 }

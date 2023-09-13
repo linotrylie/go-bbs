@@ -20,7 +20,7 @@ func main() {
 		SeperatFile: true,
 	})
 	// 开始迁移转换
-	err := t2t.
+	/*	err := t2t.
 		// 指定某个表,如果不指定,则默认全部表都迁移
 		//Table("user").
 		// 表前缀
@@ -38,12 +38,15 @@ func main() {
 		// 数据库dsn,这里可以使用 t2t.DB() 代替,参数为 *sql.DB 对象
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		// 执行
-		Run()
+		Run()*/
 	//err := t2t.Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\entity\\").
 	//	Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 	//	RunEntity()
 	/*err := t2t.Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\http\\model\\requests\\").
 	Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 	RunRequest()*/
+	err := t2t.Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("D:\\Code\\go-bbs\\app\\respository\\").
+		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
+		RunRepository()
 	fmt.Println(err)
 }

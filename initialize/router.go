@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go-bbs/app/http/middleware"
+	"go-bbs/global"
 	"go-bbs/router"
 	"html/template"
 	"net/http"
@@ -33,9 +34,8 @@ func Routers() *gin.Engine {
 	Router.Use(middleware.Cors(), middleware.Recovery(), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
 
 	///////////普罗米修斯添加到中间件////////////////////
-	var p = &Prometheus{}
-	registerPrometheus(p, "go-bbs", ":8080")
-	Router.Use(newPrometheusHandle(p))
+	global.RegisterPrometheus(global.Promethus, "go-bbs", ":8080")
+	Router.Use(global.NewPrometheusHandle(global.Promethus))
 	///////////普罗米修斯添加到中间件////////////////////
 
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup
@@ -46,7 +46,7 @@ func Routers() *gin.Engine {
 	Router.GET("/", func(context *gin.Context) {
 	})
 
-	Router.GET("/metrics", PromHandler(promhttp.Handler()))
+	Router.GET("/metrics", global.PromHandler(promhttp.Handler()))
 
 	Router.GET("/favicon.ico", func(context *gin.Context) {
 	})
@@ -62,12 +62,14 @@ func Routers() *gin.Engine {
 		commonRouter.InitCommonRouter(PublicGroup) // 注册基础功能路由 不做鉴权
 		frontendRouter.InitThreadRouter(PublicGroup)
 		frontendRouter.InitHomeRouter(PublicGroup)
+		commonRouter.InitUserRouter(PublicGroup) //前端用户
 	}
 	Session(PublicGroup)
 	PrivateGroup := Router.Group("/s")
 	{
 		api := PrivateGroup.Group("api")
 		apiRouter.InitAuthRouter(api)
+		frontendRouter.InitUserRouter(api) //前端用户
 
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "views/backend",

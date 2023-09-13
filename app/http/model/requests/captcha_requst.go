@@ -10,8 +10,8 @@ type CaptchaVerify struct {
 	Value string `json:"value"`
 }
 
-func (param CaptchaVerify) Validate() error {
-	return validation.ValidateStruct(&param,
+func (param *CaptchaVerify) Validate() error {
+	return validation.ValidateStruct(param,
 		validation.Field(&param.Key, validation.Required, validation.Length(16, 64), is.UTFLetterNumeric),
 		validation.Field(&param.Value, validation.Required, validation.Length(4, 6), is.UTFDigit),
 	)
@@ -21,8 +21,8 @@ type EmailCaptcha struct {
 	Email string `json:"email"`
 }
 
-func (param EmailCaptcha) Validate() error {
-	return validation.ValidateStruct(&param,
+func (param *EmailCaptcha) Validate() error {
+	return validation.ValidateStruct(param,
 		validation.Field(&param.Email, validation.Required, validation.Length(8, 64), is.Email),
 	)
 }
@@ -32,8 +32,8 @@ type EmailCaptchaVerify struct {
 	Email string `json:"email"`
 }
 
-func (param EmailCaptchaVerify) Validate() error {
-	return validation.ValidateStruct(&param,
+func (param *EmailCaptchaVerify) Validate() error {
+	return validation.ValidateStruct(param,
 		validation.Field(&param.Value, validation.Required, validation.Length(4, 6), is.UTFDigit),
 		validation.Field(&param.Email, validation.Required, validation.Length(8, 64), is.Email),
 	)

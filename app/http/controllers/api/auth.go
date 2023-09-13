@@ -53,3 +53,7 @@ func (controller *AuthController) Register(ctx *gin.Context) {
 		"message": "hello bns",
 	})
 }
+
+func (controller *AuthController) Login(ctx *gin.Context) {
+
+}

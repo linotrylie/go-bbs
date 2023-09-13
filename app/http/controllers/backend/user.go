@@ -11,6 +11,9 @@ import (
 type UserController struct {
 }
 
+func (controller *UserController) name(ctx *gin.Context) {
+
+}
 func (controller *UserController) Index(ctx *gin.Context) {
 	result := map[string]interface{}{}
 	user := model.User{Uid: 3}

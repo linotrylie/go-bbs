@@ -32,3 +32,7 @@ type ThreadRequest struct {
 	Tagids         string ` json:"tagids"`
 	TagidsTime     int    ` json:"tagidstime"`
 }
+
+type ThreadListRequest struct {
+	Fid int `json:"fid"`
+}

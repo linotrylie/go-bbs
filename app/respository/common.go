@@ -25,7 +25,11 @@ type Pager struct {
 	FieldsOrder []string // []{"id desc","name asc"}
 }
 
-func Insert(model model.Model) (rowsAffected int64, err error) {
+func Insert(model model.Model) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		global.Promethus.OrmWithLabelValues(model.TableName(), "Insert", e, now)
+	}()
 	result := global.DB.Create(model)
 	if result.Error != nil {
 		global.LOG.Error(result.Error.Error(), zap.Error(result.Error))
@@ -36,6 +40,10 @@ func Insert(model model.Model) (rowsAffected int64, err error) {
 }
 
 func Update(model model.Model) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		global.Promethus.OrmWithLabelValues(model.TableName(), "Update", e, now)
+	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
@@ -49,6 +57,7 @@ func Update(model model.Model) (rowsAffected int64, e error) {
 		return
 	}
 	//更新完成后，重新缓存
+	DeleteInRedis(model)
 	FindByLocation(model)
 	e = result.Error
 	rowsAffected = result.RowsAffected
@@ -56,6 +65,10 @@ func Update(model model.Model) (rowsAffected int64, e error) {
 }
 
 func FindByLocation(model model.Model) (e error) {
+	now := time.Now()
+	defer func() {
+		global.Promethus.OrmWithLabelValues(model.TableName(), "FindByLocation", e, now)
+	}()
 	if len(model.Location()) == 0 {
 		return errors.New("location cannot be empty")
 	}
@@ -76,6 +89,10 @@ func FindByLocation(model model.Model) (e error) {
 
 // DeleteByLocation 此方法为硬删除 慎用
 func DeleteByLocation(model model.Model) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		global.Promethus.OrmWithLabelValues(model.TableName(), "DeleteByLocation", e, now)
+	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
@@ -91,7 +108,6 @@ func DeleteByLocation(model model.Model) (rowsAffected int64, e error) {
 }
 
 func (p *Pager) Execute(db *gorm.DB, object interface{}) (e error) {
-
 	if p.Page != 0 && p.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

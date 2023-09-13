@@ -12,13 +12,13 @@ import (
 )
 
 type CaptchaService struct {
-	EmailCaptchaVerify requests.EmailCaptchaVerify
-	CaptchaVerify      requests.CaptchaVerify
+	EmailCaptchaVerify *requests.EmailCaptchaVerify
+	CaptchaVerify      *requests.CaptchaVerify
 }
 
 var store = base64Captcha.DefaultMemStore
 
-func (serv *CaptchaService) VerifyCaptcha(c *gin.Context) bool {
+func (serv *CaptchaService) VerifyCaptcha(c *gin.Context, CaptchaVerify *requests.CaptchaVerify, EmailCaptchaVerify *requests.EmailCaptchaVerify) bool {
 	key := c.ClientIP()
 	openCaptcha := global.CONFIG.Captcha.OpenCaptcha               // 是否开启防爆次数
 	openCaptchaTimeOut := global.CONFIG.Captcha.OpenCaptchaTimeOut // 缓存超时时间
@@ -31,6 +31,8 @@ func (serv *CaptchaService) VerifyCaptcha(c *gin.Context) bool {
 		_ = global.BlackCache.Increment(key, 1)
 		return false
 	}
+	serv.CaptchaVerify = CaptchaVerify
+	serv.EmailCaptchaVerify = EmailCaptchaVerify
 	//判断系统是开启了哪一项的验证
 	switch global.CONFIG.Captcha.IsEmailOrPic {
 	case 0:
@@ -52,7 +54,7 @@ func (serv *CaptchaService) VerifyCaptcha(c *gin.Context) bool {
 	}
 }
 
-func verifyEmailCaptcha(EmailCaptchaVerify requests.EmailCaptchaVerify) bool {
+func verifyEmailCaptcha(EmailCaptchaVerify *requests.EmailCaptchaVerify) bool {
 	codeInter, errBool := global.BlackCache.Get(EmailCaptchaVerify.Email)
 	if !errBool {
 		return false
@@ -64,7 +66,7 @@ func verifyEmailCaptcha(EmailCaptchaVerify requests.EmailCaptchaVerify) bool {
 	}
 	return false
 }
-func verifyPicCaptcha(CaptchaVerify requests.CaptchaVerify) bool {
+func verifyPicCaptcha(CaptchaVerify *requests.CaptchaVerify) bool {
 	if store.Verify(CaptchaVerify.Key, CaptchaVerify.Value, true) {
 		return true
 	}

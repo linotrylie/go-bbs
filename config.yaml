@@ -86,9 +86,9 @@ Database:
     MaxOpenConns: 30
 # local configuration
 local:
-  path: uploads/file
-  store-path: uploads/file
-
+  path: storage/uploads/file
+  store-path: storage/uploads/file
+  upload_path: https://www.5ixiaohui.com/upload/
 # autocode configuration
 autocode:
   transfer-restart: true

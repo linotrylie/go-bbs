@@ -5,14 +5,12 @@ import (
 	"go-bbs/app/http/model"
 	"go-bbs/global"
 	"go.uber.org/zap"
-	"sync"
+	"time"
 )
 
 type UserRepository struct {
-	mu     sync.Mutex
-	User   *model.User
-	Pager  *Pager
-	IsLock bool
+	User  *model.User
+	Pager *Pager
 }
 
 // Insert 保存
@@ -26,10 +24,6 @@ func (obj *UserRepository) Insert() (effectedRow int64, err error) {
 
 // Update 更新
 func (obj *UserRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
 	effectedRow, err = Update(obj.User)
 	if err != nil {
 		return
@@ -48,19 +42,17 @@ func (obj *UserRepository) First() (err error) {
 
 // Delete 此方法为硬删除 慎用
 func (obj *UserRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
 	rowsAffected, e = DeleteByLocation(obj.User)
 	return
 }
 
 // FindByWhere 批量查询 带分页
 func (obj *UserRepository) FindByWhere(query string, args []interface{}) (list []model.User, e error) {
+	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Promethus.OrmWithLabelValues(obj.User.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
 	db := global.DB.Table(obj.User.TableName())
@@ -74,5 +66,17 @@ func (obj *UserRepository) FindByWhere(query string, args []interface{}) (list [
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	return
+}
+
+func (obj *UserRepository) FindUserByMap(where map[string]interface{}) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	db := global.DB.Table(obj.User.TableName()).Where(where).Find(obj.User)
+	SaveInRedis(obj.User)
+	e = db.Error
 	return
 }

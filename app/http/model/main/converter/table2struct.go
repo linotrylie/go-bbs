@@ -125,6 +125,138 @@ func (t *Table2Struct) Config(c *T2tConfig) *Table2Struct {
 	return t
 }
 
+func (t *Table2Struct) RunRepository() error {
+	formatStr := `
+package respository
+
+import (
+	"go-bbs/app/exceptions"
+	"go-bbs/app/http/model"
+	"go-bbs/global"
+	"go.uber.org/zap"
+	"sync"
+)
+
+type %sRepository struct {
+	mu     sync.Mutex
+	%s   *model.%s
+	Pager  *Pager
+	IsLock bool
+}
+
+// Insert 保存
+func (obj *%sRepository) Insert() (effectedRow int64, err error) {
+	effectedRow, err = Insert(obj.%s)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Update 更新
+func (obj *%sRepository) Update() (effectedRow int64, err error) {
+	if obj.IsLock {
+		obj.mu.Lock()
+		defer obj.mu.Unlock()
+	}
+	effectedRow, err = Update(obj.%s)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// First 查询单条
+func (obj *%sRepository) First() (err error) {
+	err = FindByLocation(obj.%s)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Delete 此方法为硬删除 慎用
+func (obj *%sRepository) Delete() (rowsAffected int64, e error) {
+	if obj.IsLock {
+		obj.mu.Lock()
+		defer obj.mu.Unlock()
+	}
+	rowsAffected, e = DeleteByLocation(obj.%s)
+	return
+}
+
+// FindByWhere 批量查询 带分页
+func (obj *%sRepository) FindByWhere(query string, args []interface{}) (list []model.%s, e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	db := global.DB.Table(obj.%s.TableName())
+	if query != "" {
+		db = db.Where(query, args...)
+	}
+	e = obj.Pager.Execute(db, &list)
+	if e != nil {
+		return nil, e
+	}
+	if len(list) == 0 {
+		return nil, exceptions.NotFoundData
+	}
+	return
+}
+`
+	if t.config == nil {
+		t.config = new(T2tConfig)
+	}
+	// 链接mysql, 获取db对象
+	t.dialMysql()
+	if t.err != nil {
+		return t.err
+	}
+	// 获取表和字段的shcema
+	tableColumns, err := t.getColumns()
+	if err != nil {
+		return err
+	}
+	// 组装struct
+	for tableRealName, _ := range tableColumns {
+		// 去除前缀
+		if t.prefix != "" {
+			tableRealName = tableRealName[len(t.prefix):]
+		}
+		tableName := strutil.CamelCase(tableRealName)
+		switch len(tableName) {
+		case 0:
+		case 1:
+			tableName = strings.ToUpper(tableName[0:1])
+		default:
+			// 字符长度大于1时
+			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
+		}
+		fmt.Println(tableName)
+		sprintf := fmt.Sprintf(formatStr, tableName, tableName, tableName, tableName, tableName, tableName,
+			tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
+		// 写入文件struct
+		var savePath = t.savePath
+		// 是否指定保存路径
+		//if savePath == "" {
+		savePath += strings.ToLower(tableRealName) + "_repository.go"
+		//}
+		filePath := fmt.Sprintf("%s", savePath)
+		f, err := os.Create(filePath)
+		if err != nil {
+			fmt.Println("Can not write file")
+			return err
+		}
+		defer f.Close()
+		f.WriteString(sprintf)
+		cmd := exec.Command("gofmt", "-w", filePath)
+		cmd.Run()
+	}
+	return nil
+}
+
 func (t *Table2Struct) RunRequest() error {
 	if t.config == nil {
 		t.config = new(T2tConfig)

@@ -1,4 +1,4 @@
-package initialize
+package global
 
 import (
 	"fmt"
@@ -45,11 +45,11 @@ type Prometheus struct {
 // newPrometheus returns a new prometheus middleware.
 //
 // If buckets are empty then `DefaultBuckets` are set.
-func newPrometheus() *Prometheus {
+func NewPrometheus() *Prometheus {
 	p := &Prometheus{}
 	return p
 }
-func registerPrometheus(p *Prometheus, name, listen string) {
+func RegisterPrometheus(p *Prometheus, name, listen string) {
 	p.listen = listen
 	p.reqs = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -97,8 +97,8 @@ func registerPrometheus(p *Prometheus, name, listen string) {
 	return
 }
 
-// newPrometheusHandle .
-func newPrometheusHandle(p *Prometheus) gin.HandlerFunc {
+// NewPrometheusHandle .
+func NewPrometheusHandle(p *Prometheus) gin.HandlerFunc {
 	//go func() {
 	//	if strings.Index(p.listen, ":") == 0 {
 	//		global.LOG.Info(fmt.Sprintf("[go-bbs] Now prometheus listening on: http://0.0.0.0%s\n", p.listen))

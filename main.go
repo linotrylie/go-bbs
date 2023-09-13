@@ -10,13 +10,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 )
 
 func main() {
 	global.VP = core.Viper()
+	global.Promethus = global.NewPrometheus()
 	global.LOG = core.Zap()
 	global.DB = initialize.Gorm()
 	if global.DB == nil {
@@ -35,8 +35,6 @@ func main() {
 		WriteTimeout:   0,
 		MaxHeaderBytes: 1 << 20,
 	}
-
-	fmt.Println(runtime.NumCPU())
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
