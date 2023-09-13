@@ -6,7 +6,9 @@ import (
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
-	"net/http"
+	"go-bbs/app/transform"
+	"go-bbs/global"
+	"go.uber.org/zap"
 )
 
 type UserController struct {
@@ -17,14 +19,19 @@ func (controller *UserController) name(ctx *gin.Context) {
 }
 
 func (controller *UserController) Login(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	var captcha = &requests.CaptchaVerify{}
 	var userLogin = &requests.UserLogin{}
-	err := ctx.ShouldBind(userLogin)
+	err = ctx.ShouldBind(userLogin)
 	if err != nil {
 		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
 		return
 	}
-
 	err = userLogin.Validate()
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
@@ -43,15 +50,15 @@ func (controller *UserController) Login(ctx *gin.Context) {
 		response.FailWithMessage(exceptions.FailedVerify.Error(), ctx)
 		return
 	}*/
-
 	var user = &model.User{Username: userLogin.Username, Password: userLogin.Password}
-	err = userService.Login(user)
+	userReturn, token, err := userService.Login(user, ctx)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"capt": captcha,
-		"user": userLogin,
-	})
+	response.OkWithData(gin.H{
+		"token": token,
+		"user":  transform.TransformUser(userReturn),
+	}, ctx)
+	return
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/songzhibin97/gkit/cache/local_cache"
 	"github.com/songzhibin97/gkit/cache/singleflight"
 	"github.com/spf13/viper"
+	"go-bbs/app/http/model"
 	"go-bbs/config"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -22,4 +23,5 @@ var (
 	BlackCache local_cache.Cache
 	Promethus  *Prometheus
 	Sf         = &singleflight.Group{}
+	User       *model.User
 )

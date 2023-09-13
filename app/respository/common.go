@@ -74,7 +74,7 @@ func FindByLocation(model model.Model) (e error) {
 	}
 	//先查询redis缓存
 	err := FindInRedis(model)
-	if err == nil {
+	if err != nil && err != redis.Nil {
 		return err
 	}
 	result := global.DB.Table(model.TableName()).Where(model.Location()).First(model)
@@ -157,6 +157,11 @@ func TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 //////////////Redis///////////////////////////
 
 func SaveInRedis(model model.Model) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
 	var redisKey string
 	redisKey = model.RedisKey()
 	resByte, e := json.Marshal(model)
@@ -169,30 +174,34 @@ func SaveInRedis(model model.Model) (e error) {
 }
 
 func FindInRedis(model model.Model) (e error) {
+	defer func() {
+		if e != nil && e != redis.Nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
 	var redisKey string
 	redisKey = model.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil {
-		global.LOG.Error(e.Error(), zap.Error(e))
+	if e != nil && e != redis.Nil {
 		return
 	} else if e == redis.Nil {
 		return
 	} else {
 		e = json.Unmarshal([]byte(redisRes), model)
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			return
-		}
 	}
 	return
 }
 
 func DeleteInRedis(model model.Model) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
 	var redisKey string
 	redisKey = model.RedisKey()
 	err := global.REDIS.Del(context.Background(), redisKey).Err()
 	if err != nil {
-		global.LOG.Error(err.Error(), zap.Error(err))
 		return
 	}
 	return nil

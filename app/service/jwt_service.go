@@ -23,7 +23,7 @@ type JwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (serv *JwtService) CreateClaims(user model.User) JwtCustomClaims {
+func (serv *JwtService) CreateClaims(user *model.User) JwtCustomClaims {
 	bf, _ := utils.ParseDuration(global.CONFIG.JWT.BufferTime)
 	ep, _ := utils.ParseDuration(global.CONFIG.JWT.ExpiresTime)
 	jwtCustomClaims := JwtCustomClaims{

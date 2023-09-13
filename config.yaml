@@ -21,7 +21,7 @@ zap:
 redis:
   db: 0
   addr: 127.0.0.1:6379
-  password: ""
+  password:
 
 # email configuration
 email:
@@ -88,7 +88,7 @@ Database:
 local:
   path: storage/uploads/file
   store-path: storage/uploads/file
-  upload_path: https://www.5ixiaohui.com/upload/
+  upload-path: https://www.5ixiaohui.com/upload
 # autocode configuration
 autocode:
   transfer-restart: true

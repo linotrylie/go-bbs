@@ -1,37 +1,47 @@
 package service
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/duke-git/lancet/v2/random"
+	"github.com/gin-gonic/gin"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/respository"
+	"go-bbs/global"
+	"go-bbs/utils"
+	"time"
 )
 
 type UserService struct {
 	userRepo respository.UserRepository
 }
 
-func (serv *UserService) Login(user *model.User) (e error) {
+func (serv *UserService) Login(user *model.User, ctx *gin.Context) (userReturn *model.User, token string, e error) {
 	//先检查是否存在相同用户名的用户
 	serv.userRepo.User = &model.User{}
 	where := make(map[string]interface{})
 	where["username"] = user.Username
 	e = serv.userRepo.FindUserByMap(where)
 	if e != nil {
-		return e
+		return nil, "", e
 	}
 	if serv.userRepo.User == nil {
-		return exceptions.UserNotFound
+		return nil, "", exceptions.UserNotFound
 	}
 	ok := serv.VerifyPassword(serv.userRepo.User, user.Password)
-
 	if !ok {
-		return exceptions.FailedVerify
+		return nil, "", exceptions.FailedVerify
 	}
+	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
+	claims := ServiceGroupApp.JwtService.CreateClaims(serv.userRepo.User)
+	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
+	if e != nil {
+		return nil, "", e
+	}
+	userReturn = serv.userRepo.User
+	global.User = serv.userRepo.User
+	//用户通过验证后，对用户进行后续操作，如增加经验积分或者记录登录ip等等
+	go serv.LoginAfter(ctx)
 	return
 }
 
@@ -47,19 +57,18 @@ func (serv *UserService) name() {
 
 func (serv *UserService) VerifyPassword(user *model.User, password string) bool {
 	str := password + user.Salt
-	fmt.Println(user.Password)
-	fmt.Println(password, str)
-	fmt.Println(cryptor.Md5Byte([]byte(str)))
-	data := []byte(str) //切片
-	has := md5.Sum(data)
-	md5str := fmt.Sprintf("%x", has) //将[]byte转成16进制
-	fmt.Println(md5str)
-	h := md5.New()
-	h.Write([]byte(str)) // 需要加密的字符串为 123456
-	cipherStr := h.Sum(nil)
-	fmt.Printf("%s\n", hex.EncodeToString(cipherStr)) // 输出加密结果
 	if cryptor.Md5String(str) == user.Password {
 		return true
 	}
 	return false
+}
+
+func (serv *UserService) LoginAfter(ctx *gin.Context) {
+	serv.userRepo.User.SetLogins(1).
+		SetLoginDate(int(time.Now().Unix())).
+		SetLoginIP(int(utils.Ip2long(ctx.ClientIP())))
+	_, err := serv.userRepo.Update()
+	if err != nil {
+		return
+	}
 }

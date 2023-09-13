@@ -48,3 +48,10 @@ func Ip2long(ipstr string) (ip uint32) {
 func Long2ip(ip uint32) string {
 	return fmt.Sprintf("%d.%d.%d.%d", ip>>24, ip<<8>>24, ip<<16>>24, ip<<24>>24)
 }
+
+func MaskPhone(phone string) string {
+	if len(phone) <= 10 {
+		return phone
+	}
+	return phone[:3] + "****" + phone[len(phone)-4:]
+}

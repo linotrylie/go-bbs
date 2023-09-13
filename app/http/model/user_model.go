@@ -81,27 +81,43 @@ func (obj *User) SetCredits(n int) *User {
 }
 
 // SetGolds .
-func (obj *User) SetGolds(n int) {
+func (obj *User) SetGolds(n int) *User {
 	obj.Golds += n
 	obj.Update("golds", obj.Golds)
+	return obj
 }
 
 // SetRmbs .
-func (obj *User) SetRmbs(n int) {
+func (obj *User) SetRmbs(n int) *User {
 	obj.Rmbs += n
 	obj.Update("rmbs", obj.Rmbs)
+	return obj
 }
 
-func (obj *User) SetPosts(n int) {
+func (obj *User) SetPosts(n int) *User {
 	obj.Posts += n
 	obj.Update("posts", obj.Posts)
+	return obj
 }
 
-func (obj *User) SetThreads(n int) {
+func (obj *User) SetThreads(n int) *User {
 	obj.Threads += n
 	obj.Update("threads", obj.Threads)
+	return obj
 }
-func (obj *User) SetLogins(n int) {
+func (obj *User) SetLogins(n int) *User {
 	obj.Logins += n
 	obj.Update("logins", obj.Logins)
+	return obj
+}
+
+func (obj *User) SetLoginIP(ip int) *User {
+	obj.LoginIp = ip
+	obj.Update("login_ip", obj.LoginIp)
+	return obj
+}
+func (obj *User) SetLoginDate(time int) *User {
+	obj.LoginDate = time
+	obj.Update("login_date", obj.LoginDate)
+	return obj
 }
