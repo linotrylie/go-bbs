@@ -21,7 +21,7 @@ var (
 	LOG        *zap.Logger
 	Cookie     cookie.Store
 	BlackCache local_cache.Cache
-	Prometheus *Prometheus
+	Prome      *Prometheus
 	Sf         = &singleflight.Group{}
 	User       *model.User
 )

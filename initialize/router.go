@@ -34,8 +34,8 @@ func Routers() *gin.Engine {
 	Router.Use(middleware.Cors(), middleware.Recovery(true), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
 
 	///////////普罗米修斯添加到中间件////////////////////
-	global.RegisterPrometheus(global.Prometheus, "go-bbs", ":8080")
-	Router.Use(global.NewPrometheusHandle(global.Prometheus))
+	global.RegisterPrometheus(global.Prome, "go-bbs", ":8080")
+	Router.Use(global.NewPrometheusHandle(global.Prome))
 	///////////普罗米修斯添加到中间件////////////////////
 
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup

@@ -16,7 +16,7 @@ import (
 
 func main() {
 	global.VP = core.Viper()
-	global.Prometheus = global.NewPrometheus()
+	global.Prome = global.NewPrometheus()
 	global.LOG = core.Zap()
 	global.DB = initialize.Gorm()
 	if global.DB == nil {

@@ -52,7 +52,7 @@ func (obj *UserRepository) FindByWhere(query string, args []interface{}) (list [
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prometheus.OrmWithLabelValues(obj.User.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(obj.User.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
 	db := global.DB.Table(obj.User.TableName())
