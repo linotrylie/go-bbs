@@ -35,11 +35,12 @@ email:
 
 # system configuration
 system:
-  env: public # Change to "develop" to skip authentication for development mode
-  addr: 8888
+  env: develop # Change to "develop" to skip authentication for development mode
+  addr: 8080
+  host: http://localhost:8080
   db-type: mysql
   oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
-  use-redis: false # 使用redis
+  use-redis: true # 使用redis
   use-multipoint: false
   # IP限制次数 一个小时15000次
   iplimit-count: 1500

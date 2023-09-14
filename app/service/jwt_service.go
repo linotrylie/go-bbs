@@ -62,6 +62,7 @@ func (serv *JwtService) CreateTokenByOldToken(oldToken string, claims JwtCustomC
 // ParseToken 解析 token
 func (serv *JwtService) ParseToken(tokenString string) (*JwtCustomClaims, error) {
 	jwtCustomClaims := &JwtCustomClaims{}
+	serv.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
 	token, err := jwt.ParseWithClaims(tokenString, jwtCustomClaims, func(token *jwt.Token) (i interface{}, e error) {
 		return serv.SigningKey, nil
 	})

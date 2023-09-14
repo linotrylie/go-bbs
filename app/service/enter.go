@@ -5,6 +5,7 @@ type ServiceGroup struct {
 	ThreadService  ThreadService
 	JwtService     JwtService
 	UserService    UserService
+	GroupService   GroupService
 }
 
 var ServiceGroupApp = new(ServiceGroup)

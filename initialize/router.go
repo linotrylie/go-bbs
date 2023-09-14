@@ -31,7 +31,7 @@ func Routers() *gin.Engine {
 		)
 	}))
 
-	Router.Use(middleware.Cors(), middleware.Recovery(), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
+	Router.Use(middleware.Cors(), middleware.Recovery(true), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
 
 	///////////普罗米修斯添加到中间件////////////////////
 	global.RegisterPrometheus(global.Promethus, "go-bbs", ":8080")
@@ -41,15 +41,12 @@ func Routers() *gin.Engine {
 	apiRouter := router.AllRouterGroupMain.ApiRouterGroup
 	backendRouter := router.AllRouterGroupMain.BackendRouterGroup
 	commonRouter := router.AllRouterGroupMain.CommonRouterGroup
-	frontendRouter := router.AllRouterGroupMain.FrontendRouterGroup
 
-	Router.GET("/", func(context *gin.Context) {
-	})
-
+	Router.Static("/storage/uploads/file/", "./storage/uploads/file/") //静态文件目录
+	//Router.LoadHTMLGlob("views/*")
+	Router.GET("/", func(context *gin.Context) {})
 	Router.GET("/metrics", global.PromHandler(promhttp.Handler()))
-
-	Router.GET("/favicon.ico", func(context *gin.Context) {
-	})
+	Router.GET("/favicon.ico", func(context *gin.Context) {})
 	//公共路由组件 不需要鉴权
 	PublicGroup := Router.Group("/")
 	{
@@ -60,16 +57,14 @@ func Routers() *gin.Engine {
 	}
 	{
 		commonRouter.InitCommonRouter(PublicGroup) // 注册基础功能路由 不做鉴权
-		frontendRouter.InitThreadRouter(PublicGroup)
-		frontendRouter.InitHomeRouter(PublicGroup)
-		commonRouter.InitUserRouter(PublicGroup) //前端用户
 	}
-	Session(PublicGroup)
+
 	PrivateGroup := Router.Group("/s")
+	PrivateGroup.Use(middleware.JWT())
 	{
-		api := PrivateGroup.Group("api")
-		apiRouter.InitAuthRouter(api)
-		frontendRouter.InitUserRouter(api) //前端用户
+		apiGroup := PrivateGroup.Group("api")
+		apiRouter.InitAuthRouter(apiGroup)
+		apiRouter.InitUserRouter(apiGroup, PublicGroup) //前端用户
 
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "views/backend",
@@ -86,6 +81,7 @@ func Routers() *gin.Engine {
 		backend := PrivateGroup.Group("backend", mw)
 		backendRouter.InitUserRouter(backend)
 	}
+	Session(PublicGroup)
 	Session(PrivateGroup)
 	return Router
 }

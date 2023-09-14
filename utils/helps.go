@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // 类型转换
@@ -54,4 +55,13 @@ func MaskPhone(phone string) string {
 		return phone
 	}
 	return phone[:3] + "****" + phone[len(phone)-4:]
+}
+
+func DatetimeToUnix(datetime string) int64 {
+	loc, _ := time.LoadLocation("Local")
+	parseInLocation, err := time.ParseInLocation(time.DateTime, datetime, loc)
+	if err != nil {
+		return 0
+	}
+	return parseInLocation.Unix()
 }

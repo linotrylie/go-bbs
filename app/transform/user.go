@@ -18,9 +18,18 @@ func TransformUser(user *model.User) (userVo response.User) {
 	userVo.LoginDate = time.Unix(int64(user.LoginDate), 0).Format(time.DateTime)
 	userVo.Logins = user.Logins
 	userVo.LoginIp = utils.Long2ip(uint32(user.LoginIp))
-	avatarurl := global.CONFIG.Local.UploadPath + "/avatar/"
-	mid := fmt.Sprintf("%09d", user.Uid)
-	userVo.Avatar = avatarurl + mid[:3] + "/" + fmt.Sprintf("%d", user.Uid) + ".png?" + fmt.Sprintf("%d", user.Avatar)
+	var avatar string
+	if global.CONFIG.System.OssType != "local" {
+		mid := fmt.Sprintf("%09d", user.Uid)
+		avatar = global.CONFIG.Local.UploadPath + "/avatar/" + mid[:3] + "/"
+	} else {
+		avatar = global.CONFIG.System.Host + "/" + global.CONFIG.Local.StorePath + "/avatar/"
+	}
+	if user.Avatar > 0 {
+		userVo.Avatar = avatar + fmt.Sprintf("%d", user.Uid) + ".png?" + fmt.Sprintf("%d", user.Avatar)
+	} else {
+		userVo.Avatar = avatar + "avatar.png"
+	}
 	userVo.Credits = user.Credits
 	userVo.Favorites = user.Favorites
 	userVo.Gid = user.Gid

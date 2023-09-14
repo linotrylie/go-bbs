@@ -29,7 +29,7 @@ func main() {
 	router := initialize.Routers()
 	initialize.InitViews(router) //加载模板渲染库
 	srv := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":" + fmt.Sprintf("%d", global.CONFIG.System.Addr),
 		Handler:        router,
 		ReadTimeout:    0,
 		WriteTimeout:   0,

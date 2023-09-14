@@ -1,13 +1,14 @@
 package common
 
 import (
+	"go-bbs/app/http/controllers/api"
 	"go-bbs/app/service"
 	emailServ "go-bbs/plugin/email/service"
 )
 
 type CommonGroup struct {
 	CaptchaController
-	UserController
+	api.UserController
 }
 
 var emailService = emailServ.ServiceGroupApp.EmailService

@@ -9,9 +9,8 @@ type UserRouter struct {
 }
 
 func (ur *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
-	User := Router.Group("user")
-	userContr := controllers.AllRouterGroupApp.BackendGroup.UserController
+	_ = Router.Group("user")
+	_ = controllers.AllRouterGroupApp.BackendGroup.UserController
 	{
-		User.GET("index", userContr.Index)
 	}
 }
