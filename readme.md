@@ -12,7 +12,7 @@
  - gohouse/converter gorm结构体生成工具
  - jordan-wright/email  邮件服务
  - oss云存储
- - promethus 服务监控
+ - prometheus 服务监控
 
 ### 目录说明
 - app

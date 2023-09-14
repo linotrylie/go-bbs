@@ -28,7 +28,7 @@ type Pager struct {
 func Insert(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Promethus.OrmWithLabelValues(model.TableName(), "Insert", e, now)
+		global.Prometheus.OrmWithLabelValues(model.TableName(), "Insert", e, now)
 	}()
 	result := global.DB.Create(model)
 	if result.Error != nil {
@@ -42,7 +42,7 @@ func Insert(model model.Model) (rowsAffected int64, e error) {
 func Update(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Promethus.OrmWithLabelValues(model.TableName(), "Update", e, now)
+		global.Prometheus.OrmWithLabelValues(model.TableName(), "Update", e, now)
 	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
@@ -67,7 +67,7 @@ func Update(model model.Model) (rowsAffected int64, e error) {
 func FindByLocation(model model.Model) (e error) {
 	now := time.Now()
 	defer func() {
-		global.Promethus.OrmWithLabelValues(model.TableName(), "FindByLocation", e, now)
+		global.Prometheus.OrmWithLabelValues(model.TableName(), "FindByLocation", e, now)
 	}()
 	if len(model.Location()) == 0 {
 		return errors.New("location cannot be empty")
@@ -91,7 +91,7 @@ func FindByLocation(model model.Model) (e error) {
 func DeleteByLocation(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Promethus.OrmWithLabelValues(model.TableName(), "DeleteByLocation", e, now)
+		global.Prometheus.OrmWithLabelValues(model.TableName(), "DeleteByLocation", e, now)
 	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
