@@ -5,10 +5,10 @@ import (
 	"go-bbs/app/http/controllers"
 )
 
-type CommonRouter struct {
+type CaptchaRouter struct {
 }
 
-func (com *CommonRouter) InitCommonRouter(Router *gin.RouterGroup) {
+func (com *CaptchaRouter) InitCaptchaRouter(Router *gin.RouterGroup) {
 	captcha := Router.Group("captcha")
 	captchaContr := controllers.AllRouterGroupApp.CommonGroup.CaptchaController
 	{

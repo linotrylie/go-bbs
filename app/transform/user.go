@@ -13,8 +13,7 @@ func TransformUser(user *model.User) (userVo response.User) {
 	userVo.VipEnd = user.VipEnd
 	userVo.Username = user.Username
 	userVo.Uid = user.Uid
-	userVo.UnreadNotices = user.UnreadNotices
-	userVo.Invitenums = user.Invitenums
+
 	userVo.LoginDate = time.Unix(int64(user.LoginDate), 0).Format(time.DateTime)
 	userVo.Logins = user.Logins
 	userVo.LoginIp = utils.Long2ip(uint32(user.LoginIp))
@@ -30,17 +29,24 @@ func TransformUser(user *model.User) (userVo response.User) {
 	} else {
 		userVo.Avatar = avatar + "avatar.png"
 	}
-	userVo.Credits = user.Credits
 	userVo.Favorites = user.Favorites
 	userVo.Gid = user.Gid
-	userVo.Rmbs = user.Rmbs
-	userVo.Golds = user.Golds
-	userVo.Notices = user.Notices
 	userVo.Qq = user.Qq
+	userVo.Credits = user.Credits
 	if global.User.Uid == user.Uid {
 		userVo.Mobile = user.Mobile
+		userVo.Rmbs = user.Rmbs
+		userVo.Golds = user.Golds
+		userVo.Notices = user.Notices
+		userVo.UnreadNotices = user.UnreadNotices
+		userVo.Invitenums = user.Invitenums
 	} else {
 		userVo.Mobile = utils.MaskPhone(user.Mobile)
+		userVo.Rmbs = 0
+		userVo.Golds = 0
+		userVo.Notices = 0
+		userVo.UnreadNotices = 0
+		userVo.Invitenums = 0
 	}
 	userVo.Posts = user.Posts
 	userVo.Realname = user.Realname

@@ -123,3 +123,39 @@ func (obj *User) SetLoginDate(time int) *User {
 	obj.Update("login_date", obj.LoginDate)
 	return obj
 }
+
+func (obj *User) SetPassword(password string) *User {
+	obj.Password = password
+	obj.Update("password", obj.Password)
+	return obj
+}
+
+func (obj *User) SetSalt(salt string) *User {
+	obj.Salt = salt
+	obj.Update("salt", obj.Salt)
+	return obj
+}
+
+func (obj *User) SetRealname(realname string) *User {
+	obj.Realname = realname
+	obj.Update("realname", obj.Realname)
+	return obj
+}
+
+func (obj *User) SetEmail(email string) *User {
+	obj.Email = email
+	obj.Update("email", obj.Email)
+	return obj
+}
+
+func (obj *User) SetQq(qq string) *User {
+	obj.Qq = qq
+	obj.Update("qq", obj.Qq)
+	return obj
+}
+
+func (obj *User) SetMobile(mobile string) *User {
+	obj.Mobile = mobile
+	obj.Update("mobile", obj.Mobile)
+	return obj
+}

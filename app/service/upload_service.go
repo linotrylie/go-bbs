@@ -3,9 +3,13 @@ package service
 import (
 	"go-bbs/app/http/model"
 	"go-bbs/global"
+	"go-bbs/utils/upload"
+	"mime/multipart"
+	"strings"
+	"time"
 )
 
-type FileUploadAndDownloadService struct{}
+type UploadService struct{}
 
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: Upload
@@ -13,8 +17,8 @@ type FileUploadAndDownloadService struct{}
 //@param: file model.ExaFileUploadAndDownload
 //@return: error
 
-func (e *FileUploadAndDownloadService) Upload(file model.Attach) error {
-	return global.DB.Create(&file).Error
+func (e *UploadService) Upload(file model.Attach) (model.Attach, error) {
+	return file, global.DB.Create(&file).Error
 }
 
 //@author: [piexlmax](https://github.com/piexlmax)
@@ -23,8 +27,26 @@ func (e *FileUploadAndDownloadService) Upload(file model.Attach) error {
 //@param: id uint
 //@return: model.ExaFileUploadAndDownload, error
 
-func (e *FileUploadAndDownloadService) FindFile(id uint) (model.Attach, error) {
+func (e *UploadService) FindFile(id uint) (model.Attach, error) {
 	var file model.Attach
 	err := global.DB.Where("aid = ?", id).First(&file).Error
 	return file, err
+}
+
+func (e *UploadService) UploadFile(header *multipart.FileHeader) (file model.Attach, err error) {
+	oss := upload.NewOss()
+	filePath, _, uploadErr := oss.UploadFile(header)
+	if uploadErr != nil {
+		panic(err)
+	}
+	s := strings.Split(header.Filename, ".")
+	f := model.Attach{
+		Filename:    filePath,
+		Orgfilename: header.Filename,
+		Filesize:    header.Size,
+		Uid:         global.User.Uid,
+		CreateDate:  time.Now().Unix(),
+		Filetype:    s[len(s)-1],
+	}
+	return e.Upload(f)
 }

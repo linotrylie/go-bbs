@@ -14,10 +14,6 @@ import (
 type UserController struct {
 }
 
-func (controller *UserController) name(ctx *gin.Context) {
-
-}
-
 func (controller *UserController) Login(ctx *gin.Context) {
 	var err error
 	defer func() {
@@ -91,6 +87,7 @@ func (controller *UserController) Detail(ctx *gin.Context) {
 	}
 	detail, err := userService.Detail(userDetail.Uid)
 	if err != nil {
+		response.FailWithMessage(exceptions.NotFoundData.Error(), ctx)
 		return
 	}
 	userVo := transform.TransformUser(detail)
@@ -116,4 +113,67 @@ func (controller *UserController) Logout(ctx *gin.Context) {
 	userService.Logout()
 	response.OkWithMessage("退出成功", ctx)
 	return
+}
+
+func (controller *UserController) ChangePassword(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
+	var userChangePassword = &requests.UserChangePassword{}
+	err = ctx.ShouldBind(userChangePassword)
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	err = userChangePassword.Validate()
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	if userChangePassword.NewPassword != userChangePassword.NewPasswordVerify {
+		err = exceptions.FailedVerify
+		response.FailWithMessage(exceptions.FailedVerify.Error(), ctx)
+		return
+	}
+	err = userService.ChangesPassword(userChangePassword)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.OkWithMessage("修改成功", ctx)
+	return
+}
+
+func (controller *UserController) Edit(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
+	var userEdit = &requests.UserEdit{}
+	err = ctx.ShouldBind(userEdit)
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	err = userEdit.Validate()
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	err = userService.Edit(userEdit)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.OkWithMessage("修改成功", ctx)
+	return
+}
+
+func (controller *UserController) name(ctx *gin.Context) {
+
 }

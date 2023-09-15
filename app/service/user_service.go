@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/duke-git/lancet/v2/random"
+	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
+	"go-bbs/app/http/model/requests"
 	"go-bbs/app/respository"
 	"go-bbs/global"
 	"go-bbs/utils"
@@ -50,13 +52,14 @@ func (serv *UserService) Login(user *model.User, ctx *gin.Context) (userReturn *
 }
 
 func (serv *UserService) GeneratePassword(user *model.User, password string) {
-	salt := random.RandString(16)
+	var salt string
+	if strutil.IsBlank(user.Salt) {
+		salt = random.RandString(16)
+	} else {
+		salt = user.Salt
+	}
 	str := password + salt
-	user.Password = cryptor.Md5String(str)
-	user.Salt = salt
-}
-
-func (serv *UserService) name() {
+	user.SetPassword(cryptor.Md5String(str)).SetSalt(salt)
 }
 
 func (serv *UserService) VerifyPassword(user *model.User, password string) bool {
@@ -88,4 +91,75 @@ func (serv *UserService) Detail(uid int) (*model.User, error) {
 		return nil, err
 	}
 	return serv.UserRepo.User, nil
+}
+
+func (serv *UserService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
+	serv.UserRepo.User = &model.User{}
+	serv.UserRepo.User.Uid = global.User.Uid
+	err = serv.UserRepo.First()
+	if err != nil {
+		return
+	}
+	ok := serv.VerifyPassword(serv.UserRepo.User, userChangePassword.OldPassword)
+	if !ok {
+		err = exceptions.FailedVerify
+		return
+	}
+	serv.GeneratePassword(serv.UserRepo.User, userChangePassword.NewPassword)
+	update, err := serv.UserRepo.Update()
+	if err != nil {
+		return err
+	}
+	if update < 1 {
+		err = exceptions.ModifyError
+		return
+	}
+	//修改密码后，需要重新登录
+	serv.Logout()
+	return nil
+}
+
+func (serv *UserService) Edit(userEdit *requests.UserEdit) (err error) {
+
+	serv.UserRepo.User = &model.User{Uid: global.User.Uid}
+	err = serv.UserRepo.First()
+	if err != nil {
+		return err
+	}
+	var user = &model.User{}
+	if serv.UserRepo.User.Realname != userEdit.Realname {
+		user.SetRealname(userEdit.Realname)
+	}
+	if serv.UserRepo.User.Qq != userEdit.Qq {
+		user.SetQq(userEdit.Qq)
+	}
+	if serv.UserRepo.User.Mobile != userEdit.Mobile {
+		user.SetMobile(userEdit.Mobile)
+	}
+	if serv.UserRepo.User.Email != userEdit.Email && !strutil.IsBlank(userEdit.Email) {
+		//邮箱不为空 就检验邮箱验证码
+		var emailCaptchaVerify = &requests.EmailCaptchaVerify{Email: userEdit.Email, Value: userEdit.Value}
+		ok := verifyEmailCaptcha(emailCaptchaVerify)
+		if !ok {
+			err = exceptions.FailedVerify
+			return
+		}
+		user.SetEmail(userEdit.Email)
+	}
+	if user != nil {
+		user.Uid = global.User.Uid
+		serv.UserRepo.User = user
+		update, e := serv.UserRepo.Update()
+		if e != nil {
+			err = e
+			return
+		}
+		if update < 1 {
+			err = exceptions.ModifyError
+			return
+		}
+	}
+	return nil
+}
+func (serv *UserService) name() {
 }

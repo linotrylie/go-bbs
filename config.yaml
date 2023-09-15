@@ -35,11 +35,11 @@ email:
 
 # system configuration
 system:
-  env: develop # Change to "develop" to skip authentication for development mode
-  addr: 8080
-  host: http://localhost:8080
+  env: develop1 # Change to "develop" to skip authentication for development mode
+  addr: 8888
+  host: http://localhost:8888
   db-type: mysql
-  oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
+  oss-type: qiniu # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
   use-redis: true # 使用redis
   use-multipoint: false
   # IP限制次数 一个小时15000次
@@ -112,12 +112,12 @@ autocode:
 # qiniu configuration (请自行七牛申请对应的 公钥 私钥 bucket 和 域名地址)
 qiniu:
   zone: ZoneHuaDong
-  bucket: ""
-  img-path: ""
-  use-https: false
-  access-key: ""
-  secret-key: ""
-  use-cdn-domains: false
+  bucket: "freebns"
+  img-path: "https://www.5ixiaohui.com"
+  use-https: true
+  access-key: "DQy3SgdA_8tUtlWd9mksE7yJSQakFw0WHvHJTXGv"
+  secret-key: "876i6rFFeIWwSagcOaMkA6KjVALe_Ui_NdrlmRm1"
+  use-cdn-domains: true
 
 # aliyun oss configuration
 aliyun-oss:

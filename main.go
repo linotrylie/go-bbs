@@ -29,10 +29,10 @@ func main() {
 	router := initialize.Routers()
 	initialize.InitViews(router) //加载模板渲染库
 	srv := &http.Server{
-		Addr:           ":" + fmt.Sprintf("%d", global.CONFIG.System.Addr),
+		Addr:           fmt.Sprintf(":%d", global.CONFIG.System.Addr),
 		Handler:        router,
-		ReadTimeout:    0,
-		WriteTimeout:   0,
+		ReadTimeout:    20 * time.Second,
+		WriteTimeout:   20 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 	go func() {

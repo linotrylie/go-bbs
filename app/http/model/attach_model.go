@@ -10,13 +10,13 @@ type Attach struct {
 	Tid         int    `gorm:"column:tid" json:"tid"`
 	Pid         int    `gorm:"column:pid" json:"pid"`
 	Uid         int    `gorm:"column:uid" json:"uid"`
-	Filesize    int    `gorm:"column:filesize" json:"filesize"`
+	Filesize    int64  `gorm:"column:filesize" json:"filesize"`
 	Width       int    `gorm:"column:width" json:"width"`
 	Height      int    `gorm:"column:height" json:"height"`
 	Filename    string `gorm:"column:filename" json:"filename"`
 	Orgfilename string `gorm:"column:orgfilename" json:"orgfilename"`
 	Filetype    string `gorm:"column:filetype" json:"filetype"`
-	CreateDate  int    `gorm:"column:create_date" json:"create_date"`
+	CreateDate  int64  `gorm:"column:create_date" json:"create_date"`
 	Comment     string `gorm:"column:comment" json:"comment"`
 	Downloads   int    `gorm:"column:downloads" json:"downloads"`
 	Credits     int    `gorm:"column:credits" json:"credits"`

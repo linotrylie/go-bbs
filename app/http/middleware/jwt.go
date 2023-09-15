@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"go-bbs/app/constants"
@@ -24,7 +23,8 @@ func JWT() gin.HandlerFunc {
 			err := respository.FindByLocation(global.User)
 			if err != nil {
 				c.JSON(419, gin.H{
-					"msg": err.Error(),
+					"code": 7,
+					"msg":  exceptions.LogBackIn.Error(),
 				})
 				c.Abort()
 			}
@@ -32,38 +32,44 @@ func JWT() gin.HandlerFunc {
 			return
 		}
 		token := c.Request.Header.Get(constants.Authorization)
-		fmt.Println(token)
 		if token == "" {
 			c.JSON(419, gin.H{
-				"msg": exceptions.FailedVerify.Error(),
+				"code": 7,
+				"msg":  exceptions.LogBackIn.Error(),
 			})
 			c.Abort()
+			return
 		}
 		claims, err := jwtServ.ParseToken(strings.Trim(token, "")[7:])
 		if err != nil {
 			c.JSON(419, gin.H{
-				"msg": exceptions.FailedVerify.Error(),
+				"code": 7,
+				"msg":  exceptions.LogBackIn.Error(),
 			})
 			c.Abort()
+			return
 		}
 		global.User = &model.User{}
 		global.User.Uid = claims.UID
 		err = respository.FindByLocation(global.User)
 		if err != nil {
 			c.JSON(419, gin.H{
-				"msg": err.Error(),
+				"code": 7,
+				"msg":  exceptions.LogBackIn.Error(),
 			})
 			c.Abort()
+			return
 		}
 
 		_, err = global.REDIS.Get(context.Background(), global.User.Username).Result()
 		if err != nil || err == redis.Nil {
 			c.JSON(419, gin.H{
-				"msg": err.Error(),
+				"code": 7,
+				"msg":  exceptions.LogBackIn.Error(),
 			})
 			c.Abort()
+			return
 		}
-
 		c.Next()
 	}
 }

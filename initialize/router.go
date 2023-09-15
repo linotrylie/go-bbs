@@ -56,7 +56,7 @@ func Routers() *gin.Engine {
 		})
 	}
 	{
-		commonRouter.InitCommonRouter(PublicGroup) // 注册基础功能路由 不做鉴权
+		commonRouter.InitCaptchaRouter(PublicGroup) // 注册基础功能路由 不做鉴权
 	}
 
 	PrivateGroup := Router.Group("/s")
@@ -65,7 +65,7 @@ func Routers() *gin.Engine {
 		apiGroup := PrivateGroup.Group("api")
 		apiRouter.InitAuthRouter(apiGroup)
 		apiRouter.InitUserRouter(apiGroup, PublicGroup) //前端用户
-
+		commonRouter.InitUploadRouter(PrivateGroup)
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "views/backend",
 			Extension: ".html",

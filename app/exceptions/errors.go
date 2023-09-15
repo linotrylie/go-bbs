@@ -9,4 +9,6 @@ var (
 	FailedVerify  = errors.New("验证失败！")
 	NotFoundData  = errors.New("未查询到记录！")
 	TokenInvalid  = errors.New("token已失效")
+	ModifyError   = errors.New("修改失败")
+	LogBackIn     = errors.New("重新登录")
 )

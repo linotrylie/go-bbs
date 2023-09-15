@@ -78,12 +78,12 @@ func FindByLocation(model model.Model) (e error) {
 		return err
 	}
 	result := global.DB.Table(model.TableName()).Where(model.Location()).First(model)
+	e = result.Error
 	if result.Error != nil {
 		global.LOG.Error(result.Error.Error(), zap.Error(result.Error))
 		return
 	}
 	SaveInRedis(model)
-	e = result.Error
 	return
 }
 

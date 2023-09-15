@@ -1,5 +1,6 @@
 package common
 
 type RouterGroup struct {
-	CommonRouter
+	CaptchaRouter
+	UploadRouter
 }
