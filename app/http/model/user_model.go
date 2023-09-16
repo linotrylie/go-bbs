@@ -21,10 +21,10 @@ type User struct {
 	Credits       int    `gorm:"column:credits" json:"credits"`         // 积分
 	Golds         int    `gorm:"column:golds" json:"golds"`             // 金币
 	Rmbs          int    `gorm:"column:rmbs" json:"rmbs"`               // 人民币
-	CreateIp      int    `gorm:"column:create_ip" json:"create_ip"`     // 创建时IP
-	CreateDate    int    `gorm:"column:create_date" json:"create_date"` // 创建时间
-	LoginIp       int    `gorm:"column:login_ip" json:"login_ip"`       // 登录时IP
-	LoginDate     int    `gorm:"column:login_date" json:"login_date"`   // 登录时间
+	CreateIp      uint32 `gorm:"column:create_ip" json:"create_ip"`     // 创建时IP
+	CreateDate    int64  `gorm:"column:create_date" json:"create_date"` // 创建时间
+	LoginIp       uint32 `gorm:"column:login_ip" json:"login_ip"`       // 登录时IP
+	LoginDate     int64  `gorm:"column:login_date" json:"login_date"`   // 登录时间
 	Logins        int    `gorm:"column:logins" json:"logins"`           // 登录次数
 	Avatar        int    `gorm:"column:avatar" json:"avatar"`           // 用户最后更新图像时间
 	Invitenums    int    `gorm:"column:invitenums" json:"invitenums"`
@@ -113,12 +113,12 @@ func (obj *User) SetLogins(n int) *User {
 	return obj
 }
 
-func (obj *User) SetLoginIP(ip int) *User {
+func (obj *User) SetLoginIP(ip uint32) *User {
 	obj.LoginIp = ip
 	obj.Update("login_ip", obj.LoginIp)
 	return obj
 }
-func (obj *User) SetLoginDate(time int) *User {
+func (obj *User) SetLoginDate(time int64) *User {
 	obj.LoginDate = time
 	obj.Update("login_date", obj.LoginDate)
 	return obj

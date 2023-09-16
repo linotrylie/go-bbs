@@ -15,7 +15,7 @@ func TransformUser(user *model.User) (userVo response.UserVo) {
 	userVo.Uid = user.Uid
 	userVo.LoginDate = time.Unix(int64(user.LoginDate), 0).Format(time.DateTime)
 	userVo.Logins = user.Logins
-	userVo.LoginIp = utils.Long2ip(uint32(user.LoginIp))
+	userVo.LoginIp = utils.Long2ip(user.LoginIp)
 	var avatar string
 	if global.CONFIG.System.OssType != "local" {
 		mid := fmt.Sprintf("%09d", user.Uid)
@@ -51,7 +51,7 @@ func TransformUser(user *model.User) (userVo response.UserVo) {
 	userVo.Realname = user.Realname
 	userVo.Email = user.Email
 	userVo.Threads = user.Threads
-	userVo.CreateIp = utils.Long2ip(uint32(user.CreateIp))
+	userVo.CreateIp = utils.Long2ip(user.CreateIp)
 	userVo.CreateDate = time.Unix(int64(user.CreateDate), 0).Format(time.DateTime)
 	return
 }

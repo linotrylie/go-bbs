@@ -6,6 +6,7 @@ import (
 	"github.com/duke-git/lancet/v2/random"
 	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gin-gonic/gin"
+	"github.com/songzhibin97/gkit/net/ip"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
@@ -19,36 +20,34 @@ type UserService struct {
 	UserRepo respository.UserRepository
 }
 
-func (serv *UserService) Login(user *model.User, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
-	//先检查是否存在相同用户名的用户
-	serv.UserRepo.User = &model.User{}
+// IsHasUserByUsername 是否有指定用户名的用户
+// @return 存在 true  不存在 false
+func (serv *UserService) IsHasUserByUsername(username string) bool {
 	where := make(map[string]interface{})
-	where["username"] = user.Username
-	e = serv.UserRepo.FindUserByMap(where)
+	where["username"] = username
+	e := serv.UserRepo.FindUserByMap(where)
 	if e != nil {
-		return nil, nil, "", e
+		return false
 	}
 	if serv.UserRepo.User == nil {
+		return false
+	}
+	return true
+}
+
+func (serv *UserService) Login(user *model.User, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+	//先检查是否存在相同用户名的用户
+	hasUser := serv.IsHasUserByUsername(user.Username)
+	if !hasUser {
 		return nil, nil, "", exceptions.UserNotFound
 	}
 	ok := serv.VerifyPassword(serv.UserRepo.User, user.Password)
 	if !ok {
 		return nil, nil, "", exceptions.FailedVerify
 	}
-	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
-	claims := ServiceGroupApp.JwtService.CreateClaims(serv.UserRepo.User)
-	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
-	if e != nil {
-		return nil, nil, "", e
-	}
-	userReturn = serv.UserRepo.User
-	global.User = serv.UserRepo.User
-	jwtCustomClaims = &claims
-	//将用户登录信息记录在redis中
-	global.REDIS.Set(context.Background(), serv.UserRepo.User.Username, "login", time.Duration(utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix())*time.Second)
 	//用户通过验证后，对用户进行后续操作，如增加经验积分或者记录登录ip等等
 	go serv.LoginAfter(ctx)
-	return
+	return serv.ReturnUserInfo()
 }
 
 func (serv *UserService) GeneratePassword(user *model.User, password string) {
@@ -72,8 +71,8 @@ func (serv *UserService) VerifyPassword(user *model.User, password string) bool 
 
 func (serv *UserService) LoginAfter(ctx *gin.Context) {
 	serv.UserRepo.User.SetLogins(1).
-		SetLoginDate(int(time.Now().Unix())).
-		SetLoginIP(int(utils.Ip2long(ctx.ClientIP())))
+		SetLoginDate(time.Now().Unix()).
+		SetLoginIP(utils.Ip2long(ctx.ClientIP()))
 	_, err := serv.UserRepo.Update()
 	if err != nil {
 		return
@@ -161,5 +160,56 @@ func (serv *UserService) Edit(userEdit *requests.UserEdit) (err error) {
 	}
 	return nil
 }
+
+func (serv *UserService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+	//先检查是否存在相同用户名的用户
+	hasUser := serv.IsHasUserByUsername(userRegister.Username)
+	if hasUser {
+		return nil, nil, "", exceptions.DuplicateUser
+	}
+	//校验验证码
+	//ok := ServiceGroupApp.CaptchaService.VerifyCaptcha(ctx, &userRegister.Captcha, &userRegister.Email)
+	//if !ok {
+	//	return nil, nil, "", exceptions.FailedVerify
+	//}
+	createIp, e := ip.StringToLong(ctx.ClientIP())
+	var user = &model.User{
+		Username:   userRegister.Username,
+		Email:      userRegister.Email.Email,
+		CreateDate: time.Now().Unix(),
+		CreateIp:   uint32(createIp),
+		Gid:        101,
+		Logins:     1,
+		LoginDate:  time.Now().Unix(),
+		LoginIp:    uint32(createIp),
+		Signature:  "他什么也没留下~",
+	}
+	serv.GeneratePassword(user, userRegister.Password)
+	serv.UserRepo.User = user
+	insert, err := serv.UserRepo.Insert()
+	if err != nil {
+		return nil, nil, "", err
+	}
+	if insert < 1 {
+		return nil, nil, "", exceptions.CreateError
+	}
+	return serv.ReturnUserInfo()
+}
+
+func (serv *UserService) ReturnUserInfo() (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
+	claims := ServiceGroupApp.JwtService.CreateClaims(serv.UserRepo.User)
+	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
+	if e != nil {
+		return nil, nil, "", e
+	}
+	userReturn = serv.UserRepo.User
+	global.User = serv.UserRepo.User
+	jwtCustomClaims = &claims
+	//将用户登录信息记录在redis中
+	global.REDIS.Set(context.Background(), serv.UserRepo.User.Username, "login", time.Duration(utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix())*time.Second)
+	return
+}
+
 func (serv *UserService) name() {
 }

@@ -75,8 +75,13 @@ func (obj *UserRepository) FindUserByMap(where map[string]interface{}) (e error)
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
-	db := global.DB.Table(obj.User.TableName()).Where(where).Find(obj.User)
-	SaveInRedis(obj.User)
+	var user model.User
+	db := global.DB.Table(obj.User.TableName()).Where(where).First(&user)
 	e = db.Error
+	if e != nil {
+		return
+	}
+	obj.User = &user
+	SaveInRedis(obj.User)
 	return
 }

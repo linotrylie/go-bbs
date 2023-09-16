@@ -10,6 +10,7 @@ var (
 	NotFoundData  = errors.New("未查询到记录！")
 	TokenInvalid  = errors.New("token已失效")
 	ModifyError   = errors.New("修改失败")
+	CreateError   = errors.New("新增失败")
 	LogBackIn     = errors.New("重新登录")
 	NotAuth       = errors.New("没有权限！")
 )

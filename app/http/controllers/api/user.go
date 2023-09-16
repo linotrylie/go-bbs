@@ -61,7 +61,7 @@ func (controller *UserController) Login(ctx *gin.Context) {
 	userVo.Group = *group
 	response.OkWithData(gin.H{
 		"token":      token,
-		"expired_at": jwtCustomClaims.ExpiresAt.Second(),
+		"expired_at": jwtCustomClaims.ExpiresAt.Unix(),
 		"user":       userVo,
 	}, ctx)
 	return
@@ -171,6 +171,44 @@ func (controller *UserController) Edit(ctx *gin.Context) {
 		return
 	}
 	response.OkWithMessage("修改成功", ctx)
+	return
+}
+
+func (controller *UserController) Register(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
+	var userRegister = &requests.UserRegister{}
+	err = ctx.ShouldBind(userRegister)
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	err = userRegister.Validate()
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	userReturn, jwtCustomClaims, token, err := userService.Register(userRegister, ctx)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	userVo := transform.TransformUser(userReturn)
+	group, err := groupService.Detail(userReturn.Gid)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	userVo.Group = *group
+	response.OkWithData(gin.H{
+		"token":      token,
+		"expired_at": jwtCustomClaims.ExpiresAt.Unix(),
+		"user":       userVo,
+	}, ctx)
 	return
 }
 

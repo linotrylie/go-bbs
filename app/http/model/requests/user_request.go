@@ -17,11 +17,11 @@ func (param *UserLogin) Validate() error {
 	return validation.ValidateStruct(param,
 		validation.Field(&param.Username,
 			validation.Required.Error("用户名必填！"),
-			validation.Length(4, 32).Error("用户名超出规定长度"),
+			validation.Length(2, 32).Error("用户名超出规定长度"),
 		),
 		validation.Field(&param.Password,
 			validation.Required.Error("密码必填！"),
-			validation.Length(4, 32).Error("密码超出规定长度"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
 		),
 	)
 }
@@ -50,16 +50,16 @@ func (param *UserChangePassword) Validate() error {
 	return validation.ValidateStruct(param,
 		validation.Field(&param.NewPassword,
 			validation.Required.Error("请填写新密码！"),
-			validation.Length(4, 32).Error("密码超出规定长度"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
 		),
 		validation.Field(&param.OldPassword,
 			validation.Required.Error("请填写旧密码！"),
-			validation.Length(4, 32).Error("密码超出规定长度"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
 		),
 		validation.Field(&param.NewPasswordVerify,
 			//validation.
 			validation.Required.Error("请填写重复新密码！"),
-			validation.Length(4, 32).Error("密码超出规定长度"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
 		),
 	)
 }
@@ -75,7 +75,7 @@ type UserEdit struct {
 func (param *UserEdit) Validate() error {
 	return validation.ValidateStruct(param,
 		validation.Field(&param.Realname,
-			validation.Length(4, 32).Error("密码超出规定长度！"),
+			validation.Length(4, 32).Error("超出规定长度！"),
 		),
 		validation.Field(&param.Mobile,
 			validation.Length(11, 11).Error("手机号码超出规定长度！"),
@@ -84,5 +84,32 @@ func (param *UserEdit) Validate() error {
 		validation.Field(&param.Email, validation.Length(8, 64).Error("邮箱超出规定长度！"), is.Email),
 		validation.Field(&param.Qq, validation.Match(regexp.MustCompile("[1-9][0-9]{4,}")).Error("QQ号格式不正确！")),
 		validation.Field(&param.Value, validation.Length(4, 6).Error("验证码超出规定长度！"), is.UTFDigit),
+	)
+}
+
+type UserRegister struct {
+	Username       string             `json:"username,omitempty"`
+	Email          EmailCaptchaVerify `json:"email_verify,omitempty"`
+	Captcha        CaptchaVerify      `json:"captcha_verify,omitempty"`
+	Password       string             `json:"password,omitempty"`
+	PasswordVerify string             `json:"password_verify,omitempty"`
+}
+
+func (param *UserRegister) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Username,
+			validation.Required.Error("用户名必填！"),
+			validation.Length(4, 32).Error("用户名超出规定长度"),
+		),
+		validation.Field(&param.Email),
+		validation.Field(&param.Password,
+			validation.Required.Error("请填写新密码！"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
+		),
+		validation.Field(&param.PasswordVerify,
+			validation.Required.Error("请填写重复新密码！"),
+			validation.Length(32, 32).Error("密码超出规定长度"),
+		),
+		validation.Field(&param.Captcha),
 	)
 }

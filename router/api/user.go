@@ -14,6 +14,7 @@ func (tr *UserRouter) InitUserRouter(privateRouter *gin.RouterGroup, publicRoute
 	userContr := controllers.AllRouterGroupApp.ApiGroup.UserController
 	{
 		UserWithoutAuth.POST("login", userContr.Login)
+		UserWithoutAuth.POST("register", userContr.Register)
 	}
 	{
 		UserWithAuth.POST("detail", userContr.Detail)
