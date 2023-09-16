@@ -1,18 +1,22 @@
 package service
 
 import (
-	"go-bbs/app/entity"
+	"go-bbs/app/http/model"
 	"go-bbs/app/respository"
 )
 
 type ThreadService struct {
-	threadRepo   *respository.ThreadRepository
-	threadEntity *entity.ThreadEntity
-	userRepo     *respository.UserRepository
-	userEntity   *entity.UserEntity
-	forumRepo    *respository.ForumRepository
+	ForumRepo respository.ThreadRepository
 }
 
-func (serv *ThreadService) List() {
+func (serv *ThreadService) List(fid int) (threadList []*model.Thread, e error) {
+	threadList, e = serv.ForumRepo.ThreadList(fid)
+	if e != nil {
+		return nil, e
+	}
+	return threadList, nil
+}
+
+func (serv *ThreadService) name() {
 
 }

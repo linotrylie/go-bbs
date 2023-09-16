@@ -48,7 +48,7 @@ func Routers() *gin.Engine {
 	Router.GET("/metrics", global.PromHandler(promhttp.Handler()))
 	Router.GET("/favicon.ico", func(context *gin.Context) {})
 	//公共路由组件 不需要鉴权
-	PublicGroup := Router.Group("/")
+	PublicGroup := Router.Group(global.CONFIG.System.RouterPrefix)
 	{
 		// 健康监测
 		PublicGroup.GET("/ding", func(c *gin.Context) {
@@ -59,12 +59,12 @@ func Routers() *gin.Engine {
 		commonRouter.InitCaptchaRouter(PublicGroup) // 注册基础功能路由 不做鉴权
 	}
 
-	PrivateGroup := Router.Group("/s")
+	PrivateGroup := Router.Group("/")
 	PrivateGroup.Use(middleware.JWT())
 	{
-		apiGroup := PrivateGroup.Group("api")
-		apiRouter.InitAuthRouter(apiGroup)
-		apiRouter.InitUserRouter(apiGroup, PublicGroup) //前端用户
+		apiRouter.InitAuthRouter(PrivateGroup)
+		apiRouter.InitUserRouter(PrivateGroup, PublicGroup)  //前端用户
+		apiRouter.InitForumRouter(PrivateGroup, PublicGroup) //前端用户
 		commonRouter.InitUploadRouter(PrivateGroup)
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "views/backend",

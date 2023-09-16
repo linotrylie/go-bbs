@@ -8,6 +8,7 @@ import (
 type ApiGroup struct {
 	AuthController
 	UserController
+	ForumController
 }
 
 var (
@@ -15,4 +16,6 @@ var (
 	emailService   = new(emailServ.EmailService)
 	userService    = new(service.UserService)
 	groupService   = new(service.GroupService)
+	forumService   = new(service.ForumService)
+	threadService  = new(service.ThreadService)
 )

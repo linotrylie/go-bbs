@@ -47,7 +47,7 @@ system:
   #  IP限制一个小时
   iplimit-time: 3600
   #  路由全局前缀
-  router-prefix: ""
+  router-prefix: "/"
 
 # captcha configuration
 captcha:

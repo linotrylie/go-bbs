@@ -1,11 +1,14 @@
 package respository
 
 import (
+	"encoding/json"
+	"fmt"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/global"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
 type ThreadRepository struct {
@@ -74,5 +77,44 @@ func (obj *ThreadRepository) FindByWhere(query string, args []interface{}) (list
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	return
+}
+
+func (obj *ThreadRepository) ThreadList(fid int) (threadList []*model.Thread, e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(obj.Thread.TableName(), "ThreadList", e, now)
+		}
+	}()
+
+	redisKey := fmt.Sprintf("thread_list_%d_%d", obj.Pager.Page, obj.Pager.PageSize)
+	key, _ := FindInRedisByKey(redisKey)
+	if key != "" {
+		e = json.Unmarshal([]byte(key), &threadList)
+		if e != nil {
+			return nil, e
+		}
+		return
+	}
+	db := global.DB.Model(obj.Thread)
+	if fid <= 0 {
+		db.Where("fid > ?", 0).Preload("User")
+	} else {
+		db.Where("fid = ?", fid).Preload("User")
+	}
+	e = obj.Pager.Execute(db, &threadList)
+	if e != nil {
+		return nil, e
+	}
+	if len(threadList) == 0 {
+		return nil, exceptions.NotFoundData
+	}
+	marshal, e := json.Marshal(threadList)
+	if e != nil {
+		return nil, e
+	}
+	SaveInRedisByKey(redisKey, string(marshal))
 	return
 }

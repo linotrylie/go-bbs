@@ -9,11 +9,10 @@ import (
 	"time"
 )
 
-func TransformUser(user *model.User) (userVo response.User) {
+func TransformUser(user *model.User) (userVo response.UserVo) {
 	userVo.VipEnd = user.VipEnd
 	userVo.Username = user.Username
 	userVo.Uid = user.Uid
-
 	userVo.LoginDate = time.Unix(int64(user.LoginDate), 0).Format(time.DateTime)
 	userVo.Logins = user.Logins
 	userVo.LoginIp = utils.Long2ip(uint32(user.LoginIp))
@@ -33,7 +32,7 @@ func TransformUser(user *model.User) (userVo response.User) {
 	userVo.Gid = user.Gid
 	userVo.Qq = user.Qq
 	userVo.Credits = user.Credits
-	if global.User.Uid == user.Uid {
+	if global.User != nil && global.User.Uid == user.Uid {
 		userVo.Mobile = user.Mobile
 		userVo.Rmbs = user.Rmbs
 		userVo.Golds = user.Golds

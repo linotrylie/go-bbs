@@ -10,7 +10,7 @@ type Thread struct {
 	Tid            int    `gorm:"primaryKey;column:tid" json:"tid"`
 	Top            int    `gorm:"column:top" json:"top"`
 	Uid            int    `gorm:"column:uid" json:"uid"`
-	Userip         int    `gorm:"column:userip" json:"userip"`
+	Userip         uint32 `gorm:"column:userip" json:"userip"`
 	Subject        string `gorm:"column:subject" json:"subject"`
 	CreateDate     int    `gorm:"column:create_date" json:"create_date"`
 	LastDate       int    `gorm:"column:last_date" json:"last_date"`
@@ -40,6 +40,7 @@ type Thread struct {
 	ActivityId     int    `gorm:"column:activity_id" json:"activity_id"`
 	AttachGolds    int    `gorm:"column:attach_golds" json:"attach_golds"`
 	ContentGolds   int    `gorm:"column:content_golds" json:"content_golds"`
+	User           User   `gorm:"foreignKey:uid;references:uid" json:"-"`
 }
 
 func (*Thread) TableName() string {

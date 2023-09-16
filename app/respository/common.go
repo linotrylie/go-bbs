@@ -28,7 +28,9 @@ type Pager struct {
 func Insert(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Prome.OrmWithLabelValues(model.TableName(), "Insert", e, now)
+		if e != nil {
+			global.Prome.OrmWithLabelValues(model.TableName(), "Insert", e, now)
+		}
 	}()
 	result := global.DB.Create(model)
 	if result.Error != nil {
@@ -42,7 +44,9 @@ func Insert(model model.Model) (rowsAffected int64, e error) {
 func Update(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Prome.OrmWithLabelValues(model.TableName(), "Update", e, now)
+		if e != nil {
+			global.Prome.OrmWithLabelValues(model.TableName(), "Update", e, now)
+		}
 	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
@@ -67,7 +71,9 @@ func Update(model model.Model) (rowsAffected int64, e error) {
 func FindByLocation(model model.Model) (e error) {
 	now := time.Now()
 	defer func() {
-		global.Prome.OrmWithLabelValues(model.TableName(), "FindByLocation", e, now)
+		if e != nil {
+			global.Prome.OrmWithLabelValues(model.TableName(), "FindByLocation", e, now)
+		}
 	}()
 	if len(model.Location()) == 0 {
 		return errors.New("location cannot be empty")
@@ -91,7 +97,9 @@ func FindByLocation(model model.Model) (e error) {
 func DeleteByLocation(model model.Model) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
-		global.Prome.OrmWithLabelValues(model.TableName(), "DeleteByLocation", e, now)
+		if e != nil {
+			global.Prome.OrmWithLabelValues(model.TableName(), "DeleteByLocation", e, now)
+		}
 	}()
 	if len(model.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
@@ -190,6 +198,33 @@ func FindInRedis(model model.Model) (e error) {
 		e = json.Unmarshal([]byte(redisRes), model)
 	}
 	return
+}
+
+func FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	defer func() {
+		if e != nil && e != redis.Nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
+	if e != nil && e != redis.Nil {
+		return
+	} else if e == redis.Nil {
+		return
+	} else {
+		return
+	}
+	return
+}
+
+func SaveInRedisByKey(redisKey string, data string) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
+	return nil
 }
 
 func DeleteInRedis(model model.Model) (e error) {

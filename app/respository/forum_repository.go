@@ -1,11 +1,14 @@
 package respository
 
 import (
+	"encoding/json"
+	"fmt"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/global"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
 type ForumRepository struct {
@@ -58,9 +61,11 @@ func (obj *ForumRepository) Delete() (rowsAffected int64, e error) {
 
 // FindByWhere 批量查询 带分页
 func (obj *ForumRepository) FindByWhere(query string, args []interface{}) (list []model.Forum, e error) {
+	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(obj.Forum.TableName(), "FindByWhere", e, now)
 		}
 	}()
 	db := global.DB.Table(obj.Forum.TableName())
@@ -74,5 +79,35 @@ func (obj *ForumRepository) FindByWhere(query string, args []interface{}) (list 
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	return
+}
+
+func (obj *ForumRepository) List() (list []model.Forum, e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	redisKey := fmt.Sprintf("forum_list_%d_%d", obj.Pager.Page, obj.Pager.PageSize)
+	key, _ := FindInRedisByKey(redisKey)
+	if key != "" {
+		e = json.Unmarshal([]byte(key), &list)
+		if e != nil {
+			return nil, e
+		}
+		return
+	}
+	list, e = obj.FindByWhere("fid > ?", []interface{}{0})
+	if e != nil {
+		return nil, e
+	}
+	if len(list) == 0 {
+		return nil, exceptions.NotFoundData
+	}
+	marshal, e := json.Marshal(list)
+	if e != nil {
+		return nil, e
+	}
+	SaveInRedisByKey(redisKey, string(marshal))
 	return
 }

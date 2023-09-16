@@ -2,7 +2,7 @@ package response
 
 import "go-bbs/app/http/model"
 
-type User struct {
+type UserVo struct {
 	Uid           int            `json:"uid"`         // 用户编号
 	Gid           int            `json:"gid"`         // 用户组编号
 	Email         string         `json:"email"`       // 邮箱
