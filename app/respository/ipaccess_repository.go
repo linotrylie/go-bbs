@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type IpaccessRepository struct {
-	mu       sync.Mutex
+type ipaccessRepository struct {
 	Ipaccess *model.Ipaccess
 	Pager    *Pager
-	IsLock   bool
+	Repo     Repository
 }
 
-// Insert 保存
-func (obj *IpaccessRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Ipaccess)
-	if err != nil {
-		return
-	}
-	return
+var IpaccessRepository = newIpaccessRepository()
+
+func newIpaccessRepository() *ipaccessRepository {
+	return new(ipaccessRepository)
 }
 
-// Update 更新
-func (obj *IpaccessRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Ipaccess)
-	if err != nil {
-		return
-	}
-	return
+func (obj *ipaccessRepository) Insert(ipaccess model.Ipaccess) (rowsAffected int64, e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.Insert(&ipaccess)
 }
 
-// First 查询单条
-func (obj *IpaccessRepository) First() (err error) {
-	err = FindByLocation(obj.Ipaccess)
-	if err != nil {
-		return
-	}
-	return
+func (obj *ipaccessRepository) Update(ipaccess model.Ipaccess) (rowsAffected int64, e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.Update(&ipaccess)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *IpaccessRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Ipaccess)
-	return
+func (obj *ipaccessRepository) FindByLocation(ipaccess model.Ipaccess) (e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.FindByLocation(&ipaccess)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *IpaccessRepository) FindByWhere(query string, args []interface{}) (list []model.Ipaccess, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Ipaccess.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *ipaccessRepository) DeleteByLocation(ipaccess model.Ipaccess) (rowsAffected int64, e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.Update(&ipaccess)
+}
+
+func (obj *ipaccessRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	IpaccessRepository.Repo.Model = &model.Ipaccess{}
+	return IpaccessRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *ipaccessRepository) SaveInRedis(ipaccess model.Ipaccess) (e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.SaveInRedis(&ipaccess)
+}
+
+func (obj *ipaccessRepository) FindInRedis(ipaccess model.Ipaccess) (e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.FindInRedis(&ipaccess)
+}
+
+func (obj *ipaccessRepository) DeleteInRedis(ipaccess model.Ipaccess) (e error) {
+	IpaccessRepository.Repo.Model = &ipaccess
+	return IpaccessRepository.Repo.DeleteInRedis(&ipaccess)
+}
+
+func (obj *ipaccessRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	IpaccessRepository.Repo.Model = &model.Ipaccess{}
+	return IpaccessRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *ipaccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	IpaccessRepository.Repo.Model = &model.Ipaccess{}
+	return IpaccessRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *ipaccessRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	IpaccessRepository.Repo.Model = &model.Ipaccess{}
+	return IpaccessRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *ipaccessRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	IpaccessRepository.Repo.Model = &model.Ipaccess{}
+	return IpaccessRepository.Repo.GetDataListByWhereMap(where)
 }

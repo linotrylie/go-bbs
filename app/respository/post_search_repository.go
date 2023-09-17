@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type PostSearchRepository struct {
-	mu         sync.Mutex
+type postSearchRepository struct {
 	PostSearch *model.PostSearch
 	Pager      *Pager
-	IsLock     bool
+	Repo       Repository
 }
 
-// Insert 保存
-func (obj *PostSearchRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.PostSearch)
-	if err != nil {
-		return
-	}
-	return
+var PostSearchRepository = newPostSearchRepository()
+
+func newPostSearchRepository() *postSearchRepository {
+	return new(postSearchRepository)
 }
 
-// Update 更新
-func (obj *PostSearchRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.PostSearch)
-	if err != nil {
-		return
-	}
-	return
+func (obj *postSearchRepository) Insert(postSearch model.PostSearch) (rowsAffected int64, e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.Insert(&postSearch)
 }
 
-// First 查询单条
-func (obj *PostSearchRepository) First() (err error) {
-	err = FindByLocation(obj.PostSearch)
-	if err != nil {
-		return
-	}
-	return
+func (obj *postSearchRepository) Update(postSearch model.PostSearch) (rowsAffected int64, e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.Update(&postSearch)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *PostSearchRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.PostSearch)
-	return
+func (obj *postSearchRepository) FindByLocation(postSearch model.PostSearch) (e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.FindByLocation(&postSearch)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *PostSearchRepository) FindByWhere(query string, args []interface{}) (list []model.PostSearch, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.PostSearch.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *postSearchRepository) DeleteByLocation(postSearch model.PostSearch) (rowsAffected int64, e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.Update(&postSearch)
+}
+
+func (obj *postSearchRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	PostSearchRepository.Repo.Model = &model.PostSearch{}
+	return PostSearchRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *postSearchRepository) SaveInRedis(postSearch model.PostSearch) (e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.SaveInRedis(&postSearch)
+}
+
+func (obj *postSearchRepository) FindInRedis(postSearch model.PostSearch) (e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.FindInRedis(&postSearch)
+}
+
+func (obj *postSearchRepository) DeleteInRedis(postSearch model.PostSearch) (e error) {
+	PostSearchRepository.Repo.Model = &postSearch
+	return PostSearchRepository.Repo.DeleteInRedis(&postSearch)
+}
+
+func (obj *postSearchRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	PostSearchRepository.Repo.Model = &model.PostSearch{}
+	return PostSearchRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *postSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	PostSearchRepository.Repo.Model = &model.PostSearch{}
+	return PostSearchRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *postSearchRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	PostSearchRepository.Repo.Model = &model.PostSearch{}
+	return PostSearchRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *postSearchRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	PostSearchRepository.Repo.Model = &model.PostSearch{}
+	return PostSearchRepository.Repo.GetDataListByWhereMap(where)
 }

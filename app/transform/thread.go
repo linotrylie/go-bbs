@@ -7,7 +7,11 @@ import (
 	"time"
 )
 
-func TransformThread(thread *model.Thread) (threadVo response.ThreadVo) {
+func TransformThread(thread *model.Thread) (threadVo *response.ThreadVo) {
+	if thread == nil {
+		return nil
+	}
+	threadVo = &response.ThreadVo{}
 	threadVo.Uid = thread.Uid
 	threadVo.Fid = thread.Fid
 	threadVo.Firstpid = thread.Firstpid

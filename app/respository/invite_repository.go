@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type InviteRepository struct {
-	mu     sync.Mutex
+type inviteRepository struct {
 	Invite *model.Invite
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *InviteRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Invite)
-	if err != nil {
-		return
-	}
-	return
+var InviteRepository = newInviteRepository()
+
+func newInviteRepository() *inviteRepository {
+	return new(inviteRepository)
 }
 
-// Update 更新
-func (obj *InviteRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Invite)
-	if err != nil {
-		return
-	}
-	return
+func (obj *inviteRepository) Insert(invite model.Invite) (rowsAffected int64, e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.Insert(&invite)
 }
 
-// First 查询单条
-func (obj *InviteRepository) First() (err error) {
-	err = FindByLocation(obj.Invite)
-	if err != nil {
-		return
-	}
-	return
+func (obj *inviteRepository) Update(invite model.Invite) (rowsAffected int64, e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.Update(&invite)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *InviteRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Invite)
-	return
+func (obj *inviteRepository) FindByLocation(invite model.Invite) (e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.FindByLocation(&invite)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *InviteRepository) FindByWhere(query string, args []interface{}) (list []model.Invite, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Invite.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *inviteRepository) DeleteByLocation(invite model.Invite) (rowsAffected int64, e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.Update(&invite)
+}
+
+func (obj *inviteRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	InviteRepository.Repo.Model = &model.Invite{}
+	return InviteRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *inviteRepository) SaveInRedis(invite model.Invite) (e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.SaveInRedis(&invite)
+}
+
+func (obj *inviteRepository) FindInRedis(invite model.Invite) (e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.FindInRedis(&invite)
+}
+
+func (obj *inviteRepository) DeleteInRedis(invite model.Invite) (e error) {
+	InviteRepository.Repo.Model = &invite
+	return InviteRepository.Repo.DeleteInRedis(&invite)
+}
+
+func (obj *inviteRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	InviteRepository.Repo.Model = &model.Invite{}
+	return InviteRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *inviteRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	InviteRepository.Repo.Model = &model.Invite{}
+	return InviteRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *inviteRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	InviteRepository.Repo.Model = &model.Invite{}
+	return InviteRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *inviteRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	InviteRepository.Repo.Model = &model.Invite{}
+	return InviteRepository.Repo.GetDataListByWhereMap(where)
 }

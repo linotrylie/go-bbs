@@ -1,13 +1,13 @@
 package service
 
 type ServiceGroup struct {
-	CaptchaService CaptchaService
-	ThreadService  ThreadService
-	JwtService     JwtService
-	UserService    UserService
-	GroupService   GroupService
-	UploadService  UploadService
-	ForumService   ForumService
+	CaptchaService captchaService
+	ThreadService  threadService
+	JwtService     jwtService
+	UserService    userService
+	GroupService   groupService
+	UploadService  uploadService
+	ForumService   forumService
 }
 
 var ServiceGroupApp = new(ServiceGroup)

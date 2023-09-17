@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type PaylistRepository struct {
-	mu      sync.Mutex
+type paylistRepository struct {
 	Paylist *model.Paylist
 	Pager   *Pager
-	IsLock  bool
+	Repo    Repository
 }
 
-// Insert 保存
-func (obj *PaylistRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Paylist)
-	if err != nil {
-		return
-	}
-	return
+var PaylistRepository = newPaylistRepository()
+
+func newPaylistRepository() *paylistRepository {
+	return new(paylistRepository)
 }
 
-// Update 更新
-func (obj *PaylistRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Paylist)
-	if err != nil {
-		return
-	}
-	return
+func (obj *paylistRepository) Insert(paylist model.Paylist) (rowsAffected int64, e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.Insert(&paylist)
 }
 
-// First 查询单条
-func (obj *PaylistRepository) First() (err error) {
-	err = FindByLocation(obj.Paylist)
-	if err != nil {
-		return
-	}
-	return
+func (obj *paylistRepository) Update(paylist model.Paylist) (rowsAffected int64, e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.Update(&paylist)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *PaylistRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Paylist)
-	return
+func (obj *paylistRepository) FindByLocation(paylist model.Paylist) (e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.FindByLocation(&paylist)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *PaylistRepository) FindByWhere(query string, args []interface{}) (list []model.Paylist, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Paylist.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *paylistRepository) DeleteByLocation(paylist model.Paylist) (rowsAffected int64, e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.Update(&paylist)
+}
+
+func (obj *paylistRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	PaylistRepository.Repo.Model = &model.Paylist{}
+	return PaylistRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *paylistRepository) SaveInRedis(paylist model.Paylist) (e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.SaveInRedis(&paylist)
+}
+
+func (obj *paylistRepository) FindInRedis(paylist model.Paylist) (e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.FindInRedis(&paylist)
+}
+
+func (obj *paylistRepository) DeleteInRedis(paylist model.Paylist) (e error) {
+	PaylistRepository.Repo.Model = &paylist
+	return PaylistRepository.Repo.DeleteInRedis(&paylist)
+}
+
+func (obj *paylistRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	PaylistRepository.Repo.Model = &model.Paylist{}
+	return PaylistRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *paylistRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	PaylistRepository.Repo.Model = &model.Paylist{}
+	return PaylistRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *paylistRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	PaylistRepository.Repo.Model = &model.Paylist{}
+	return PaylistRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *paylistRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	PaylistRepository.Repo.Model = &model.Paylist{}
+	return PaylistRepository.Repo.GetDataListByWhereMap(where)
 }

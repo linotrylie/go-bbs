@@ -11,14 +11,20 @@ import (
 	"time"
 )
 
-type CaptchaService struct {
+type captchaService struct {
 	EmailCaptchaVerify *requests.EmailCaptchaVerify
 	CaptchaVerify      *requests.CaptchaVerify
 }
 
+var CaptchaService = newCaptchaService()
+
+func newCaptchaService() *captchaService {
+	return new(captchaService)
+}
+
 var store = base64Captcha.DefaultMemStore
 
-func (serv *CaptchaService) VerifyCaptcha(c *gin.Context, CaptchaVerify *requests.CaptchaVerify, EmailCaptchaVerify *requests.EmailCaptchaVerify) bool {
+func (serv *captchaService) VerifyCaptcha(c *gin.Context, CaptchaVerify *requests.CaptchaVerify, EmailCaptchaVerify *requests.EmailCaptchaVerify) bool {
 	key := c.ClientIP()
 	openCaptcha := global.CONFIG.Captcha.OpenCaptcha               // 是否开启防爆次数
 	openCaptchaTimeOut := global.CONFIG.Captcha.OpenCaptchaTimeOut // 缓存超时时间

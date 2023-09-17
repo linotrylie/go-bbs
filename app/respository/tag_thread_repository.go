@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type TagThreadRepository struct {
-	mu        sync.Mutex
+type tagThreadRepository struct {
 	TagThread *model.TagThread
 	Pager     *Pager
-	IsLock    bool
+	Repo      Repository
 }
 
-// Insert 保存
-func (obj *TagThreadRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.TagThread)
-	if err != nil {
-		return
-	}
-	return
+var TagThreadRepository = newTagThreadRepository()
+
+func newTagThreadRepository() *tagThreadRepository {
+	return new(tagThreadRepository)
 }
 
-// Update 更新
-func (obj *TagThreadRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.TagThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *tagThreadRepository) Insert(tagThread model.TagThread) (rowsAffected int64, e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.Insert(&tagThread)
 }
 
-// First 查询单条
-func (obj *TagThreadRepository) First() (err error) {
-	err = FindByLocation(obj.TagThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *tagThreadRepository) Update(tagThread model.TagThread) (rowsAffected int64, e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.Update(&tagThread)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *TagThreadRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.TagThread)
-	return
+func (obj *tagThreadRepository) FindByLocation(tagThread model.TagThread) (e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.FindByLocation(&tagThread)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *TagThreadRepository) FindByWhere(query string, args []interface{}) (list []model.TagThread, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.TagThread.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *tagThreadRepository) DeleteByLocation(tagThread model.TagThread) (rowsAffected int64, e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.Update(&tagThread)
+}
+
+func (obj *tagThreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	TagThreadRepository.Repo.Model = &model.TagThread{}
+	return TagThreadRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *tagThreadRepository) SaveInRedis(tagThread model.TagThread) (e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.SaveInRedis(&tagThread)
+}
+
+func (obj *tagThreadRepository) FindInRedis(tagThread model.TagThread) (e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.FindInRedis(&tagThread)
+}
+
+func (obj *tagThreadRepository) DeleteInRedis(tagThread model.TagThread) (e error) {
+	TagThreadRepository.Repo.Model = &tagThread
+	return TagThreadRepository.Repo.DeleteInRedis(&tagThread)
+}
+
+func (obj *tagThreadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	TagThreadRepository.Repo.Model = &model.TagThread{}
+	return TagThreadRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *tagThreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	TagThreadRepository.Repo.Model = &model.TagThread{}
+	return TagThreadRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *tagThreadRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	TagThreadRepository.Repo.Model = &model.TagThread{}
+	return TagThreadRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *tagThreadRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	TagThreadRepository.Repo.Model = &model.TagThread{}
+	return TagThreadRepository.Repo.GetDataListByWhereMap(where)
 }

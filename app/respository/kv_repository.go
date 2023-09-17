@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type KvRepository struct {
-	mu     sync.Mutex
-	Kv     *model.Kv
-	Pager  *Pager
-	IsLock bool
+type kvRepository struct {
+	Kv    *model.Kv
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *KvRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Kv)
-	if err != nil {
-		return
-	}
-	return
+var KvRepository = newKvRepository()
+
+func newKvRepository() *kvRepository {
+	return new(kvRepository)
 }
 
-// Update 更新
-func (obj *KvRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Kv)
-	if err != nil {
-		return
-	}
-	return
+func (obj *kvRepository) Insert(kv model.Kv) (rowsAffected int64, e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.Insert(&kv)
 }
 
-// First 查询单条
-func (obj *KvRepository) First() (err error) {
-	err = FindByLocation(obj.Kv)
-	if err != nil {
-		return
-	}
-	return
+func (obj *kvRepository) Update(kv model.Kv) (rowsAffected int64, e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.Update(&kv)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *KvRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Kv)
-	return
+func (obj *kvRepository) FindByLocation(kv model.Kv) (e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.FindByLocation(&kv)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *KvRepository) FindByWhere(query string, args []interface{}) (list []model.Kv, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Kv.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *kvRepository) DeleteByLocation(kv model.Kv) (rowsAffected int64, e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.Update(&kv)
+}
+
+func (obj *kvRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	KvRepository.Repo.Model = &model.Kv{}
+	return KvRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *kvRepository) SaveInRedis(kv model.Kv) (e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.SaveInRedis(&kv)
+}
+
+func (obj *kvRepository) FindInRedis(kv model.Kv) (e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.FindInRedis(&kv)
+}
+
+func (obj *kvRepository) DeleteInRedis(kv model.Kv) (e error) {
+	KvRepository.Repo.Model = &kv
+	return KvRepository.Repo.DeleteInRedis(&kv)
+}
+
+func (obj *kvRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	KvRepository.Repo.Model = &model.Kv{}
+	return KvRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *kvRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	KvRepository.Repo.Model = &model.Kv{}
+	return KvRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *kvRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	KvRepository.Repo.Model = &model.Kv{}
+	return KvRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *kvRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	KvRepository.Repo.Model = &model.Kv{}
+	return KvRepository.Repo.GetDataListByWhereMap(where)
 }

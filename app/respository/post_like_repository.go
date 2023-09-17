@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type PostLikeRepository struct {
-	mu       sync.Mutex
+type postLikeRepository struct {
 	PostLike *model.PostLike
 	Pager    *Pager
-	IsLock   bool
+	Repo     Repository
 }
 
-// Insert 保存
-func (obj *PostLikeRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.PostLike)
-	if err != nil {
-		return
-	}
-	return
+var PostLikeRepository = newPostLikeRepository()
+
+func newPostLikeRepository() *postLikeRepository {
+	return new(postLikeRepository)
 }
 
-// Update 更新
-func (obj *PostLikeRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.PostLike)
-	if err != nil {
-		return
-	}
-	return
+func (obj *postLikeRepository) Insert(postLike model.PostLike) (rowsAffected int64, e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.Insert(&postLike)
 }
 
-// First 查询单条
-func (obj *PostLikeRepository) First() (err error) {
-	err = FindByLocation(obj.PostLike)
-	if err != nil {
-		return
-	}
-	return
+func (obj *postLikeRepository) Update(postLike model.PostLike) (rowsAffected int64, e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.Update(&postLike)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *PostLikeRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.PostLike)
-	return
+func (obj *postLikeRepository) FindByLocation(postLike model.PostLike) (e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.FindByLocation(&postLike)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *PostLikeRepository) FindByWhere(query string, args []interface{}) (list []model.PostLike, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.PostLike.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *postLikeRepository) DeleteByLocation(postLike model.PostLike) (rowsAffected int64, e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.Update(&postLike)
+}
+
+func (obj *postLikeRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	PostLikeRepository.Repo.Model = &model.PostLike{}
+	return PostLikeRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *postLikeRepository) SaveInRedis(postLike model.PostLike) (e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.SaveInRedis(&postLike)
+}
+
+func (obj *postLikeRepository) FindInRedis(postLike model.PostLike) (e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.FindInRedis(&postLike)
+}
+
+func (obj *postLikeRepository) DeleteInRedis(postLike model.PostLike) (e error) {
+	PostLikeRepository.Repo.Model = &postLike
+	return PostLikeRepository.Repo.DeleteInRedis(&postLike)
+}
+
+func (obj *postLikeRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	PostLikeRepository.Repo.Model = &model.PostLike{}
+	return PostLikeRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *postLikeRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	PostLikeRepository.Repo.Model = &model.PostLike{}
+	return PostLikeRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *postLikeRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	PostLikeRepository.Repo.Model = &model.PostLike{}
+	return PostLikeRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *postLikeRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	PostLikeRepository.Repo.Model = &model.PostLike{}
+	return PostLikeRepository.Repo.GetDataListByWhereMap(where)
 }

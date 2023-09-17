@@ -1,87 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"time"
 )
 
-type UserRepository struct {
+type userRepository struct {
 	User  *model.User
 	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *UserRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.User)
-	if err != nil {
-		return
-	}
-	return
+var UserRepository = newUserRepository()
+
+func newUserRepository() *userRepository {
+	return new(userRepository)
 }
 
-// Update 更新
-func (obj *UserRepository) Update() (effectedRow int64, err error) {
-	effectedRow, err = Update(obj.User)
-	if err != nil {
-		return
-	}
-	return
+func (obj *userRepository) Insert(user model.User) (rowsAffected int64, e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.Insert(&user)
 }
 
-// First 查询单条
-func (obj *UserRepository) First() (err error) {
-	err = FindByLocation(obj.User)
-	if err != nil {
-		return
-	}
-	return
+func (obj *userRepository) Update(user model.User) (rowsAffected int64, e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.Update(&user)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *UserRepository) Delete() (rowsAffected int64, e error) {
-	rowsAffected, e = DeleteByLocation(obj.User)
-	return
+func (obj *userRepository) FindByLocation(user model.User) (e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.FindByLocation(&user)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *UserRepository) FindByWhere(query string, args []interface{}) (list []model.User, e error) {
-	now := time.Now()
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(obj.User.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
-	db := global.DB.Table(obj.User.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *userRepository) DeleteByLocation(user model.User) (rowsAffected int64, e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.Update(&user)
 }
 
-func (obj *UserRepository) FindUserByMap(where map[string]interface{}) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	var user model.User
-	db := global.DB.Table(obj.User.TableName()).Where(where).First(&user)
-	e = db.Error
-	if e != nil {
-		return
-	}
-	obj.User = &user
-	SaveInRedis(obj.User)
-	return
+func (obj *userRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	UserRepository.Repo.Model = &model.User{}
+	return UserRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *userRepository) SaveInRedis(user model.User) (e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.SaveInRedis(&user)
+}
+
+func (obj *userRepository) FindInRedis(user model.User) (e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.FindInRedis(&user)
+}
+
+func (obj *userRepository) DeleteInRedis(user model.User) (e error) {
+	UserRepository.Repo.Model = &user
+	return UserRepository.Repo.DeleteInRedis(&user)
+}
+
+func (obj *userRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	UserRepository.Repo.Model = &model.User{}
+	return UserRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *userRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	UserRepository.Repo.Model = &model.User{}
+	return UserRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *userRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	UserRepository.Repo.Model = &model.User{}
+	return UserRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *userRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	UserRepository.Repo.Model = &model.User{}
+	return UserRepository.Repo.GetDataListByWhereMap(where)
 }

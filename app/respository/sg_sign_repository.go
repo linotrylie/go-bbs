@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type SgSignRepository struct {
-	mu     sync.Mutex
+type sgSignRepository struct {
 	SgSign *model.SgSign
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *SgSignRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.SgSign)
-	if err != nil {
-		return
-	}
-	return
+var SgSignRepository = newSgSignRepository()
+
+func newSgSignRepository() *sgSignRepository {
+	return new(sgSignRepository)
 }
 
-// Update 更新
-func (obj *SgSignRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.SgSign)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sgSignRepository) Insert(sgSign model.SgSign) (rowsAffected int64, e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.Insert(&sgSign)
 }
 
-// First 查询单条
-func (obj *SgSignRepository) First() (err error) {
-	err = FindByLocation(obj.SgSign)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sgSignRepository) Update(sgSign model.SgSign) (rowsAffected int64, e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.Update(&sgSign)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *SgSignRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.SgSign)
-	return
+func (obj *sgSignRepository) FindByLocation(sgSign model.SgSign) (e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.FindByLocation(&sgSign)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *SgSignRepository) FindByWhere(query string, args []interface{}) (list []model.SgSign, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.SgSign.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *sgSignRepository) DeleteByLocation(sgSign model.SgSign) (rowsAffected int64, e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.Update(&sgSign)
+}
+
+func (obj *sgSignRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	SgSignRepository.Repo.Model = &model.SgSign{}
+	return SgSignRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *sgSignRepository) SaveInRedis(sgSign model.SgSign) (e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.SaveInRedis(&sgSign)
+}
+
+func (obj *sgSignRepository) FindInRedis(sgSign model.SgSign) (e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.FindInRedis(&sgSign)
+}
+
+func (obj *sgSignRepository) DeleteInRedis(sgSign model.SgSign) (e error) {
+	SgSignRepository.Repo.Model = &sgSign
+	return SgSignRepository.Repo.DeleteInRedis(&sgSign)
+}
+
+func (obj *sgSignRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	SgSignRepository.Repo.Model = &model.SgSign{}
+	return SgSignRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *sgSignRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	SgSignRepository.Repo.Model = &model.SgSign{}
+	return SgSignRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *sgSignRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	SgSignRepository.Repo.Model = &model.SgSign{}
+	return SgSignRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *sgSignRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	SgSignRepository.Repo.Model = &model.SgSign{}
+	return SgSignRepository.Repo.GetDataListByWhereMap(where)
 }

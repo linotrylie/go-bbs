@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type GitTagsThreadRepository struct {
-	mu            sync.Mutex
+type gitTagsThreadRepository struct {
 	GitTagsThread *model.GitTagsThread
 	Pager         *Pager
-	IsLock        bool
+	Repo          Repository
 }
 
-// Insert 保存
-func (obj *GitTagsThreadRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.GitTagsThread)
-	if err != nil {
-		return
-	}
-	return
+var GitTagsThreadRepository = newGitTagsThreadRepository()
+
+func newGitTagsThreadRepository() *gitTagsThreadRepository {
+	return new(gitTagsThreadRepository)
 }
 
-// Update 更新
-func (obj *GitTagsThreadRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.GitTagsThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *gitTagsThreadRepository) Insert(gitTagsThread model.GitTagsThread) (rowsAffected int64, e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.Insert(&gitTagsThread)
 }
 
-// First 查询单条
-func (obj *GitTagsThreadRepository) First() (err error) {
-	err = FindByLocation(obj.GitTagsThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *gitTagsThreadRepository) Update(gitTagsThread model.GitTagsThread) (rowsAffected int64, e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.Update(&gitTagsThread)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *GitTagsThreadRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.GitTagsThread)
-	return
+func (obj *gitTagsThreadRepository) FindByLocation(gitTagsThread model.GitTagsThread) (e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.FindByLocation(&gitTagsThread)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *GitTagsThreadRepository) FindByWhere(query string, args []interface{}) (list []model.GitTagsThread, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.GitTagsThread.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *gitTagsThreadRepository) DeleteByLocation(gitTagsThread model.GitTagsThread) (rowsAffected int64, e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.Update(&gitTagsThread)
+}
+
+func (obj *gitTagsThreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	GitTagsThreadRepository.Repo.Model = &model.GitTagsThread{}
+	return GitTagsThreadRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *gitTagsThreadRepository) SaveInRedis(gitTagsThread model.GitTagsThread) (e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.SaveInRedis(&gitTagsThread)
+}
+
+func (obj *gitTagsThreadRepository) FindInRedis(gitTagsThread model.GitTagsThread) (e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.FindInRedis(&gitTagsThread)
+}
+
+func (obj *gitTagsThreadRepository) DeleteInRedis(gitTagsThread model.GitTagsThread) (e error) {
+	GitTagsThreadRepository.Repo.Model = &gitTagsThread
+	return GitTagsThreadRepository.Repo.DeleteInRedis(&gitTagsThread)
+}
+
+func (obj *gitTagsThreadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	GitTagsThreadRepository.Repo.Model = &model.GitTagsThread{}
+	return GitTagsThreadRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *gitTagsThreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	GitTagsThreadRepository.Repo.Model = &model.GitTagsThread{}
+	return GitTagsThreadRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *gitTagsThreadRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	GitTagsThreadRepository.Repo.Model = &model.GitTagsThread{}
+	return GitTagsThreadRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *gitTagsThreadRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	GitTagsThreadRepository.Repo.Model = &model.GitTagsThread{}
+	return GitTagsThreadRepository.Repo.GetDataListByWhereMap(where)
 }

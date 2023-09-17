@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type KamiRepository struct {
-	mu     sync.Mutex
-	Kami   *model.Kami
-	Pager  *Pager
-	IsLock bool
+type kamiRepository struct {
+	Kami  *model.Kami
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *KamiRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Kami)
-	if err != nil {
-		return
-	}
-	return
+var KamiRepository = newKamiRepository()
+
+func newKamiRepository() *kamiRepository {
+	return new(kamiRepository)
 }
 
-// Update 更新
-func (obj *KamiRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Kami)
-	if err != nil {
-		return
-	}
-	return
+func (obj *kamiRepository) Insert(kami model.Kami) (rowsAffected int64, e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.Insert(&kami)
 }
 
-// First 查询单条
-func (obj *KamiRepository) First() (err error) {
-	err = FindByLocation(obj.Kami)
-	if err != nil {
-		return
-	}
-	return
+func (obj *kamiRepository) Update(kami model.Kami) (rowsAffected int64, e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.Update(&kami)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *KamiRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Kami)
-	return
+func (obj *kamiRepository) FindByLocation(kami model.Kami) (e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.FindByLocation(&kami)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *KamiRepository) FindByWhere(query string, args []interface{}) (list []model.Kami, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Kami.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *kamiRepository) DeleteByLocation(kami model.Kami) (rowsAffected int64, e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.Update(&kami)
+}
+
+func (obj *kamiRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	KamiRepository.Repo.Model = &model.Kami{}
+	return KamiRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *kamiRepository) SaveInRedis(kami model.Kami) (e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.SaveInRedis(&kami)
+}
+
+func (obj *kamiRepository) FindInRedis(kami model.Kami) (e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.FindInRedis(&kami)
+}
+
+func (obj *kamiRepository) DeleteInRedis(kami model.Kami) (e error) {
+	KamiRepository.Repo.Model = &kami
+	return KamiRepository.Repo.DeleteInRedis(&kami)
+}
+
+func (obj *kamiRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	KamiRepository.Repo.Model = &model.Kami{}
+	return KamiRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *kamiRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	KamiRepository.Repo.Model = &model.Kami{}
+	return KamiRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *kamiRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	KamiRepository.Repo.Model = &model.Kami{}
+	return KamiRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *kamiRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	KamiRepository.Repo.Model = &model.Kami{}
+	return KamiRepository.Repo.GetDataListByWhereMap(where)
 }

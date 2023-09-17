@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type AttachRepository struct {
-	mu     sync.Mutex
+type attachRepository struct {
 	Attach *model.Attach
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *AttachRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Attach)
-	if err != nil {
-		return
-	}
-	return
+var AttachRepository = newAttachRepository()
+
+func newAttachRepository() *attachRepository {
+	return new(attachRepository)
 }
 
-// Update 更新
-func (obj *AttachRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Attach)
-	if err != nil {
-		return
-	}
-	return
+func (obj *attachRepository) Insert(attach model.Attach) (rowsAffected int64, e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.Insert(&attach)
 }
 
-// First 查询单条
-func (obj *AttachRepository) First() (err error) {
-	err = FindByLocation(obj.Attach)
-	if err != nil {
-		return
-	}
-	return
+func (obj *attachRepository) Update(attach model.Attach) (rowsAffected int64, e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.Update(&attach)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *AttachRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Attach)
-	return
+func (obj *attachRepository) FindByLocation(attach model.Attach) (e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.FindByLocation(&attach)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *AttachRepository) FindByWhere(query string, args []interface{}) (list []model.Attach, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Attach.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *attachRepository) DeleteByLocation(attach model.Attach) (rowsAffected int64, e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.Update(&attach)
+}
+
+func (obj *attachRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	AttachRepository.Repo.Model = &model.Attach{}
+	return AttachRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *attachRepository) SaveInRedis(attach model.Attach) (e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.SaveInRedis(&attach)
+}
+
+func (obj *attachRepository) FindInRedis(attach model.Attach) (e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.FindInRedis(&attach)
+}
+
+func (obj *attachRepository) DeleteInRedis(attach model.Attach) (e error) {
+	AttachRepository.Repo.Model = &attach
+	return AttachRepository.Repo.DeleteInRedis(&attach)
+}
+
+func (obj *attachRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	AttachRepository.Repo.Model = &model.Attach{}
+	return AttachRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *attachRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	AttachRepository.Repo.Model = &model.Attach{}
+	return AttachRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *attachRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	AttachRepository.Repo.Model = &model.Attach{}
+	return AttachRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *attachRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	AttachRepository.Repo.Model = &model.Attach{}
+	return AttachRepository.Repo.GetDataListByWhereMap(where)
 }

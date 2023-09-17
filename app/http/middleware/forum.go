@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/response"
 	"go-bbs/app/respository"
 	"go-bbs/global"
+	"math"
 	"strconv"
 )
 
@@ -18,25 +20,20 @@ func AuthForum() gin.HandlerFunc {
 		} else {
 			gid = global.User.Gid
 		}
-		forumId, ok := ctx.GetQuery("forum")
-		if !ok {
-			response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
-			ctx.Abort()
-			return
-		}
+		forumId := ctx.DefaultQuery("fid", "0")
 		fid, _ := strconv.Atoi(forumId)
-		if fid <= 0 {
-			ctx.Next()
-			return
-		}
-		forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
-		err := respository.FindByLocation(forumAccess)
+		err := validation.Validate(fid,
+			validation.Min(0).Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		)
 		if err != nil {
 			response.FailWithMessage(err.Error(), ctx)
 			ctx.Abort()
 			return
 		}
-		if forumAccess.Allowread == 0 {
+		forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
+		respository.FindByLocation(forumAccess)
+		if forumAccess.Fid != 0 && forumAccess.Allowread == 0 {
 			response.FailWithMessage(exceptions.NotAuth.Error(), ctx)
 			ctx.Abort()
 			return

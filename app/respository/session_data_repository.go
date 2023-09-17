@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type SessionDataRepository struct {
-	mu          sync.Mutex
+type sessionDataRepository struct {
 	SessionData *model.SessionData
 	Pager       *Pager
-	IsLock      bool
+	Repo        Repository
 }
 
-// Insert 保存
-func (obj *SessionDataRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.SessionData)
-	if err != nil {
-		return
-	}
-	return
+var SessionDataRepository = newSessionDataRepository()
+
+func newSessionDataRepository() *sessionDataRepository {
+	return new(sessionDataRepository)
 }
 
-// Update 更新
-func (obj *SessionDataRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.SessionData)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sessionDataRepository) Insert(sessionData model.SessionData) (rowsAffected int64, e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.Insert(&sessionData)
 }
 
-// First 查询单条
-func (obj *SessionDataRepository) First() (err error) {
-	err = FindByLocation(obj.SessionData)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sessionDataRepository) Update(sessionData model.SessionData) (rowsAffected int64, e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.Update(&sessionData)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *SessionDataRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.SessionData)
-	return
+func (obj *sessionDataRepository) FindByLocation(sessionData model.SessionData) (e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.FindByLocation(&sessionData)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *SessionDataRepository) FindByWhere(query string, args []interface{}) (list []model.SessionData, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.SessionData.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *sessionDataRepository) DeleteByLocation(sessionData model.SessionData) (rowsAffected int64, e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.Update(&sessionData)
+}
+
+func (obj *sessionDataRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	SessionDataRepository.Repo.Model = &model.SessionData{}
+	return SessionDataRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *sessionDataRepository) SaveInRedis(sessionData model.SessionData) (e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.SaveInRedis(&sessionData)
+}
+
+func (obj *sessionDataRepository) FindInRedis(sessionData model.SessionData) (e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.FindInRedis(&sessionData)
+}
+
+func (obj *sessionDataRepository) DeleteInRedis(sessionData model.SessionData) (e error) {
+	SessionDataRepository.Repo.Model = &sessionData
+	return SessionDataRepository.Repo.DeleteInRedis(&sessionData)
+}
+
+func (obj *sessionDataRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	SessionDataRepository.Repo.Model = &model.SessionData{}
+	return SessionDataRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *sessionDataRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	SessionDataRepository.Repo.Model = &model.SessionData{}
+	return SessionDataRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *sessionDataRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	SessionDataRepository.Repo.Model = &model.SessionData{}
+	return SessionDataRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *sessionDataRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	SessionDataRepository.Repo.Model = &model.SessionData{}
+	return SessionDataRepository.Repo.GetDataListByWhereMap(where)
 }

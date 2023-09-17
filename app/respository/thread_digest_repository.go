@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type ThreadDigestRepository struct {
-	mu           sync.Mutex
+type threadDigestRepository struct {
 	ThreadDigest *model.ThreadDigest
 	Pager        *Pager
-	IsLock       bool
+	Repo         Repository
 }
 
-// Insert 保存
-func (obj *ThreadDigestRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.ThreadDigest)
-	if err != nil {
-		return
-	}
-	return
+var ThreadDigestRepository = newThreadDigestRepository()
+
+func newThreadDigestRepository() *threadDigestRepository {
+	return new(threadDigestRepository)
 }
 
-// Update 更新
-func (obj *ThreadDigestRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.ThreadDigest)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadDigestRepository) Insert(threadDigest model.ThreadDigest) (rowsAffected int64, e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.Insert(&threadDigest)
 }
 
-// First 查询单条
-func (obj *ThreadDigestRepository) First() (err error) {
-	err = FindByLocation(obj.ThreadDigest)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadDigestRepository) Update(threadDigest model.ThreadDigest) (rowsAffected int64, e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.Update(&threadDigest)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ThreadDigestRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.ThreadDigest)
-	return
+func (obj *threadDigestRepository) FindByLocation(threadDigest model.ThreadDigest) (e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.FindByLocation(&threadDigest)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ThreadDigestRepository) FindByWhere(query string, args []interface{}) (list []model.ThreadDigest, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.ThreadDigest.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *threadDigestRepository) DeleteByLocation(threadDigest model.ThreadDigest) (rowsAffected int64, e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.Update(&threadDigest)
+}
+
+func (obj *threadDigestRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ThreadDigestRepository.Repo.Model = &model.ThreadDigest{}
+	return ThreadDigestRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *threadDigestRepository) SaveInRedis(threadDigest model.ThreadDigest) (e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.SaveInRedis(&threadDigest)
+}
+
+func (obj *threadDigestRepository) FindInRedis(threadDigest model.ThreadDigest) (e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.FindInRedis(&threadDigest)
+}
+
+func (obj *threadDigestRepository) DeleteInRedis(threadDigest model.ThreadDigest) (e error) {
+	ThreadDigestRepository.Repo.Model = &threadDigest
+	return ThreadDigestRepository.Repo.DeleteInRedis(&threadDigest)
+}
+
+func (obj *threadDigestRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ThreadDigestRepository.Repo.Model = &model.ThreadDigest{}
+	return ThreadDigestRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *threadDigestRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ThreadDigestRepository.Repo.Model = &model.ThreadDigest{}
+	return ThreadDigestRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *threadDigestRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ThreadDigestRepository.Repo.Model = &model.ThreadDigest{}
+	return ThreadDigestRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *threadDigestRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ThreadDigestRepository.Repo.Model = &model.ThreadDigest{}
+	return ThreadDigestRepository.Repo.GetDataListByWhereMap(where)
 }

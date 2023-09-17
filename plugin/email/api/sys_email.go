@@ -19,7 +19,7 @@ type EmailApi struct{}
 // @Success   200  {string}  string  "{"success":true,"data":{},"msg":"发送成功"}"
 // @Router    /email/emailTest [post]
 func (s *EmailApi) EmailTest(c *gin.Context) {
-	err := service.ServiceGroupApp.EmailTest()
+	err := service.EmailService.EmailTest()
 	if err != nil {
 		global.LOG.Error("发送失败!", zap.Error(err))
 		response.FailWithMessage("发送失败", c)
@@ -43,7 +43,7 @@ func (s *EmailApi) SendEmail(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	err = service.ServiceGroupApp.SendEmail(email.To, email.Subject, email.Body)
+	err = service.EmailService.SendEmail(email.To, email.Subject, email.Body)
 	if err != nil {
 		global.LOG.Error("发送失败!", zap.Error(err))
 		response.FailWithMessage("发送失败", c)

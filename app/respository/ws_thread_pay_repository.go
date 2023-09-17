@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type WsThreadPayRepository struct {
-	mu          sync.Mutex
+type wsThreadPayRepository struct {
 	WsThreadPay *model.WsThreadPay
 	Pager       *Pager
-	IsLock      bool
+	Repo        Repository
 }
 
-// Insert 保存
-func (obj *WsThreadPayRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.WsThreadPay)
-	if err != nil {
-		return
-	}
-	return
+var WsThreadPayRepository = newWsThreadPayRepository()
+
+func newWsThreadPayRepository() *wsThreadPayRepository {
+	return new(wsThreadPayRepository)
 }
 
-// Update 更新
-func (obj *WsThreadPayRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.WsThreadPay)
-	if err != nil {
-		return
-	}
-	return
+func (obj *wsThreadPayRepository) Insert(wsThreadPay model.WsThreadPay) (rowsAffected int64, e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.Insert(&wsThreadPay)
 }
 
-// First 查询单条
-func (obj *WsThreadPayRepository) First() (err error) {
-	err = FindByLocation(obj.WsThreadPay)
-	if err != nil {
-		return
-	}
-	return
+func (obj *wsThreadPayRepository) Update(wsThreadPay model.WsThreadPay) (rowsAffected int64, e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.Update(&wsThreadPay)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *WsThreadPayRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.WsThreadPay)
-	return
+func (obj *wsThreadPayRepository) FindByLocation(wsThreadPay model.WsThreadPay) (e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.FindByLocation(&wsThreadPay)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *WsThreadPayRepository) FindByWhere(query string, args []interface{}) (list []model.WsThreadPay, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.WsThreadPay.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *wsThreadPayRepository) DeleteByLocation(wsThreadPay model.WsThreadPay) (rowsAffected int64, e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.Update(&wsThreadPay)
+}
+
+func (obj *wsThreadPayRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	WsThreadPayRepository.Repo.Model = &model.WsThreadPay{}
+	return WsThreadPayRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *wsThreadPayRepository) SaveInRedis(wsThreadPay model.WsThreadPay) (e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.SaveInRedis(&wsThreadPay)
+}
+
+func (obj *wsThreadPayRepository) FindInRedis(wsThreadPay model.WsThreadPay) (e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.FindInRedis(&wsThreadPay)
+}
+
+func (obj *wsThreadPayRepository) DeleteInRedis(wsThreadPay model.WsThreadPay) (e error) {
+	WsThreadPayRepository.Repo.Model = &wsThreadPay
+	return WsThreadPayRepository.Repo.DeleteInRedis(&wsThreadPay)
+}
+
+func (obj *wsThreadPayRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	WsThreadPayRepository.Repo.Model = &model.WsThreadPay{}
+	return WsThreadPayRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *wsThreadPayRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	WsThreadPayRepository.Repo.Model = &model.WsThreadPay{}
+	return WsThreadPayRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *wsThreadPayRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	WsThreadPayRepository.Repo.Model = &model.WsThreadPay{}
+	return WsThreadPayRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *wsThreadPayRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	WsThreadPayRepository.Repo.Model = &model.WsThreadPay{}
+	return WsThreadPayRepository.Repo.GetDataListByWhereMap(where)
 }

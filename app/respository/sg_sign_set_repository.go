@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type SgSignSetRepository struct {
-	mu        sync.Mutex
+type sgSignSetRepository struct {
 	SgSignSet *model.SgSignSet
 	Pager     *Pager
-	IsLock    bool
+	Repo      Repository
 }
 
-// Insert 保存
-func (obj *SgSignSetRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.SgSignSet)
-	if err != nil {
-		return
-	}
-	return
+var SgSignSetRepository = newSgSignSetRepository()
+
+func newSgSignSetRepository() *sgSignSetRepository {
+	return new(sgSignSetRepository)
 }
 
-// Update 更新
-func (obj *SgSignSetRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.SgSignSet)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sgSignSetRepository) Insert(sgSignSet model.SgSignSet) (rowsAffected int64, e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.Insert(&sgSignSet)
 }
 
-// First 查询单条
-func (obj *SgSignSetRepository) First() (err error) {
-	err = FindByLocation(obj.SgSignSet)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sgSignSetRepository) Update(sgSignSet model.SgSignSet) (rowsAffected int64, e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.Update(&sgSignSet)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *SgSignSetRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.SgSignSet)
-	return
+func (obj *sgSignSetRepository) FindByLocation(sgSignSet model.SgSignSet) (e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.FindByLocation(&sgSignSet)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *SgSignSetRepository) FindByWhere(query string, args []interface{}) (list []model.SgSignSet, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.SgSignSet.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *sgSignSetRepository) DeleteByLocation(sgSignSet model.SgSignSet) (rowsAffected int64, e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.Update(&sgSignSet)
+}
+
+func (obj *sgSignSetRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	SgSignSetRepository.Repo.Model = &model.SgSignSet{}
+	return SgSignSetRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *sgSignSetRepository) SaveInRedis(sgSignSet model.SgSignSet) (e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.SaveInRedis(&sgSignSet)
+}
+
+func (obj *sgSignSetRepository) FindInRedis(sgSignSet model.SgSignSet) (e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.FindInRedis(&sgSignSet)
+}
+
+func (obj *sgSignSetRepository) DeleteInRedis(sgSignSet model.SgSignSet) (e error) {
+	SgSignSetRepository.Repo.Model = &sgSignSet
+	return SgSignSetRepository.Repo.DeleteInRedis(&sgSignSet)
+}
+
+func (obj *sgSignSetRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	SgSignSetRepository.Repo.Model = &model.SgSignSet{}
+	return SgSignSetRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *sgSignSetRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	SgSignSetRepository.Repo.Model = &model.SgSignSet{}
+	return SgSignSetRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *sgSignSetRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	SgSignSetRepository.Repo.Model = &model.SgSignSet{}
+	return SgSignSetRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *sgSignSetRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	SgSignSetRepository.Repo.Model = &model.SgSignSet{}
+	return SgSignSetRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type SlideRepository struct {
-	mu     sync.Mutex
-	Slide  *model.Slide
-	Pager  *Pager
-	IsLock bool
+type slideRepository struct {
+	Slide *model.Slide
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *SlideRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Slide)
-	if err != nil {
-		return
-	}
-	return
+var SlideRepository = newSlideRepository()
+
+func newSlideRepository() *slideRepository {
+	return new(slideRepository)
 }
 
-// Update 更新
-func (obj *SlideRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Slide)
-	if err != nil {
-		return
-	}
-	return
+func (obj *slideRepository) Insert(slide model.Slide) (rowsAffected int64, e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.Insert(&slide)
 }
 
-// First 查询单条
-func (obj *SlideRepository) First() (err error) {
-	err = FindByLocation(obj.Slide)
-	if err != nil {
-		return
-	}
-	return
+func (obj *slideRepository) Update(slide model.Slide) (rowsAffected int64, e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.Update(&slide)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *SlideRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Slide)
-	return
+func (obj *slideRepository) FindByLocation(slide model.Slide) (e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.FindByLocation(&slide)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *SlideRepository) FindByWhere(query string, args []interface{}) (list []model.Slide, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Slide.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *slideRepository) DeleteByLocation(slide model.Slide) (rowsAffected int64, e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.Update(&slide)
+}
+
+func (obj *slideRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	SlideRepository.Repo.Model = &model.Slide{}
+	return SlideRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *slideRepository) SaveInRedis(slide model.Slide) (e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.SaveInRedis(&slide)
+}
+
+func (obj *slideRepository) FindInRedis(slide model.Slide) (e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.FindInRedis(&slide)
+}
+
+func (obj *slideRepository) DeleteInRedis(slide model.Slide) (e error) {
+	SlideRepository.Repo.Model = &slide
+	return SlideRepository.Repo.DeleteInRedis(&slide)
+}
+
+func (obj *slideRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	SlideRepository.Repo.Model = &model.Slide{}
+	return SlideRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *slideRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	SlideRepository.Repo.Model = &model.Slide{}
+	return SlideRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *slideRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	SlideRepository.Repo.Model = &model.Slide{}
+	return SlideRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *slideRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	SlideRepository.Repo.Model = &model.Slide{}
+	return SlideRepository.Repo.GetDataListByWhereMap(where)
 }

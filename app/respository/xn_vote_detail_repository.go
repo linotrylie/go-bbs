@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type XnVoteDetailRepository struct {
-	mu           sync.Mutex
+type xnVoteDetailRepository struct {
 	XnVoteDetail *model.XnVoteDetail
 	Pager        *Pager
-	IsLock       bool
+	Repo         Repository
 }
 
-// Insert 保存
-func (obj *XnVoteDetailRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.XnVoteDetail)
-	if err != nil {
-		return
-	}
-	return
+var XnVoteDetailRepository = newXnVoteDetailRepository()
+
+func newXnVoteDetailRepository() *xnVoteDetailRepository {
+	return new(xnVoteDetailRepository)
 }
 
-// Update 更新
-func (obj *XnVoteDetailRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.XnVoteDetail)
-	if err != nil {
-		return
-	}
-	return
+func (obj *xnVoteDetailRepository) Insert(xnVoteDetail model.XnVoteDetail) (rowsAffected int64, e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.Insert(&xnVoteDetail)
 }
 
-// First 查询单条
-func (obj *XnVoteDetailRepository) First() (err error) {
-	err = FindByLocation(obj.XnVoteDetail)
-	if err != nil {
-		return
-	}
-	return
+func (obj *xnVoteDetailRepository) Update(xnVoteDetail model.XnVoteDetail) (rowsAffected int64, e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.Update(&xnVoteDetail)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *XnVoteDetailRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.XnVoteDetail)
-	return
+func (obj *xnVoteDetailRepository) FindByLocation(xnVoteDetail model.XnVoteDetail) (e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.FindByLocation(&xnVoteDetail)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *XnVoteDetailRepository) FindByWhere(query string, args []interface{}) (list []model.XnVoteDetail, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.XnVoteDetail.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *xnVoteDetailRepository) DeleteByLocation(xnVoteDetail model.XnVoteDetail) (rowsAffected int64, e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.Update(&xnVoteDetail)
+}
+
+func (obj *xnVoteDetailRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	XnVoteDetailRepository.Repo.Model = &model.XnVoteDetail{}
+	return XnVoteDetailRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *xnVoteDetailRepository) SaveInRedis(xnVoteDetail model.XnVoteDetail) (e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.SaveInRedis(&xnVoteDetail)
+}
+
+func (obj *xnVoteDetailRepository) FindInRedis(xnVoteDetail model.XnVoteDetail) (e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.FindInRedis(&xnVoteDetail)
+}
+
+func (obj *xnVoteDetailRepository) DeleteInRedis(xnVoteDetail model.XnVoteDetail) (e error) {
+	XnVoteDetailRepository.Repo.Model = &xnVoteDetail
+	return XnVoteDetailRepository.Repo.DeleteInRedis(&xnVoteDetail)
+}
+
+func (obj *xnVoteDetailRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	XnVoteDetailRepository.Repo.Model = &model.XnVoteDetail{}
+	return XnVoteDetailRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *xnVoteDetailRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	XnVoteDetailRepository.Repo.Model = &model.XnVoteDetail{}
+	return XnVoteDetailRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *xnVoteDetailRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	XnVoteDetailRepository.Repo.Model = &model.XnVoteDetail{}
+	return XnVoteDetailRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *xnVoteDetailRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	XnVoteDetailRepository.Repo.Model = &model.XnVoteDetail{}
+	return XnVoteDetailRepository.Repo.GetDataListByWhereMap(where)
 }

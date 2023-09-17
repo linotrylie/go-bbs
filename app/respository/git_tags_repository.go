@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type GitTagsRepository struct {
-	mu      sync.Mutex
+type gitTagsRepository struct {
 	GitTags *model.GitTags
 	Pager   *Pager
-	IsLock  bool
+	Repo    Repository
 }
 
-// Insert 保存
-func (obj *GitTagsRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.GitTags)
-	if err != nil {
-		return
-	}
-	return
+var GitTagsRepository = newGitTagsRepository()
+
+func newGitTagsRepository() *gitTagsRepository {
+	return new(gitTagsRepository)
 }
 
-// Update 更新
-func (obj *GitTagsRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.GitTags)
-	if err != nil {
-		return
-	}
-	return
+func (obj *gitTagsRepository) Insert(gitTags model.GitTags) (rowsAffected int64, e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.Insert(&gitTags)
 }
 
-// First 查询单条
-func (obj *GitTagsRepository) First() (err error) {
-	err = FindByLocation(obj.GitTags)
-	if err != nil {
-		return
-	}
-	return
+func (obj *gitTagsRepository) Update(gitTags model.GitTags) (rowsAffected int64, e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.Update(&gitTags)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *GitTagsRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.GitTags)
-	return
+func (obj *gitTagsRepository) FindByLocation(gitTags model.GitTags) (e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.FindByLocation(&gitTags)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *GitTagsRepository) FindByWhere(query string, args []interface{}) (list []model.GitTags, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.GitTags.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *gitTagsRepository) DeleteByLocation(gitTags model.GitTags) (rowsAffected int64, e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.Update(&gitTags)
+}
+
+func (obj *gitTagsRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	GitTagsRepository.Repo.Model = &model.GitTags{}
+	return GitTagsRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *gitTagsRepository) SaveInRedis(gitTags model.GitTags) (e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.SaveInRedis(&gitTags)
+}
+
+func (obj *gitTagsRepository) FindInRedis(gitTags model.GitTags) (e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.FindInRedis(&gitTags)
+}
+
+func (obj *gitTagsRepository) DeleteInRedis(gitTags model.GitTags) (e error) {
+	GitTagsRepository.Repo.Model = &gitTags
+	return GitTagsRepository.Repo.DeleteInRedis(&gitTags)
+}
+
+func (obj *gitTagsRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	GitTagsRepository.Repo.Model = &model.GitTags{}
+	return GitTagsRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *gitTagsRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	GitTagsRepository.Repo.Model = &model.GitTags{}
+	return GitTagsRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *gitTagsRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	GitTagsRepository.Repo.Model = &model.GitTags{}
+	return GitTagsRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *gitTagsRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	GitTagsRepository.Repo.Model = &model.GitTags{}
+	return GitTagsRepository.Repo.GetDataListByWhereMap(where)
 }

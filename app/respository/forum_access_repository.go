@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type ForumAccessRepository struct {
-	mu          sync.Mutex
+type forumAccessRepository struct {
 	ForumAccess *model.ForumAccess
 	Pager       *Pager
-	IsLock      bool
+	Repo        Repository
 }
 
-// Insert 保存
-func (obj *ForumAccessRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.ForumAccess)
-	if err != nil {
-		return
-	}
-	return
+var ForumAccessRepository = newForumAccessRepository()
+
+func newForumAccessRepository() *forumAccessRepository {
+	return new(forumAccessRepository)
 }
 
-// Update 更新
-func (obj *ForumAccessRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.ForumAccess)
-	if err != nil {
-		return
-	}
-	return
+func (obj *forumAccessRepository) Insert(forumAccess model.ForumAccess) (rowsAffected int64, e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.Insert(&forumAccess)
 }
 
-// First 查询单条
-func (obj *ForumAccessRepository) First() (err error) {
-	err = FindByLocation(obj.ForumAccess)
-	if err != nil {
-		return
-	}
-	return
+func (obj *forumAccessRepository) Update(forumAccess model.ForumAccess) (rowsAffected int64, e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.Update(&forumAccess)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ForumAccessRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.ForumAccess)
-	return
+func (obj *forumAccessRepository) FindByLocation(forumAccess model.ForumAccess) (e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.FindByLocation(&forumAccess)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ForumAccessRepository) FindByWhere(query string, args []interface{}) (list []model.ForumAccess, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.ForumAccess.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *forumAccessRepository) DeleteByLocation(forumAccess model.ForumAccess) (rowsAffected int64, e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.Update(&forumAccess)
+}
+
+func (obj *forumAccessRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ForumAccessRepository.Repo.Model = &model.ForumAccess{}
+	return ForumAccessRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *forumAccessRepository) SaveInRedis(forumAccess model.ForumAccess) (e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.SaveInRedis(&forumAccess)
+}
+
+func (obj *forumAccessRepository) FindInRedis(forumAccess model.ForumAccess) (e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.FindInRedis(&forumAccess)
+}
+
+func (obj *forumAccessRepository) DeleteInRedis(forumAccess model.ForumAccess) (e error) {
+	ForumAccessRepository.Repo.Model = &forumAccess
+	return ForumAccessRepository.Repo.DeleteInRedis(&forumAccess)
+}
+
+func (obj *forumAccessRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ForumAccessRepository.Repo.Model = &model.ForumAccess{}
+	return ForumAccessRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *forumAccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ForumAccessRepository.Repo.Model = &model.ForumAccess{}
+	return ForumAccessRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *forumAccessRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ForumAccessRepository.Repo.Model = &model.ForumAccess{}
+	return ForumAccessRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *forumAccessRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ForumAccessRepository.Repo.Model = &model.ForumAccess{}
+	return ForumAccessRepository.Repo.GetDataListByWhereMap(where)
 }

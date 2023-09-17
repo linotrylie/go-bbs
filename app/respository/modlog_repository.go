@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type ModlogRepository struct {
-	mu     sync.Mutex
+type modlogRepository struct {
 	Modlog *model.Modlog
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *ModlogRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Modlog)
-	if err != nil {
-		return
-	}
-	return
+var ModlogRepository = newModlogRepository()
+
+func newModlogRepository() *modlogRepository {
+	return new(modlogRepository)
 }
 
-// Update 更新
-func (obj *ModlogRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Modlog)
-	if err != nil {
-		return
-	}
-	return
+func (obj *modlogRepository) Insert(modlog model.Modlog) (rowsAffected int64, e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.Insert(&modlog)
 }
 
-// First 查询单条
-func (obj *ModlogRepository) First() (err error) {
-	err = FindByLocation(obj.Modlog)
-	if err != nil {
-		return
-	}
-	return
+func (obj *modlogRepository) Update(modlog model.Modlog) (rowsAffected int64, e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.Update(&modlog)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ModlogRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Modlog)
-	return
+func (obj *modlogRepository) FindByLocation(modlog model.Modlog) (e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.FindByLocation(&modlog)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ModlogRepository) FindByWhere(query string, args []interface{}) (list []model.Modlog, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Modlog.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *modlogRepository) DeleteByLocation(modlog model.Modlog) (rowsAffected int64, e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.Update(&modlog)
+}
+
+func (obj *modlogRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ModlogRepository.Repo.Model = &model.Modlog{}
+	return ModlogRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *modlogRepository) SaveInRedis(modlog model.Modlog) (e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.SaveInRedis(&modlog)
+}
+
+func (obj *modlogRepository) FindInRedis(modlog model.Modlog) (e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.FindInRedis(&modlog)
+}
+
+func (obj *modlogRepository) DeleteInRedis(modlog model.Modlog) (e error) {
+	ModlogRepository.Repo.Model = &modlog
+	return ModlogRepository.Repo.DeleteInRedis(&modlog)
+}
+
+func (obj *modlogRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ModlogRepository.Repo.Model = &model.Modlog{}
+	return ModlogRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *modlogRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ModlogRepository.Repo.Model = &model.Modlog{}
+	return ModlogRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *modlogRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ModlogRepository.Repo.Model = &model.Modlog{}
+	return ModlogRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *modlogRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ModlogRepository.Repo.Model = &model.Modlog{}
+	return ModlogRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type CacheRepository struct {
-	mu     sync.Mutex
-	Cache  *model.Cache
-	Pager  *Pager
-	IsLock bool
+type cacheRepository struct {
+	Cache *model.Cache
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *CacheRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Cache)
-	if err != nil {
-		return
-	}
-	return
+var CacheRepository = newCacheRepository()
+
+func newCacheRepository() *cacheRepository {
+	return new(cacheRepository)
 }
 
-// Update 更新
-func (obj *CacheRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Cache)
-	if err != nil {
-		return
-	}
-	return
+func (obj *cacheRepository) Insert(cache model.Cache) (rowsAffected int64, e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.Insert(&cache)
 }
 
-// First 查询单条
-func (obj *CacheRepository) First() (err error) {
-	err = FindByLocation(obj.Cache)
-	if err != nil {
-		return
-	}
-	return
+func (obj *cacheRepository) Update(cache model.Cache) (rowsAffected int64, e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.Update(&cache)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *CacheRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Cache)
-	return
+func (obj *cacheRepository) FindByLocation(cache model.Cache) (e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.FindByLocation(&cache)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *CacheRepository) FindByWhere(query string, args []interface{}) (list []model.Cache, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Cache.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *cacheRepository) DeleteByLocation(cache model.Cache) (rowsAffected int64, e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.Update(&cache)
+}
+
+func (obj *cacheRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	CacheRepository.Repo.Model = &model.Cache{}
+	return CacheRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *cacheRepository) SaveInRedis(cache model.Cache) (e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.SaveInRedis(&cache)
+}
+
+func (obj *cacheRepository) FindInRedis(cache model.Cache) (e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.FindInRedis(&cache)
+}
+
+func (obj *cacheRepository) DeleteInRedis(cache model.Cache) (e error) {
+	CacheRepository.Repo.Model = &cache
+	return CacheRepository.Repo.DeleteInRedis(&cache)
+}
+
+func (obj *cacheRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	CacheRepository.Repo.Model = &model.Cache{}
+	return CacheRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *cacheRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	CacheRepository.Repo.Model = &model.Cache{}
+	return CacheRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *cacheRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	CacheRepository.Repo.Model = &model.Cache{}
+	return CacheRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *cacheRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	CacheRepository.Repo.Model = &model.Cache{}
+	return CacheRepository.Repo.GetDataListByWhereMap(where)
 }

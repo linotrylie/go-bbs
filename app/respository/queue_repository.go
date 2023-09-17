@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type QueueRepository struct {
-	mu     sync.Mutex
-	Queue  *model.Queue
-	Pager  *Pager
-	IsLock bool
+type queueRepository struct {
+	Queue *model.Queue
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *QueueRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Queue)
-	if err != nil {
-		return
-	}
-	return
+var QueueRepository = newQueueRepository()
+
+func newQueueRepository() *queueRepository {
+	return new(queueRepository)
 }
 
-// Update 更新
-func (obj *QueueRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Queue)
-	if err != nil {
-		return
-	}
-	return
+func (obj *queueRepository) Insert(queue model.Queue) (rowsAffected int64, e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.Insert(&queue)
 }
 
-// First 查询单条
-func (obj *QueueRepository) First() (err error) {
-	err = FindByLocation(obj.Queue)
-	if err != nil {
-		return
-	}
-	return
+func (obj *queueRepository) Update(queue model.Queue) (rowsAffected int64, e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.Update(&queue)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *QueueRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Queue)
-	return
+func (obj *queueRepository) FindByLocation(queue model.Queue) (e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.FindByLocation(&queue)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *QueueRepository) FindByWhere(query string, args []interface{}) (list []model.Queue, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Queue.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *queueRepository) DeleteByLocation(queue model.Queue) (rowsAffected int64, e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.Update(&queue)
+}
+
+func (obj *queueRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	QueueRepository.Repo.Model = &model.Queue{}
+	return QueueRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *queueRepository) SaveInRedis(queue model.Queue) (e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.SaveInRedis(&queue)
+}
+
+func (obj *queueRepository) FindInRedis(queue model.Queue) (e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.FindInRedis(&queue)
+}
+
+func (obj *queueRepository) DeleteInRedis(queue model.Queue) (e error) {
+	QueueRepository.Repo.Model = &queue
+	return QueueRepository.Repo.DeleteInRedis(&queue)
+}
+
+func (obj *queueRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	QueueRepository.Repo.Model = &model.Queue{}
+	return QueueRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *queueRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	QueueRepository.Repo.Model = &model.Queue{}
+	return QueueRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *queueRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	QueueRepository.Repo.Model = &model.Queue{}
+	return QueueRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *queueRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	QueueRepository.Repo.Model = &model.Queue{}
+	return QueueRepository.Repo.GetDataListByWhereMap(where)
 }

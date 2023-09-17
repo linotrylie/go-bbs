@@ -9,8 +9,14 @@ import (
 	"time"
 )
 
-type JwtService struct {
+type jwtService struct {
 	SigningKey []byte
+}
+
+var JwtService = newJwtService()
+
+func newJwtService() *jwtService {
+	return new(jwtService)
 }
 
 type JwtCustomClaims struct {
@@ -23,7 +29,7 @@ type JwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (serv *JwtService) CreateClaims(user *model.User) JwtCustomClaims {
+func (serv *jwtService) CreateClaims(user *model.User) JwtCustomClaims {
 	bf, _ := utils.ParseDuration(global.CONFIG.JWT.BufferTime)
 	ep, _ := utils.ParseDuration(global.CONFIG.JWT.ExpiresTime)
 	jwtCustomClaims := JwtCustomClaims{
@@ -44,7 +50,7 @@ func (serv *JwtService) CreateClaims(user *model.User) JwtCustomClaims {
 	return jwtCustomClaims
 }
 
-func (serv *JwtService) CreateToken(claims JwtCustomClaims) (token string, err error) {
+func (serv *jwtService) CreateToken(claims JwtCustomClaims) (token string, err error) {
 	if serv.SigningKey == nil {
 		return "", nil
 	}
@@ -52,7 +58,7 @@ func (serv *JwtService) CreateToken(claims JwtCustomClaims) (token string, err e
 	return
 }
 
-func (serv *JwtService) CreateTokenByOldToken(oldToken string, claims JwtCustomClaims) (string, error) {
+func (serv *jwtService) CreateTokenByOldToken(oldToken string, claims JwtCustomClaims) (string, error) {
 	v, err, _ := global.Sf.Do("JWT:"+oldToken, func() (interface{}, error) {
 		return serv.CreateToken(claims)
 	})
@@ -60,7 +66,7 @@ func (serv *JwtService) CreateTokenByOldToken(oldToken string, claims JwtCustomC
 }
 
 // ParseToken 解析 token
-func (serv *JwtService) ParseToken(tokenString string) (*JwtCustomClaims, error) {
+func (serv *jwtService) ParseToken(tokenString string) (*JwtCustomClaims, error) {
 	jwtCustomClaims := &JwtCustomClaims{}
 	serv.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
 	token, err := jwt.ParseWithClaims(tokenString, jwtCustomClaims, func(token *jwt.Token) (i interface{}, e error) {
@@ -73,7 +79,7 @@ func (serv *JwtService) ParseToken(tokenString string) (*JwtCustomClaims, error)
 }
 
 // IsTokenValid 判断token是否有效
-func (serv *JwtService) IsTokenValid(tokenStr string) bool {
+func (serv *jwtService) IsTokenValid(tokenStr string) bool {
 	_, err := serv.ParseToken(tokenStr)
 	if err != nil {
 		return false

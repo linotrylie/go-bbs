@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type GroupRepository struct {
-	mu     sync.Mutex
-	Group  *model.Group
-	Pager  *Pager
-	IsLock bool
+type groupRepository struct {
+	Group *model.Group
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *GroupRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Group)
-	if err != nil {
-		return
-	}
-	return
+var GroupRepository = newGroupRepository()
+
+func newGroupRepository() *groupRepository {
+	return new(groupRepository)
 }
 
-// Update 更新
-func (obj *GroupRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Group)
-	if err != nil {
-		return
-	}
-	return
+func (obj *groupRepository) Insert(group model.Group) (rowsAffected int64, e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.Insert(&group)
 }
 
-// First 查询单条
-func (obj *GroupRepository) First() (err error) {
-	err = FindByLocation(obj.Group)
-	if err != nil {
-		return
-	}
-	return
+func (obj *groupRepository) Update(group model.Group) (rowsAffected int64, e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.Update(&group)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *GroupRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Group)
-	return
+func (obj *groupRepository) FindByLocation(group model.Group) (e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.FindByLocation(&group)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *GroupRepository) FindByWhere(query string, args []interface{}) (list []model.Group, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Group.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *groupRepository) DeleteByLocation(group model.Group) (rowsAffected int64, e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.Update(&group)
+}
+
+func (obj *groupRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	GroupRepository.Repo.Model = &model.Group{}
+	return GroupRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *groupRepository) SaveInRedis(group model.Group) (e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.SaveInRedis(&group)
+}
+
+func (obj *groupRepository) FindInRedis(group model.Group) (e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.FindInRedis(&group)
+}
+
+func (obj *groupRepository) DeleteInRedis(group model.Group) (e error) {
+	GroupRepository.Repo.Model = &group
+	return GroupRepository.Repo.DeleteInRedis(&group)
+}
+
+func (obj *groupRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	GroupRepository.Repo.Model = &model.Group{}
+	return GroupRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *groupRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	GroupRepository.Repo.Model = &model.Group{}
+	return GroupRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *groupRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	GroupRepository.Repo.Model = &model.Group{}
+	return GroupRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *groupRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	GroupRepository.Repo.Model = &model.Group{}
+	return GroupRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -49,7 +49,7 @@ func (*Thread) TableName() string {
 
 // Location .
 func (obj *Thread) Location() map[string]interface{} {
-	return map[string]interface{}{"tid": obj.Tid}
+	return map[string]interface{}{"tid": obj.Tid, "fid": obj.Fid}
 }
 
 // Redis Key .

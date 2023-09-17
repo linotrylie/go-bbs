@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type TagCateRepository struct {
-	mu      sync.Mutex
+type tagCateRepository struct {
 	TagCate *model.TagCate
 	Pager   *Pager
-	IsLock  bool
+	Repo    Repository
 }
 
-// Insert 保存
-func (obj *TagCateRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.TagCate)
-	if err != nil {
-		return
-	}
-	return
+var TagCateRepository = newTagCateRepository()
+
+func newTagCateRepository() *tagCateRepository {
+	return new(tagCateRepository)
 }
 
-// Update 更新
-func (obj *TagCateRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.TagCate)
-	if err != nil {
-		return
-	}
-	return
+func (obj *tagCateRepository) Insert(tagCate model.TagCate) (rowsAffected int64, e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.Insert(&tagCate)
 }
 
-// First 查询单条
-func (obj *TagCateRepository) First() (err error) {
-	err = FindByLocation(obj.TagCate)
-	if err != nil {
-		return
-	}
-	return
+func (obj *tagCateRepository) Update(tagCate model.TagCate) (rowsAffected int64, e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.Update(&tagCate)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *TagCateRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.TagCate)
-	return
+func (obj *tagCateRepository) FindByLocation(tagCate model.TagCate) (e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.FindByLocation(&tagCate)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *TagCateRepository) FindByWhere(query string, args []interface{}) (list []model.TagCate, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.TagCate.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *tagCateRepository) DeleteByLocation(tagCate model.TagCate) (rowsAffected int64, e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.Update(&tagCate)
+}
+
+func (obj *tagCateRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	TagCateRepository.Repo.Model = &model.TagCate{}
+	return TagCateRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *tagCateRepository) SaveInRedis(tagCate model.TagCate) (e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.SaveInRedis(&tagCate)
+}
+
+func (obj *tagCateRepository) FindInRedis(tagCate model.TagCate) (e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.FindInRedis(&tagCate)
+}
+
+func (obj *tagCateRepository) DeleteInRedis(tagCate model.TagCate) (e error) {
+	TagCateRepository.Repo.Model = &tagCate
+	return TagCateRepository.Repo.DeleteInRedis(&tagCate)
+}
+
+func (obj *tagCateRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	TagCateRepository.Repo.Model = &model.TagCate{}
+	return TagCateRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *tagCateRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	TagCateRepository.Repo.Model = &model.TagCate{}
+	return TagCateRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *tagCateRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	TagCateRepository.Repo.Model = &model.TagCate{}
+	return TagCateRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *tagCateRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	TagCateRepository.Repo.Model = &model.TagCate{}
+	return TagCateRepository.Repo.GetDataListByWhereMap(where)
 }

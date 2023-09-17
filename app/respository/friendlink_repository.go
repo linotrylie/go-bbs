@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type FriendlinkRepository struct {
-	mu         sync.Mutex
+type friendlinkRepository struct {
 	Friendlink *model.Friendlink
 	Pager      *Pager
-	IsLock     bool
+	Repo       Repository
 }
 
-// Insert 保存
-func (obj *FriendlinkRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Friendlink)
-	if err != nil {
-		return
-	}
-	return
+var FriendlinkRepository = newFriendlinkRepository()
+
+func newFriendlinkRepository() *friendlinkRepository {
+	return new(friendlinkRepository)
 }
 
-// Update 更新
-func (obj *FriendlinkRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Friendlink)
-	if err != nil {
-		return
-	}
-	return
+func (obj *friendlinkRepository) Insert(friendlink model.Friendlink) (rowsAffected int64, e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.Insert(&friendlink)
 }
 
-// First 查询单条
-func (obj *FriendlinkRepository) First() (err error) {
-	err = FindByLocation(obj.Friendlink)
-	if err != nil {
-		return
-	}
-	return
+func (obj *friendlinkRepository) Update(friendlink model.Friendlink) (rowsAffected int64, e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.Update(&friendlink)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *FriendlinkRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Friendlink)
-	return
+func (obj *friendlinkRepository) FindByLocation(friendlink model.Friendlink) (e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.FindByLocation(&friendlink)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *FriendlinkRepository) FindByWhere(query string, args []interface{}) (list []model.Friendlink, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Friendlink.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *friendlinkRepository) DeleteByLocation(friendlink model.Friendlink) (rowsAffected int64, e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.Update(&friendlink)
+}
+
+func (obj *friendlinkRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	FriendlinkRepository.Repo.Model = &model.Friendlink{}
+	return FriendlinkRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *friendlinkRepository) SaveInRedis(friendlink model.Friendlink) (e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.SaveInRedis(&friendlink)
+}
+
+func (obj *friendlinkRepository) FindInRedis(friendlink model.Friendlink) (e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.FindInRedis(&friendlink)
+}
+
+func (obj *friendlinkRepository) DeleteInRedis(friendlink model.Friendlink) (e error) {
+	FriendlinkRepository.Repo.Model = &friendlink
+	return FriendlinkRepository.Repo.DeleteInRedis(&friendlink)
+}
+
+func (obj *friendlinkRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	FriendlinkRepository.Repo.Model = &model.Friendlink{}
+	return FriendlinkRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *friendlinkRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	FriendlinkRepository.Repo.Model = &model.Friendlink{}
+	return FriendlinkRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *friendlinkRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	FriendlinkRepository.Repo.Model = &model.Friendlink{}
+	return FriendlinkRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *friendlinkRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	FriendlinkRepository.Repo.Model = &model.Friendlink{}
+	return FriendlinkRepository.Repo.GetDataListByWhereMap(where)
 }

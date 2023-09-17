@@ -1,120 +1,78 @@
 package respository
 
 import (
-	"encoding/json"
-	"fmt"
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
-	"time"
 )
 
-type ThreadRepository struct {
-	mu     sync.Mutex
+type threadRepository struct {
 	Thread *model.Thread
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *ThreadRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Thread)
-	if err != nil {
-		return
-	}
-	return
+var ThreadRepository = newThreadRepository()
+
+func newThreadRepository() *threadRepository {
+	return new(threadRepository)
 }
 
-// Update 更新
-func (obj *ThreadRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Thread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadRepository) Insert(thread model.Thread) (rowsAffected int64, e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.Insert(&thread)
 }
 
-// First 查询单条
-func (obj *ThreadRepository) First() (err error) {
-	err = FindByLocation(obj.Thread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadRepository) Update(thread model.Thread) (rowsAffected int64, e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.Update(&thread)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ThreadRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Thread)
-	return
+func (obj *threadRepository) FindByLocation(thread model.Thread) (e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.FindByLocation(&thread)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ThreadRepository) FindByWhere(query string, args []interface{}) (list []model.Thread, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Thread.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *threadRepository) DeleteByLocation(thread model.Thread) (rowsAffected int64, e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.Update(&thread)
 }
 
-func (obj *ThreadRepository) ThreadList(fid int) (threadList []*model.Thread, e error) {
-	now := time.Now()
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(obj.Thread.TableName(), "ThreadList", e, now)
-		}
-	}()
+func (obj *threadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ThreadRepository.Repo.Model = &model.Thread{}
+	return ThreadRepository.Repo.TransactionExecute(fun, opts...)
+}
 
-	redisKey := fmt.Sprintf("thread_list_%d_%d", obj.Pager.Page, obj.Pager.PageSize)
-	key, _ := FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &threadList)
-		if e != nil {
-			return nil, e
-		}
-		return
-	}
-	db := global.DB.Model(obj.Thread)
-	if fid <= 0 {
-		db.Where("fid > ?", 0).Preload("User")
-	} else {
-		db.Where("fid = ?", fid).Preload("User")
-	}
-	e = obj.Pager.Execute(db, &threadList)
-	if e != nil {
-		return nil, e
-	}
-	if len(threadList) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	marshal, e := json.Marshal(threadList)
-	if e != nil {
-		return nil, e
-	}
-	SaveInRedisByKey(redisKey, string(marshal))
-	return
+func (obj *threadRepository) SaveInRedis(thread model.Thread) (e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.SaveInRedis(&thread)
+}
+
+func (obj *threadRepository) FindInRedis(thread model.Thread) (e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.FindInRedis(&thread)
+}
+
+func (obj *threadRepository) DeleteInRedis(thread model.Thread) (e error) {
+	ThreadRepository.Repo.Model = &thread
+	return ThreadRepository.Repo.DeleteInRedis(&thread)
+}
+
+func (obj *threadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ThreadRepository.Repo.Model = &model.Thread{}
+	return ThreadRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *threadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ThreadRepository.Repo.Model = &model.Thread{}
+	return ThreadRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *threadRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ThreadRepository.Repo.Model = &model.Thread{}
+	return ThreadRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *threadRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ThreadRepository.Repo.Model = &model.Thread{}
+	return ThreadRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type SessionRepository struct {
-	mu      sync.Mutex
+type sessionRepository struct {
 	Session *model.Session
 	Pager   *Pager
-	IsLock  bool
+	Repo    Repository
 }
 
-// Insert 保存
-func (obj *SessionRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Session)
-	if err != nil {
-		return
-	}
-	return
+var SessionRepository = newSessionRepository()
+
+func newSessionRepository() *sessionRepository {
+	return new(sessionRepository)
 }
 
-// Update 更新
-func (obj *SessionRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Session)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sessionRepository) Insert(session model.Session) (rowsAffected int64, e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.Insert(&session)
 }
 
-// First 查询单条
-func (obj *SessionRepository) First() (err error) {
-	err = FindByLocation(obj.Session)
-	if err != nil {
-		return
-	}
-	return
+func (obj *sessionRepository) Update(session model.Session) (rowsAffected int64, e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.Update(&session)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *SessionRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Session)
-	return
+func (obj *sessionRepository) FindByLocation(session model.Session) (e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.FindByLocation(&session)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *SessionRepository) FindByWhere(query string, args []interface{}) (list []model.Session, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Session.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *sessionRepository) DeleteByLocation(session model.Session) (rowsAffected int64, e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.Update(&session)
+}
+
+func (obj *sessionRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	SessionRepository.Repo.Model = &model.Session{}
+	return SessionRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *sessionRepository) SaveInRedis(session model.Session) (e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.SaveInRedis(&session)
+}
+
+func (obj *sessionRepository) FindInRedis(session model.Session) (e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.FindInRedis(&session)
+}
+
+func (obj *sessionRepository) DeleteInRedis(session model.Session) (e error) {
+	SessionRepository.Repo.Model = &session
+	return SessionRepository.Repo.DeleteInRedis(&session)
+}
+
+func (obj *sessionRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	SessionRepository.Repo.Model = &model.Session{}
+	return SessionRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *sessionRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	SessionRepository.Repo.Model = &model.Session{}
+	return SessionRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *sessionRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	SessionRepository.Repo.Model = &model.Session{}
+	return SessionRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *sessionRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	SessionRepository.Repo.Model = &model.Session{}
+	return SessionRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type HayaFavoriteRepository struct {
-	mu           sync.Mutex
+type hayaFavoriteRepository struct {
 	HayaFavorite *model.HayaFavorite
 	Pager        *Pager
-	IsLock       bool
+	Repo         Repository
 }
 
-// Insert 保存
-func (obj *HayaFavoriteRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.HayaFavorite)
-	if err != nil {
-		return
-	}
-	return
+var HayaFavoriteRepository = newHayaFavoriteRepository()
+
+func newHayaFavoriteRepository() *hayaFavoriteRepository {
+	return new(hayaFavoriteRepository)
 }
 
-// Update 更新
-func (obj *HayaFavoriteRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.HayaFavorite)
-	if err != nil {
-		return
-	}
-	return
+func (obj *hayaFavoriteRepository) Insert(hayaFavorite model.HayaFavorite) (rowsAffected int64, e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.Insert(&hayaFavorite)
 }
 
-// First 查询单条
-func (obj *HayaFavoriteRepository) First() (err error) {
-	err = FindByLocation(obj.HayaFavorite)
-	if err != nil {
-		return
-	}
-	return
+func (obj *hayaFavoriteRepository) Update(hayaFavorite model.HayaFavorite) (rowsAffected int64, e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.Update(&hayaFavorite)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *HayaFavoriteRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.HayaFavorite)
-	return
+func (obj *hayaFavoriteRepository) FindByLocation(hayaFavorite model.HayaFavorite) (e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.FindByLocation(&hayaFavorite)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *HayaFavoriteRepository) FindByWhere(query string, args []interface{}) (list []model.HayaFavorite, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.HayaFavorite.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *hayaFavoriteRepository) DeleteByLocation(hayaFavorite model.HayaFavorite) (rowsAffected int64, e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.Update(&hayaFavorite)
+}
+
+func (obj *hayaFavoriteRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	HayaFavoriteRepository.Repo.Model = &model.HayaFavorite{}
+	return HayaFavoriteRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *hayaFavoriteRepository) SaveInRedis(hayaFavorite model.HayaFavorite) (e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.SaveInRedis(&hayaFavorite)
+}
+
+func (obj *hayaFavoriteRepository) FindInRedis(hayaFavorite model.HayaFavorite) (e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.FindInRedis(&hayaFavorite)
+}
+
+func (obj *hayaFavoriteRepository) DeleteInRedis(hayaFavorite model.HayaFavorite) (e error) {
+	HayaFavoriteRepository.Repo.Model = &hayaFavorite
+	return HayaFavoriteRepository.Repo.DeleteInRedis(&hayaFavorite)
+}
+
+func (obj *hayaFavoriteRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	HayaFavoriteRepository.Repo.Model = &model.HayaFavorite{}
+	return HayaFavoriteRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *hayaFavoriteRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	HayaFavoriteRepository.Repo.Model = &model.HayaFavorite{}
+	return HayaFavoriteRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *hayaFavoriteRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	HayaFavoriteRepository.Repo.Model = &model.HayaFavorite{}
+	return HayaFavoriteRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *hayaFavoriteRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	HayaFavoriteRepository.Repo.Model = &model.HayaFavorite{}
+	return HayaFavoriteRepository.Repo.GetDataListByWhereMap(where)
 }

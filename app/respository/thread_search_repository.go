@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type ThreadSearchRepository struct {
-	mu           sync.Mutex
+type threadSearchRepository struct {
 	ThreadSearch *model.ThreadSearch
 	Pager        *Pager
-	IsLock       bool
+	Repo         Repository
 }
 
-// Insert 保存
-func (obj *ThreadSearchRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.ThreadSearch)
-	if err != nil {
-		return
-	}
-	return
+var ThreadSearchRepository = newThreadSearchRepository()
+
+func newThreadSearchRepository() *threadSearchRepository {
+	return new(threadSearchRepository)
 }
 
-// Update 更新
-func (obj *ThreadSearchRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.ThreadSearch)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadSearchRepository) Insert(threadSearch model.ThreadSearch) (rowsAffected int64, e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.Insert(&threadSearch)
 }
 
-// First 查询单条
-func (obj *ThreadSearchRepository) First() (err error) {
-	err = FindByLocation(obj.ThreadSearch)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadSearchRepository) Update(threadSearch model.ThreadSearch) (rowsAffected int64, e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.Update(&threadSearch)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ThreadSearchRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.ThreadSearch)
-	return
+func (obj *threadSearchRepository) FindByLocation(threadSearch model.ThreadSearch) (e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.FindByLocation(&threadSearch)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ThreadSearchRepository) FindByWhere(query string, args []interface{}) (list []model.ThreadSearch, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.ThreadSearch.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *threadSearchRepository) DeleteByLocation(threadSearch model.ThreadSearch) (rowsAffected int64, e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.Update(&threadSearch)
+}
+
+func (obj *threadSearchRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ThreadSearchRepository.Repo.Model = &model.ThreadSearch{}
+	return ThreadSearchRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *threadSearchRepository) SaveInRedis(threadSearch model.ThreadSearch) (e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.SaveInRedis(&threadSearch)
+}
+
+func (obj *threadSearchRepository) FindInRedis(threadSearch model.ThreadSearch) (e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.FindInRedis(&threadSearch)
+}
+
+func (obj *threadSearchRepository) DeleteInRedis(threadSearch model.ThreadSearch) (e error) {
+	ThreadSearchRepository.Repo.Model = &threadSearch
+	return ThreadSearchRepository.Repo.DeleteInRedis(&threadSearch)
+}
+
+func (obj *threadSearchRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ThreadSearchRepository.Repo.Model = &model.ThreadSearch{}
+	return ThreadSearchRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *threadSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ThreadSearchRepository.Repo.Model = &model.ThreadSearch{}
+	return ThreadSearchRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *threadSearchRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ThreadSearchRepository.Repo.Model = &model.ThreadSearch{}
+	return ThreadSearchRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *threadSearchRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ThreadSearchRepository.Repo.Model = &model.ThreadSearch{}
+	return ThreadSearchRepository.Repo.GetDataListByWhereMap(where)
 }

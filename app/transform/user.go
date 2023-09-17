@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-func TransformUser(user *model.User) (userVo response.UserVo) {
+func TransformUser(user *model.User) (userVo *response.UserVo) {
+	if user == nil {
+		return nil
+	}
+	userVo = &response.UserVo{}
 	userVo.VipEnd = user.VipEnd
 	userVo.Username = user.Username
 	userVo.Uid = user.Uid

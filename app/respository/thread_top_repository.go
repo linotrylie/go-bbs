@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type ThreadTopRepository struct {
-	mu        sync.Mutex
+type threadTopRepository struct {
 	ThreadTop *model.ThreadTop
 	Pager     *Pager
-	IsLock    bool
+	Repo      Repository
 }
 
-// Insert 保存
-func (obj *ThreadTopRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.ThreadTop)
-	if err != nil {
-		return
-	}
-	return
+var ThreadTopRepository = newThreadTopRepository()
+
+func newThreadTopRepository() *threadTopRepository {
+	return new(threadTopRepository)
 }
 
-// Update 更新
-func (obj *ThreadTopRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.ThreadTop)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadTopRepository) Insert(threadTop model.ThreadTop) (rowsAffected int64, e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.Insert(&threadTop)
 }
 
-// First 查询单条
-func (obj *ThreadTopRepository) First() (err error) {
-	err = FindByLocation(obj.ThreadTop)
-	if err != nil {
-		return
-	}
-	return
+func (obj *threadTopRepository) Update(threadTop model.ThreadTop) (rowsAffected int64, e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.Update(&threadTop)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ThreadTopRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.ThreadTop)
-	return
+func (obj *threadTopRepository) FindByLocation(threadTop model.ThreadTop) (e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.FindByLocation(&threadTop)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ThreadTopRepository) FindByWhere(query string, args []interface{}) (list []model.ThreadTop, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.ThreadTop.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *threadTopRepository) DeleteByLocation(threadTop model.ThreadTop) (rowsAffected int64, e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.Update(&threadTop)
+}
+
+func (obj *threadTopRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ThreadTopRepository.Repo.Model = &model.ThreadTop{}
+	return ThreadTopRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *threadTopRepository) SaveInRedis(threadTop model.ThreadTop) (e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.SaveInRedis(&threadTop)
+}
+
+func (obj *threadTopRepository) FindInRedis(threadTop model.ThreadTop) (e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.FindInRedis(&threadTop)
+}
+
+func (obj *threadTopRepository) DeleteInRedis(threadTop model.ThreadTop) (e error) {
+	ThreadTopRepository.Repo.Model = &threadTop
+	return ThreadTopRepository.Repo.DeleteInRedis(&threadTop)
+}
+
+func (obj *threadTopRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ThreadTopRepository.Repo.Model = &model.ThreadTop{}
+	return ThreadTopRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *threadTopRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ThreadTopRepository.Repo.Model = &model.ThreadTop{}
+	return ThreadTopRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *threadTopRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ThreadTopRepository.Repo.Model = &model.ThreadTop{}
+	return ThreadTopRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *threadTopRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ThreadTopRepository.Repo.Model = &model.ThreadTop{}
+	return ThreadTopRepository.Repo.GetDataListByWhereMap(where)
 }

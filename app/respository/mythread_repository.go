@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type MythreadRepository struct {
-	mu       sync.Mutex
+type mythreadRepository struct {
 	Mythread *model.Mythread
 	Pager    *Pager
-	IsLock   bool
+	Repo     Repository
 }
 
-// Insert 保存
-func (obj *MythreadRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Mythread)
-	if err != nil {
-		return
-	}
-	return
+var MythreadRepository = newMythreadRepository()
+
+func newMythreadRepository() *mythreadRepository {
+	return new(mythreadRepository)
 }
 
-// Update 更新
-func (obj *MythreadRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Mythread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *mythreadRepository) Insert(mythread model.Mythread) (rowsAffected int64, e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.Insert(&mythread)
 }
 
-// First 查询单条
-func (obj *MythreadRepository) First() (err error) {
-	err = FindByLocation(obj.Mythread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *mythreadRepository) Update(mythread model.Mythread) (rowsAffected int64, e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.Update(&mythread)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *MythreadRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Mythread)
-	return
+func (obj *mythreadRepository) FindByLocation(mythread model.Mythread) (e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.FindByLocation(&mythread)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *MythreadRepository) FindByWhere(query string, args []interface{}) (list []model.Mythread, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Mythread.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *mythreadRepository) DeleteByLocation(mythread model.Mythread) (rowsAffected int64, e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.Update(&mythread)
+}
+
+func (obj *mythreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	MythreadRepository.Repo.Model = &model.Mythread{}
+	return MythreadRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *mythreadRepository) SaveInRedis(mythread model.Mythread) (e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.SaveInRedis(&mythread)
+}
+
+func (obj *mythreadRepository) FindInRedis(mythread model.Mythread) (e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.FindInRedis(&mythread)
+}
+
+func (obj *mythreadRepository) DeleteInRedis(mythread model.Mythread) (e error) {
+	MythreadRepository.Repo.Model = &mythread
+	return MythreadRepository.Repo.DeleteInRedis(&mythread)
+}
+
+func (obj *mythreadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	MythreadRepository.Repo.Model = &model.Mythread{}
+	return MythreadRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *mythreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	MythreadRepository.Repo.Model = &model.Mythread{}
+	return MythreadRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *mythreadRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	MythreadRepository.Repo.Model = &model.Mythread{}
+	return MythreadRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *mythreadRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	MythreadRepository.Repo.Model = &model.Mythread{}
+	return MythreadRepository.Repo.GetDataListByWhereMap(where)
 }

@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type MypostRepository struct {
-	mu     sync.Mutex
+type mypostRepository struct {
 	Mypost *model.Mypost
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *MypostRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Mypost)
-	if err != nil {
-		return
-	}
-	return
+var MypostRepository = newMypostRepository()
+
+func newMypostRepository() *mypostRepository {
+	return new(mypostRepository)
 }
 
-// Update 更新
-func (obj *MypostRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Mypost)
-	if err != nil {
-		return
-	}
-	return
+func (obj *mypostRepository) Insert(mypost model.Mypost) (rowsAffected int64, e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.Insert(&mypost)
 }
 
-// First 查询单条
-func (obj *MypostRepository) First() (err error) {
-	err = FindByLocation(obj.Mypost)
-	if err != nil {
-		return
-	}
-	return
+func (obj *mypostRepository) Update(mypost model.Mypost) (rowsAffected int64, e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.Update(&mypost)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *MypostRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Mypost)
-	return
+func (obj *mypostRepository) FindByLocation(mypost model.Mypost) (e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.FindByLocation(&mypost)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *MypostRepository) FindByWhere(query string, args []interface{}) (list []model.Mypost, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Mypost.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *mypostRepository) DeleteByLocation(mypost model.Mypost) (rowsAffected int64, e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.Update(&mypost)
+}
+
+func (obj *mypostRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	MypostRepository.Repo.Model = &model.Mypost{}
+	return MypostRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *mypostRepository) SaveInRedis(mypost model.Mypost) (e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.SaveInRedis(&mypost)
+}
+
+func (obj *mypostRepository) FindInRedis(mypost model.Mypost) (e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.FindInRedis(&mypost)
+}
+
+func (obj *mypostRepository) DeleteInRedis(mypost model.Mypost) (e error) {
+	MypostRepository.Repo.Model = &mypost
+	return MypostRepository.Repo.DeleteInRedis(&mypost)
+}
+
+func (obj *mypostRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	MypostRepository.Repo.Model = &model.Mypost{}
+	return MypostRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *mypostRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	MypostRepository.Repo.Model = &model.Mypost{}
+	return MypostRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *mypostRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	MypostRepository.Repo.Model = &model.Mypost{}
+	return MypostRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *mypostRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	MypostRepository.Repo.Model = &model.Mypost{}
+	return MypostRepository.Repo.GetDataListByWhereMap(where)
 }

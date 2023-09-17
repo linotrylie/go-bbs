@@ -7,29 +7,33 @@ import (
 	"go-bbs/app/transform"
 )
 
-type ForumService struct {
-	ForumRepo respository.ForumRepository
+type forumService struct {
 }
 
-func (serv *ForumService) ThreadList(fid, page, pageSize int) (map[string]interface{}, error) {
+var ForumService = newForumService()
+var forumRepository = respository.ForumRepository
+
+func newForumService() *forumService {
+	return new(forumService)
+}
+func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string) (map[string]interface{}, error) {
 	forumModel := &model.Forum{}
 	if fid <= 0 {
 		forumModel.Fid = 0
 		forumModel.Name = "全部"
 	} else {
-		serv.ForumRepo.Forum = &model.Forum{Fid: fid}
-		err := serv.ForumRepo.First()
+		respository.ForumRepository.Forum = &model.Forum{Fid: fid}
+		err := respository.ForumRepository.First()
 		if err != nil {
 			return nil, err
 		}
-		forumModel = serv.ForumRepo.Forum
+		forumModel = respository.ForumRepository.Forum
 	}
-	ServiceGroupApp.ThreadService.ForumRepo.Pager = &respository.Pager{Page: page, PageSize: pageSize, FieldsOrder: []string{"create_date desc"}}
-	list, err := ServiceGroupApp.ThreadService.List(fid)
+	list, totalPage, err := ServiceGroupApp.ThreadService.List(fid, page, pageSize, order, sort)
 	if err != nil {
 		return nil, err
 	}
-	var threadVoList []response.ThreadVo
+	var threadVoList []*response.ThreadVo
 	for _, v := range list {
 		threadVo := transform.TransformThread(v)
 		threadVo.User = transform.TransformUser(&v.User)
@@ -43,20 +47,20 @@ func (serv *ForumService) ThreadList(fid, page, pageSize int) (map[string]interf
 		"list":       threadVoList,
 		"page":       page,
 		"page_size":  pageSize,
-		"total_page": ServiceGroupApp.ThreadService.ForumRepo.Pager.TotalPage,
+		"total_page": totalPage,
 	}
 	return mapRes, err
 }
 
-func (serv *ForumService) List() ([]model.Forum, error) {
-	serv.ForumRepo.Pager = &respository.Pager{Page: 1, PageSize: 100}
-	list, err := serv.ForumRepo.List()
+func (serv *forumService) List() ([]model.Model, error) {
+	respository.ForumRepository.Pager = &respository.Pager{Page: 0, PageSize: 0}
+	list, err := respository.ForumRepository.GetDataListByWhereMap(nil)
 	if err != nil {
 		return nil, err
 	}
 	return list, nil
 }
 
-func (serv *ForumService) name() {
+func (serv *forumService) name() {
 
 }

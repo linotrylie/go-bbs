@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type GgFavoriteThreadRepository struct {
-	mu               sync.Mutex
+type ggFavoriteThreadRepository struct {
 	GgFavoriteThread *model.GgFavoriteThread
 	Pager            *Pager
-	IsLock           bool
+	Repo             Repository
 }
 
-// Insert 保存
-func (obj *GgFavoriteThreadRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.GgFavoriteThread)
-	if err != nil {
-		return
-	}
-	return
+var GgFavoriteThreadRepository = newGgFavoriteThreadRepository()
+
+func newGgFavoriteThreadRepository() *ggFavoriteThreadRepository {
+	return new(ggFavoriteThreadRepository)
 }
 
-// Update 更新
-func (obj *GgFavoriteThreadRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.GgFavoriteThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *ggFavoriteThreadRepository) Insert(ggFavoriteThread model.GgFavoriteThread) (rowsAffected int64, e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.Insert(&ggFavoriteThread)
 }
 
-// First 查询单条
-func (obj *GgFavoriteThreadRepository) First() (err error) {
-	err = FindByLocation(obj.GgFavoriteThread)
-	if err != nil {
-		return
-	}
-	return
+func (obj *ggFavoriteThreadRepository) Update(ggFavoriteThread model.GgFavoriteThread) (rowsAffected int64, e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.Update(&ggFavoriteThread)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *GgFavoriteThreadRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.GgFavoriteThread)
-	return
+func (obj *ggFavoriteThreadRepository) FindByLocation(ggFavoriteThread model.GgFavoriteThread) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.FindByLocation(&ggFavoriteThread)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *GgFavoriteThreadRepository) FindByWhere(query string, args []interface{}) (list []model.GgFavoriteThread, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.GgFavoriteThread.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *ggFavoriteThreadRepository) DeleteByLocation(ggFavoriteThread model.GgFavoriteThread) (rowsAffected int64, e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.Update(&ggFavoriteThread)
+}
+
+func (obj *ggFavoriteThreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &model.GgFavoriteThread{}
+	return GgFavoriteThreadRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *ggFavoriteThreadRepository) SaveInRedis(ggFavoriteThread model.GgFavoriteThread) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.SaveInRedis(&ggFavoriteThread)
+}
+
+func (obj *ggFavoriteThreadRepository) FindInRedis(ggFavoriteThread model.GgFavoriteThread) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.FindInRedis(&ggFavoriteThread)
+}
+
+func (obj *ggFavoriteThreadRepository) DeleteInRedis(ggFavoriteThread model.GgFavoriteThread) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &ggFavoriteThread
+	return GgFavoriteThreadRepository.Repo.DeleteInRedis(&ggFavoriteThread)
+}
+
+func (obj *ggFavoriteThreadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &model.GgFavoriteThread{}
+	return GgFavoriteThreadRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *ggFavoriteThreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	GgFavoriteThreadRepository.Repo.Model = &model.GgFavoriteThread{}
+	return GgFavoriteThreadRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *ggFavoriteThreadRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	GgFavoriteThreadRepository.Repo.Model = &model.GgFavoriteThread{}
+	return GgFavoriteThreadRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *ggFavoriteThreadRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	GgFavoriteThreadRepository.Repo.Model = &model.GgFavoriteThread{}
+	return GgFavoriteThreadRepository.Repo.GetDataListByWhereMap(where)
 }

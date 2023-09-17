@@ -16,41 +16,53 @@ import (
 	"time"
 )
 
-type UserService struct {
-	UserRepo respository.UserRepository
+type userService struct {
+}
+
+var UserService = newUserService()
+
+func newUserService() *userService {
+	return new(userService)
 }
 
 // IsHasUserByUsername 是否有指定用户名的用户
 // @return 存在 true  不存在 false
-func (serv *UserService) IsHasUserByUsername(username string) bool {
+func (serv *userService) IsHasUserByUsername(username string, user *model.User) bool {
 	where := make(map[string]interface{})
 	where["username"] = username
-	e := serv.UserRepo.FindUserByMap(where)
+	e := respository.UserRepository.GetDataByWhereMap(where)
 	if e != nil {
 		return false
 	}
-	if serv.UserRepo.User == nil {
+	if respository.UserRepository.User == nil {
 		return false
 	}
+	user = respository.UserRepository.User
 	return true
 }
 
-func (serv *UserService) Login(user *model.User, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+func (serv *userService) Login(userLogin requests.UserLogin, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
 	//先检查是否存在相同用户名的用户
-	hasUser := serv.IsHasUserByUsername(user.Username)
+	user := model.User{Username: userLogin.Username}
+	hasUser := serv.IsHasUserByUsername(userLogin.Username, &user)
 	if !hasUser {
 		return nil, nil, "", exceptions.UserNotFound
 	}
-	ok := serv.VerifyPassword(serv.UserRepo.User, user.Password)
+
+	ok := serv.VerifyPassword(&user, userLogin.Password)
 	if !ok {
 		return nil, nil, "", exceptions.FailedVerify
 	}
 	//用户通过验证后，对用户进行后续操作，如增加经验积分或者记录登录ip等等
-	go serv.LoginAfter(ctx)
-	return serv.ReturnUserInfo()
+	go serv.LoginAfter(user, ctx)
+	jwtCustomClaims, token, err := serv.ReturnUserInfo(*respository.UserRepository.User)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	return &user, jwtCustomClaims, token, nil
 }
 
-func (serv *UserService) GeneratePassword(user *model.User, password string) {
+func (serv *userService) GeneratePassword(user *model.User, password string) {
 	var salt string
 	if strutil.IsBlank(user.Salt) {
 		salt = random.RandString(16)
@@ -61,7 +73,7 @@ func (serv *UserService) GeneratePassword(user *model.User, password string) {
 	user.SetPassword(cryptor.Md5String(str)).SetSalt(salt)
 }
 
-func (serv *UserService) VerifyPassword(user *model.User, password string) bool {
+func (serv *userService) VerifyPassword(user *model.User, password string) bool {
 	str := password + user.Salt
 	if cryptor.Md5String(str) == user.Password {
 		return true
@@ -69,43 +81,42 @@ func (serv *UserService) VerifyPassword(user *model.User, password string) bool 
 	return false
 }
 
-func (serv *UserService) LoginAfter(ctx *gin.Context) {
-	serv.UserRepo.User.SetLogins(1).
+func (serv *userService) LoginAfter(user model.User, ctx *gin.Context) {
+	user.SetLogins(1).
 		SetLoginDate(time.Now().Unix()).
 		SetLoginIP(utils.Ip2long(ctx.ClientIP()))
-	_, err := serv.UserRepo.Update()
+	_, err := respository.UserRepository.Update(user)
 	if err != nil {
 		return
 	}
 }
 
-func (serv *UserService) Logout() {
+func (serv *userService) Logout() {
 	global.REDIS.Del(context.Background(), global.User.Username)
 }
 
-func (serv *UserService) Detail(uid int) (*model.User, error) {
-	serv.UserRepo.User = &model.User{Uid: uid}
-	err := serv.UserRepo.First()
+func (serv *userService) Detail(uid int) (*model.User, error) {
+	user := model.User{Uid: uid}
+	err := respository.UserRepository.FindByLocation(user)
 	if err != nil {
 		return nil, err
 	}
-	return serv.UserRepo.User, nil
+	return respository.UserRepository.User, nil
 }
 
-func (serv *UserService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
-	serv.UserRepo.User = &model.User{}
-	serv.UserRepo.User.Uid = global.User.Uid
-	err = serv.UserRepo.First()
+func (serv *userService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
+	user := model.User{Uid: global.User.Uid}
+	err = respository.UserRepository.FindByLocation(user)
 	if err != nil {
 		return
 	}
-	ok := serv.VerifyPassword(serv.UserRepo.User, userChangePassword.OldPassword)
+	ok := serv.VerifyPassword(respository.UserRepository.User, userChangePassword.OldPassword)
 	if !ok {
 		err = exceptions.FailedVerify
 		return
 	}
-	serv.GeneratePassword(serv.UserRepo.User, userChangePassword.NewPassword)
-	update, err := serv.UserRepo.Update()
+	serv.GeneratePassword(respository.UserRepository.User, userChangePassword.NewPassword)
+	update, err := respository.UserRepository.Update(user)
 	if err != nil {
 		return err
 	}
@@ -118,24 +129,22 @@ func (serv *UserService) ChangesPassword(userChangePassword *requests.UserChange
 	return nil
 }
 
-func (serv *UserService) Edit(userEdit *requests.UserEdit) (err error) {
-
-	serv.UserRepo.User = &model.User{Uid: global.User.Uid}
-	err = serv.UserRepo.First()
+func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
+	user := model.User{Uid: global.User.Uid}
+	err = respository.UserRepository.FindByLocation(user)
 	if err != nil {
 		return err
 	}
-	var user = &model.User{}
-	if serv.UserRepo.User.Realname != userEdit.Realname {
+	if respository.UserRepository.User.Realname != userEdit.Realname {
 		user.SetRealname(userEdit.Realname)
 	}
-	if serv.UserRepo.User.Qq != userEdit.Qq {
+	if respository.UserRepository.User.Qq != userEdit.Qq {
 		user.SetQq(userEdit.Qq)
 	}
-	if serv.UserRepo.User.Mobile != userEdit.Mobile {
+	if respository.UserRepository.User.Mobile != userEdit.Mobile {
 		user.SetMobile(userEdit.Mobile)
 	}
-	if serv.UserRepo.User.Email != userEdit.Email && !strutil.IsBlank(userEdit.Email) {
+	if respository.UserRepository.User.Email != userEdit.Email && !strutil.IsBlank(userEdit.Email) {
 		//邮箱不为空 就检验邮箱验证码
 		var emailCaptchaVerify = &requests.EmailCaptchaVerify{Email: userEdit.Email, Value: userEdit.Value}
 		ok := verifyEmailCaptcha(emailCaptchaVerify)
@@ -145,10 +154,8 @@ func (serv *UserService) Edit(userEdit *requests.UserEdit) (err error) {
 		}
 		user.SetEmail(userEdit.Email)
 	}
-	if user != nil {
-		user.Uid = global.User.Uid
-		serv.UserRepo.User = user
-		update, e := serv.UserRepo.Update()
+	if &user != nil {
+		var update, e = respository.UserRepository.Update(user)
 		if e != nil {
 			err = e
 			return
@@ -161,9 +168,10 @@ func (serv *UserService) Edit(userEdit *requests.UserEdit) (err error) {
 	return nil
 }
 
-func (serv *UserService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (*model.User, *JwtCustomClaims, string, error) {
 	//先检查是否存在相同用户名的用户
-	hasUser := serv.IsHasUserByUsername(userRegister.Username)
+	u := model.User{}
+	hasUser := serv.IsHasUserByUsername(userRegister.Username, &u)
 	if hasUser {
 		return nil, nil, "", exceptions.DuplicateUser
 	}
@@ -172,8 +180,8 @@ func (serv *UserService) Register(userRegister *requests.UserRegister, ctx *gin.
 	//if !ok {
 	//	return nil, nil, "", exceptions.FailedVerify
 	//}
-	createIp, e := ip.StringToLong(ctx.ClientIP())
-	var user = &model.User{
+	createIp, err := ip.StringToLong(ctx.ClientIP())
+	var user = model.User{
 		Username:   userRegister.Username,
 		Email:      userRegister.Email.Email,
 		CreateDate: time.Now().Unix(),
@@ -184,32 +192,40 @@ func (serv *UserService) Register(userRegister *requests.UserRegister, ctx *gin.
 		LoginIp:    uint32(createIp),
 		Signature:  "他什么也没留下~",
 	}
-	serv.GeneratePassword(user, userRegister.Password)
-	serv.UserRepo.User = user
-	insert, err := serv.UserRepo.Insert()
+	serv.GeneratePassword(&user, userRegister.Password)
+	insert, err := respository.UserRepository.Insert(user)
 	if err != nil {
 		return nil, nil, "", err
 	}
 	if insert < 1 {
 		return nil, nil, "", exceptions.CreateError
 	}
-	return serv.ReturnUserInfo()
+	jwtCustomClaims, token, err := serv.ReturnUserInfo(*respository.UserRepository.User)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	return &user, jwtCustomClaims, token, nil
 }
 
-func (serv *UserService) ReturnUserInfo() (userReturn *model.User, jwtCustomClaims *JwtCustomClaims, token string, e error) {
+func (serv *userService) ReturnUserInfo(user model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {
 	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
-	claims := ServiceGroupApp.JwtService.CreateClaims(serv.UserRepo.User)
+	claims := ServiceGroupApp.JwtService.CreateClaims(&user)
 	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
 	if e != nil {
-		return nil, nil, "", e
+		return nil, "", e
 	}
-	userReturn = serv.UserRepo.User
-	global.User = serv.UserRepo.User
+	global.User = respository.UserRepository.User
 	jwtCustomClaims = &claims
 	//将用户登录信息记录在redis中
-	global.REDIS.Set(context.Background(), serv.UserRepo.User.Username, "login", time.Duration(utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix())*time.Second)
+	global.REDIS.Set(
+		context.Background(), respository.UserRepository.User.Username,
+		"login",
+		time.Duration(
+			utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix(),
+		)*time.Second,
+	)
 	return
 }
 
-func (serv *UserService) name() {
+func (serv *userService) name() {
 }

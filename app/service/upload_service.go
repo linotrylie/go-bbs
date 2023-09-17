@@ -9,7 +9,13 @@ import (
 	"time"
 )
 
-type UploadService struct{}
+type uploadService struct{}
+
+var UploadService = newUploadService()
+
+func newUploadService() *uploadService {
+	return new(uploadService)
+}
 
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: Upload
@@ -17,7 +23,7 @@ type UploadService struct{}
 //@param: file model.ExaFileUploadAndDownload
 //@return: error
 
-func (e *UploadService) Upload(file model.Attach) (model.Attach, error) {
+func (e *uploadService) Upload(file model.Attach) (model.Attach, error) {
 	return file, global.DB.Create(&file).Error
 }
 
@@ -27,13 +33,13 @@ func (e *UploadService) Upload(file model.Attach) (model.Attach, error) {
 //@param: id uint
 //@return: model.ExaFileUploadAndDownload, error
 
-func (e *UploadService) FindFile(id uint) (model.Attach, error) {
+func (e *uploadService) FindFile(id uint) (model.Attach, error) {
 	var file model.Attach
 	err := global.DB.Where("aid = ?", id).First(&file).Error
 	return file, err
 }
 
-func (e *UploadService) UploadFile(header *multipart.FileHeader) (file model.Attach, err error) {
+func (e *uploadService) UploadFile(header *multipart.FileHeader) (file model.Attach, err error) {
 	oss := upload.NewOss()
 	filePath, _, uploadErr := oss.UploadFile(header)
 	if uploadErr != nil {

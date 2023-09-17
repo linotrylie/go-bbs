@@ -130,81 +130,82 @@ func (t *Table2Struct) RunRepository() error {
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
 type %sRepository struct {
-	mu     sync.Mutex
-	%s   *model.%s
-	Pager  *Pager
-	IsLock bool
+	%s  *model.%s
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *%sRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.%s)
-	if err != nil {
-		return
-	}
-	return
+var %sRepository = new%sRepository()
+
+func new%sRepository() *%sRepository {
+	return new(%sRepository)
 }
 
-// Update 更新
-func (obj *%sRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.%s)
-	if err != nil {
-		return
-	}
-	return
+func (obj *%sRepository) Insert(%s model.%s) (rowsAffected int64, e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.Insert(&%s)
 }
 
-// First 查询单条
-func (obj *%sRepository) First() (err error) {
-	err = FindByLocation(obj.%s)
-	if err != nil {
-		return
-	}
-	return
+func (obj *%sRepository) Update(%s model.%s) (rowsAffected int64, e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.Update(&%s)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *%sRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.%s)
-	return
+func (obj *%sRepository) FindByLocation(%s model.%s) (e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.FindByLocation(&%s)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *%sRepository) FindByWhere(query string, args []interface{}) (list []model.%s, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.%s.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *%sRepository) DeleteByLocation(%s model.%s) (rowsAffected int64, e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.Update(&%s)
 }
+
+func (obj *%sRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	%sRepository.Repo.Model = &model.%s{}
+	return %sRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *%sRepository) SaveInRedis(%s model.%s) (e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.SaveInRedis(&%s)
+}
+
+func (obj *%sRepository) FindInRedis(%s model.%s) (e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.FindInRedis(&%s)
+}
+
+func (obj *%sRepository) DeleteInRedis(%s model.%s) (e error) {
+	%sRepository.Repo.Model = &%s
+	return %sRepository.Repo.DeleteInRedis(&%s)
+}
+
+func (obj *%sRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	%sRepository.Repo.Model = &model.%s{}
+	return %sRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *%sRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	%sRepository.Repo.Model = &model.%s{}
+	return %sRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *%sRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	%sRepository.Repo.Model = &model.%s{}
+	return %sRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *%sRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model,error) {
+	%sRepository.Repo.Model = &model.%s{}
+	return %sRepository.Repo.GetDataListByWhereMap(where)
+}
+
 `
 	if t.config == nil {
 		t.config = new(T2tConfig)
@@ -234,9 +235,27 @@ func (obj *%sRepository) FindByWhere(query string, args []interface{}) (list []m
 			// 字符长度大于1时
 			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
-		fmt.Println(tableName)
-		sprintf := fmt.Sprintf(formatStr, tableName, tableName, tableName, tableName, tableName, tableName,
-			tableName, tableName, tableName, tableName, tableName, tableName, tableName, tableName)
+		//fmt.Println(tableName)
+		/*if tableRealName == "user" || tableRealName == "group" || tableRealName == "forum" || tableRealName == "thread" {
+			continue
+		}*/
+		// newTableName forumAccess tableName ForumAccess tableRealName forum_access
+		newTableName := strings.ToLower(tableName[0:1]) + tableName[1:]
+		sprintf := fmt.Sprintf(formatStr,
+			newTableName, tableName, tableName, tableName, tableName, tableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, tableName, tableName, tableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
+			newTableName, tableName, tableName, tableName,
+			newTableName, tableName, tableName, tableName,
+			newTableName, tableName, tableName, tableName,
+			newTableName, tableName, tableName, tableName,
+		)
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径

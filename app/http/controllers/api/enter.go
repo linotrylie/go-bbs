@@ -9,13 +9,14 @@ type ApiGroup struct {
 	AuthController
 	UserController
 	ForumController
+	ThreadController
 }
 
 var (
-	captchaService = new(service.CaptchaService)
-	emailService   = new(emailServ.EmailService)
-	userService    = new(service.UserService)
-	groupService   = new(service.GroupService)
-	forumService   = new(service.ForumService)
-	threadService  = new(service.ThreadService)
+	captchaService = service.CaptchaService
+	emailService   = emailServ.EmailService
+	userService    = service.UserService
+	groupService   = service.GroupService
+	forumService   = service.ForumService
+	threadService  = service.ThreadService
 )

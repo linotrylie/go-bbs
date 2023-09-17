@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var jwtServ = new(service.JwtService)
+var jwtServ = service.JwtService
 
 func JWT() gin.HandlerFunc {
 	return func(c *gin.Context) {

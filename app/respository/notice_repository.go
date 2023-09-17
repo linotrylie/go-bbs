@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type NoticeRepository struct {
-	mu     sync.Mutex
+type noticeRepository struct {
 	Notice *model.Notice
 	Pager  *Pager
-	IsLock bool
+	Repo   Repository
 }
 
-// Insert 保存
-func (obj *NoticeRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Notice)
-	if err != nil {
-		return
-	}
-	return
+var NoticeRepository = newNoticeRepository()
+
+func newNoticeRepository() *noticeRepository {
+	return new(noticeRepository)
 }
 
-// Update 更新
-func (obj *NoticeRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Notice)
-	if err != nil {
-		return
-	}
-	return
+func (obj *noticeRepository) Insert(notice model.Notice) (rowsAffected int64, e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.Insert(&notice)
 }
 
-// First 查询单条
-func (obj *NoticeRepository) First() (err error) {
-	err = FindByLocation(obj.Notice)
-	if err != nil {
-		return
-	}
-	return
+func (obj *noticeRepository) Update(notice model.Notice) (rowsAffected int64, e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.Update(&notice)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *NoticeRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Notice)
-	return
+func (obj *noticeRepository) FindByLocation(notice model.Notice) (e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.FindByLocation(&notice)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *NoticeRepository) FindByWhere(query string, args []interface{}) (list []model.Notice, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.Notice.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *noticeRepository) DeleteByLocation(notice model.Notice) (rowsAffected int64, e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.Update(&notice)
+}
+
+func (obj *noticeRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	NoticeRepository.Repo.Model = &model.Notice{}
+	return NoticeRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *noticeRepository) SaveInRedis(notice model.Notice) (e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.SaveInRedis(&notice)
+}
+
+func (obj *noticeRepository) FindInRedis(notice model.Notice) (e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.FindInRedis(&notice)
+}
+
+func (obj *noticeRepository) DeleteInRedis(notice model.Notice) (e error) {
+	NoticeRepository.Repo.Model = &notice
+	return NoticeRepository.Repo.DeleteInRedis(&notice)
+}
+
+func (obj *noticeRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	NoticeRepository.Repo.Model = &model.Notice{}
+	return NoticeRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *noticeRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	NoticeRepository.Repo.Model = &model.Notice{}
+	return NoticeRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *noticeRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	NoticeRepository.Repo.Model = &model.Notice{}
+	return NoticeRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *noticeRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	NoticeRepository.Repo.Model = &model.Notice{}
+	return NoticeRepository.Repo.GetDataListByWhereMap(where)
 }

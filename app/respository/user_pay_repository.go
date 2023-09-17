@@ -1,78 +1,78 @@
 package respository
 
 import (
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
 )
 
-type UserPayRepository struct {
-	mu      sync.Mutex
+type userPayRepository struct {
 	UserPay *model.UserPay
 	Pager   *Pager
-	IsLock  bool
+	Repo    Repository
 }
 
-// Insert 保存
-func (obj *UserPayRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.UserPay)
-	if err != nil {
-		return
-	}
-	return
+var UserPayRepository = newUserPayRepository()
+
+func newUserPayRepository() *userPayRepository {
+	return new(userPayRepository)
 }
 
-// Update 更新
-func (obj *UserPayRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.UserPay)
-	if err != nil {
-		return
-	}
-	return
+func (obj *userPayRepository) Insert(userPay model.UserPay) (rowsAffected int64, e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.Insert(&userPay)
 }
 
-// First 查询单条
-func (obj *UserPayRepository) First() (err error) {
-	err = FindByLocation(obj.UserPay)
-	if err != nil {
-		return
-	}
-	return
+func (obj *userPayRepository) Update(userPay model.UserPay) (rowsAffected int64, e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.Update(&userPay)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *UserPayRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.UserPay)
-	return
+func (obj *userPayRepository) FindByLocation(userPay model.UserPay) (e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.FindByLocation(&userPay)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *UserPayRepository) FindByWhere(query string, args []interface{}) (list []model.UserPay, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	db := global.DB.Table(obj.UserPay.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *userPayRepository) DeleteByLocation(userPay model.UserPay) (rowsAffected int64, e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.Update(&userPay)
+}
+
+func (obj *userPayRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	UserPayRepository.Repo.Model = &model.UserPay{}
+	return UserPayRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *userPayRepository) SaveInRedis(userPay model.UserPay) (e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.SaveInRedis(&userPay)
+}
+
+func (obj *userPayRepository) FindInRedis(userPay model.UserPay) (e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.FindInRedis(&userPay)
+}
+
+func (obj *userPayRepository) DeleteInRedis(userPay model.UserPay) (e error) {
+	UserPayRepository.Repo.Model = &userPay
+	return UserPayRepository.Repo.DeleteInRedis(&userPay)
+}
+
+func (obj *userPayRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	UserPayRepository.Repo.Model = &model.UserPay{}
+	return UserPayRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *userPayRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	UserPayRepository.Repo.Model = &model.UserPay{}
+	return UserPayRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *userPayRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	UserPayRepository.Repo.Model = &model.UserPay{}
+	return UserPayRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *userPayRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	UserPayRepository.Repo.Model = &model.UserPay{}
+	return UserPayRepository.Repo.GetDataListByWhereMap(where)
 }

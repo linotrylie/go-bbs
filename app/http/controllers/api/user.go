@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/exceptions"
-	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
 	"go-bbs/app/transform"
@@ -46,8 +45,7 @@ func (controller *UserController) Login(ctx *gin.Context) {
 		response.FailWithMessage(exceptions.FailedVerify.Error(), ctx)
 		return
 	}*/
-	var user = &model.User{Username: userLogin.Username, Password: userLogin.Password}
-	userReturn, jwtCustomClaims, token, err := userService.Login(user, ctx)
+	userReturn, jwtCustomClaims, token, err := userService.Login(*userLogin, ctx)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return

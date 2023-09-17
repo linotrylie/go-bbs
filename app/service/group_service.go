@@ -5,19 +5,23 @@ import (
 	"go-bbs/app/respository"
 )
 
-type GroupService struct {
-	GroupRepo respository.GroupRepository
+type groupService struct {
 }
 
-func (serv *GroupService) name() {
+var GroupService = newGroupService()
+
+func newGroupService() *groupService {
+	return new(groupService)
+}
+func (serv *groupService) name() {
 
 }
 
-func (serv *GroupService) Detail(gid int) (*model.Group, error) {
-	serv.GroupRepo.Group = &model.Group{Gid: gid}
-	err := serv.GroupRepo.First()
+func (serv *groupService) Detail(gid int) (*model.Group, error) {
+	respository.GroupRepository.Group = &model.Group{Gid: gid}
+	err := respository.GroupRepository.First()
 	if err != nil {
 		return nil, err
 	}
-	return serv.GroupRepo.Group, nil
+	return respository.GroupRepository.Group, nil
 }

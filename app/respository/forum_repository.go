@@ -1,113 +1,78 @@
 package respository
 
 import (
-	"encoding/json"
-	"fmt"
-	"go-bbs/app/exceptions"
+	"database/sql"
 	"go-bbs/app/http/model"
-	"go-bbs/global"
-	"go.uber.org/zap"
-	"sync"
-	"time"
 )
 
-type ForumRepository struct {
-	mu     sync.Mutex
-	Forum  *model.Forum
-	Pager  *Pager
-	IsLock bool
+type forumRepository struct {
+	Forum *model.Forum
+	Pager *Pager
+	Repo  Repository
 }
 
-// Insert 保存
-func (obj *ForumRepository) Insert() (effectedRow int64, err error) {
-	effectedRow, err = Insert(obj.Forum)
-	if err != nil {
-		return
-	}
-	return
+var ForumRepository = newForumRepository()
+
+func newForumRepository() *forumRepository {
+	return new(forumRepository)
 }
 
-// Update 更新
-func (obj *ForumRepository) Update() (effectedRow int64, err error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	effectedRow, err = Update(obj.Forum)
-	if err != nil {
-		return
-	}
-	return
+func (obj *forumRepository) Insert(forum model.Forum) (rowsAffected int64, e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.Insert(&forum)
 }
 
-// First 查询单条
-func (obj *ForumRepository) First() (err error) {
-	err = FindByLocation(obj.Forum)
-	if err != nil {
-		return
-	}
-	return
+func (obj *forumRepository) Update(forum model.Forum) (rowsAffected int64, e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.Update(&forum)
 }
 
-// Delete 此方法为硬删除 慎用
-func (obj *ForumRepository) Delete() (rowsAffected int64, e error) {
-	if obj.IsLock {
-		obj.mu.Lock()
-		defer obj.mu.Unlock()
-	}
-	rowsAffected, e = DeleteByLocation(obj.Forum)
-	return
+func (obj *forumRepository) FindByLocation(forum model.Forum) (e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.FindByLocation(&forum)
 }
 
-// FindByWhere 批量查询 带分页
-func (obj *ForumRepository) FindByWhere(query string, args []interface{}) (list []model.Forum, e error) {
-	now := time.Now()
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(obj.Forum.TableName(), "FindByWhere", e, now)
-		}
-	}()
-	db := global.DB.Table(obj.Forum.TableName())
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	e = obj.Pager.Execute(db, &list)
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	return
+func (obj *forumRepository) DeleteByLocation(forum model.Forum) (rowsAffected int64, e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.Update(&forum)
 }
 
-func (obj *ForumRepository) List() (list []model.Forum, e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
-	redisKey := fmt.Sprintf("forum_list_%d_%d", obj.Pager.Page, obj.Pager.PageSize)
-	key, _ := FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
-		if e != nil {
-			return nil, e
-		}
-		return
-	}
-	list, e = obj.FindByWhere("fid > ?", []interface{}{0})
-	if e != nil {
-		return nil, e
-	}
-	if len(list) == 0 {
-		return nil, exceptions.NotFoundData
-	}
-	marshal, e := json.Marshal(list)
-	if e != nil {
-		return nil, e
-	}
-	SaveInRedisByKey(redisKey, string(marshal))
-	return
+func (obj *forumRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	ForumRepository.Repo.Model = &model.Forum{}
+	return ForumRepository.Repo.TransactionExecute(fun, opts...)
+}
+
+func (obj *forumRepository) SaveInRedis(forum model.Forum) (e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.SaveInRedis(&forum)
+}
+
+func (obj *forumRepository) FindInRedis(forum model.Forum) (e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.FindInRedis(&forum)
+}
+
+func (obj *forumRepository) DeleteInRedis(forum model.Forum) (e error) {
+	ForumRepository.Repo.Model = &forum
+	return ForumRepository.Repo.DeleteInRedis(&forum)
+}
+
+func (obj *forumRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	ForumRepository.Repo.Model = &model.Forum{}
+	return ForumRepository.Repo.SaveInRedisByKey(redisKey, data)
+}
+
+func (obj *forumRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	ForumRepository.Repo.Model = &model.Forum{}
+	return ForumRepository.Repo.FindInRedisByKey(redisKey)
+}
+
+func (obj *forumRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
+	ForumRepository.Repo.Model = &model.Forum{}
+	return ForumRepository.Repo.GetDataByWhereMap(where)
+}
+
+func (obj *forumRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model, error) {
+	ForumRepository.Repo.Model = &model.Forum{}
+	return ForumRepository.Repo.GetDataListByWhereMap(where)
 }

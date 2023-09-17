@@ -11,7 +11,6 @@ import (
 )
 
 type AuthController struct {
-	UserRepo respository.UserRepository
 }
 
 func (c *AuthController) Index(ctx *gin.Context) {
@@ -33,9 +32,9 @@ func (c *AuthController) Index(ctx *gin.Context) {
 	pager := respository.Pager{Page: page, PageSize: 5}
 	args := make([]interface{}, 1)
 	args[0] = 1
-	c.UserRepo.User = &model.User{}
-	c.UserRepo.Pager = &pager
-	list, _ := c.UserRepo.FindByWhere("uid > ?", args)
+	respository.UserRepository.User = &model.User{}
+	respository.UserRepository.Pager = &pager
+	list, _ := respository.UserRepository.FindByWhere("uid > ?", args)
 	var result = make(map[string]interface{})
 	result["list"] = list
 	result["page"] = pager.Page

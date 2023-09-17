@@ -4,4 +4,5 @@ type RouterGroup struct {
 	AuthRouter
 	UserRouter
 	ForumRouter
+	ThreadRouter
 }
