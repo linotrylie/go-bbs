@@ -3,7 +3,7 @@ package service
 import (
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/response"
-	"go-bbs/app/respository"
+	"go-bbs/app/repository"
 	"go-bbs/app/transform"
 )
 
@@ -11,7 +11,7 @@ type forumService struct {
 }
 
 var ForumService = newForumService()
-var forumRepository = respository.ForumRepository
+var forumRepository = repository.ForumRepository
 
 func newForumService() *forumService {
 	return new(forumService)
@@ -22,12 +22,12 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		forumModel.Fid = 0
 		forumModel.Name = "全部"
 	} else {
-		respository.ForumRepository.Forum = &model.Forum{Fid: fid}
-		err := respository.ForumRepository.First()
+		forum := &model.Forum{Fid: fid}
+		err := repository.ForumRepository.First(forum)
 		if err != nil {
 			return nil, err
 		}
-		forumModel = respository.ForumRepository.Forum
+		forumModel = forum
 	}
 	list, totalPage, err := ServiceGroupApp.ThreadService.List(fid, page, pageSize, order, sort)
 	if err != nil {
@@ -52,9 +52,9 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 	return mapRes, err
 }
 
-func (serv *forumService) List() ([]model.Model, error) {
-	respository.ForumRepository.Pager = &respository.Pager{Page: 0, PageSize: 0}
-	list, err := respository.ForumRepository.GetDataListByWhereMap(nil)
+func (serv *forumService) List() ([]*model.Forum, error) {
+	repository.ForumRepository.Pager = &repository.Pager{Page: 0, PageSize: 0}
+	list, err := repository.ForumRepository.GetDataListByWhereMap(nil)
 	if err != nil {
 		return nil, err
 	}

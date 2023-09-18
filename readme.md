@@ -26,7 +26,7 @@
       - middleware 中间件
       - model 模型层 只负责数据表的字段、属性、查询条件、返回值的定义
       - requests 请求结构体
-    - respository 仓库，负责对外的业务逻辑处理
+    - repository 仓库，负责对外的业务逻辑处理
     - service 服务层
     
 - config 配置

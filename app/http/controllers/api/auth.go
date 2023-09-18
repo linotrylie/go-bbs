@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/entity"
 	"go-bbs/app/http/model"
-	"go-bbs/app/respository"
+	"go-bbs/app/repository"
 	"net/http"
 	"strconv"
 )
@@ -18,23 +18,22 @@ func (c *AuthController) Index(ctx *gin.Context) {
 	var user = &model.User{}
 	user.Uid = 1
 	user.Update("username", "freebns1")
-	_, err := respository.Update(user)
+	_, err := repository.UserRepository.Update(user)
 	if err != nil {
 		return
 	}
 	var group = &model.Group{}
 	group.Gid = user.Gid
-	respository.FindByLocation(group)
+	repository.GroupRepository.First(group)
 	user.SetCredits(1).SetGolds(1)
 	fmt.Println(user)
 	userEntity := entity.UserEntity{User: *user, Group: group}
 
-	pager := respository.Pager{Page: page, PageSize: 5}
+	pager := repository.Pager{Page: page, PageSize: 5}
 	args := make([]interface{}, 1)
 	args[0] = 1
-	respository.UserRepository.User = &model.User{}
-	respository.UserRepository.Pager = &pager
-	list, _ := respository.UserRepository.FindByWhere("uid > ?", args)
+	repository.UserRepository.Pager = &pager
+	list, _ := repository.UserRepository.GetDataListByWhere("uid > ?", args)
 	var result = make(map[string]interface{})
 	result["list"] = list
 	result["page"] = pager.Page

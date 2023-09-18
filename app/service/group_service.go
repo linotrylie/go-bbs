@@ -2,7 +2,7 @@ package service
 
 import (
 	"go-bbs/app/http/model"
-	"go-bbs/app/respository"
+	"go-bbs/app/repository"
 )
 
 type groupService struct {
@@ -18,10 +18,10 @@ func (serv *groupService) name() {
 }
 
 func (serv *groupService) Detail(gid int) (*model.Group, error) {
-	respository.GroupRepository.Group = &model.Group{Gid: gid}
-	err := respository.GroupRepository.First()
+	group := &model.Group{Gid: gid}
+	err := repository.GroupRepository.First(group)
 	if err != nil {
 		return nil, err
 	}
-	return respository.GroupRepository.Group, nil
+	return group, nil
 }

@@ -7,7 +7,7 @@ import (
 	"go-bbs/app/constants"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
-	"go-bbs/app/respository"
+	"go-bbs/app/repository"
 	"go-bbs/app/service"
 	"go-bbs/global"
 	"strings"
@@ -20,7 +20,7 @@ func JWT() gin.HandlerFunc {
 		if global.CONFIG.System.Env == "develop" {
 			global.User = &model.User{}
 			global.User.Uid = 1
-			err := respository.FindByLocation(global.User)
+			err := repository.UserRepository.First(global.User)
 			if err != nil {
 				c.JSON(419, gin.H{
 					"code": 7,
@@ -51,7 +51,7 @@ func JWT() gin.HandlerFunc {
 		}
 		global.User = &model.User{}
 		global.User.Uid = claims.UID
-		err = respository.FindByLocation(global.User)
+		err = repository.UserRepository.First(global.User)
 		if err != nil {
 			c.JSON(419, gin.H{
 				"code": 7,

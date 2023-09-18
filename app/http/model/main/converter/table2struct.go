@@ -127,85 +127,384 @@ func (t *Table2Struct) Config(c *T2tConfig) *Table2Struct {
 
 func (t *Table2Struct) RunRepository() error {
 	formatStr := `
-package respository
+package repository
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/duke-git/lancet/v2/random"
+	"github.com/redis/go-redis/v9"
+	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
+	"go-bbs/global"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type %sRepository struct {
-	%s  *model.%s
 	Pager *Pager
-	Repo  Repository
 }
-
 var %sRepository = new%sRepository()
 
 func new%sRepository() *%sRepository {
 	return new(%sRepository)
 }
 
-func (obj *%sRepository) Insert(%s model.%s) (rowsAffected int64, e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.Insert(&%s)
+func (repo *%sRepository) Insert(%s *model.%s) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "Insert", e, now)
+		}
+	}()
+	result := global.DB.Create(%s)
+	if result.Error != nil {
+		
+		return
+	}
+	repo.SaveInRedis(%s)
+	return result.RowsAffected, result.Error
 }
 
-func (obj *%sRepository) Update(%s model.%s) (rowsAffected int64, e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.Update(&%s)
+func (repo *%sRepository) Update(%s *model.%s) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "Update", e, now)
+		}
+	}()
+	if len(%s.Location()) == 0 {
+		return 0, errors.New("location cannot be empty")
+	}
+	updateValues := %s.GetChanges()
+	if len(updateValues) == 0 {
+		return 0, nil
+	}
+	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Updates(updateValues)
+	if result.Error != nil {
+		return
+	}
+	//更新完成后，重新缓存
+	repo.DeleteInRedis(%s)
+	repo.First(%s)
+	e = result.Error
+	rowsAffected = result.RowsAffected
+	return
 }
 
-func (obj *%sRepository) FindByLocation(%s model.%s) (e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.FindByLocation(&%s)
+func (repo *%sRepository) First(%s *model.%s) (e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "First", e, now)
+		}
+	}()
+	if len(%s.Location()) == 0 {
+		return errors.New("location cannot be empty")
+	}
+	//先查询redis缓存
+	err := repo.FindInRedis(%s)
+	if err != nil && err != redis.Nil {
+		return err
+	}
+	result := global.DB.Table(%s.TableName()).Where(%s.Location()).First(%s)
+	e = result.Error
+	if result.Error != nil {
+		
+		return
+	}
+	repo.SaveInRedis(%s)
+	return
 }
 
-func (obj *%sRepository) DeleteByLocation(%s model.%s) (rowsAffected int64, e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.Update(&%s)
+// DeleteByLocation 此方法为硬删除 慎用
+func (repo *%sRepository) DeleteByLocation(%s *model.%s) (rowsAffected int64, e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "DeleteByLocation", e, now)
+		}
+	}()
+	if len(%s.Location()) == 0 {
+		return 0, errors.New("location cannot be empty")
+	}
+	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Unscoped().Delete(%s)
+	if result.Error != nil {
+		return
+	}
+	repo.DeleteInRedis(%s)
+	rowsAffected = result.RowsAffected
+	e = result.Error
+	return
 }
 
-func (obj *%sRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
-	%sRepository.Repo.Model = &model.%s{}
-	return %sRepository.Repo.TransactionExecute(fun, opts...)
+// 事务
+func (repo *%sRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
+		defer func() {
+			if err := recover(); err != nil {
+				e = errors.New(fmt.Sprint(err))
+				global.LOG.Error(e.Error(), zap.Error(e))
+			}
+		}()
+		e = fun()
+		return
+	}, opts...)
 }
 
-func (obj *%sRepository) SaveInRedis(%s model.%s) (e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.SaveInRedis(&%s)
+//////////////Redis///////////////////////////
+
+func (repo *%sRepository) SaveInRedis(%s *model.%s) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	var redisKey string
+	redisKey = %s.RedisKey()
+	resByte, e := json.Marshal(%s)
+	if e != nil {
+		return e
+	}
+	resStr := string(resByte)
+	global.REDIS.Set(context.Background(), redisKey, resStr, time.Duration(random.RandInt(7200, 14400))*time.Second)
+	return nil
 }
 
-func (obj *%sRepository) FindInRedis(%s model.%s) (e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.FindInRedis(&%s)
+func (repo *%sRepository) FindInRedis(%s *model.%s) (e error) {
+	defer func() {
+		if e != nil && e != redis.Nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	var redisKey string
+	redisKey = %s.RedisKey()
+	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
+	if e != nil && e != redis.Nil {
+		return
+	} else if e == redis.Nil {
+		return
+	} else {
+		e = json.Unmarshal([]byte(redisRes), %s)
+	}
+	return
 }
 
-func (obj *%sRepository) DeleteInRedis(%s model.%s) (e error) {
-	%sRepository.Repo.Model = &%s
-	return %sRepository.Repo.DeleteInRedis(&%s)
+func (repo *%sRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+	defer func() {
+		if e != nil && e != redis.Nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
+	if e != nil && e != redis.Nil {
+		return
+	} else if e == redis.Nil {
+		return
+	} else {
+		return
+	}
+	return
 }
 
-func (obj *%sRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	%sRepository.Repo.Model = &model.%s{}
-	return %sRepository.Repo.SaveInRedisByKey(redisKey, data)
+func (repo *%sRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
+	return nil
 }
 
-func (obj *%sRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
-	%sRepository.Repo.Model = &model.%s{}
-	return %sRepository.Repo.FindInRedisByKey(redisKey)
+func (repo *%sRepository) DeleteInRedis(%s *model.%s) (e error) {
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+		}
+	}()
+	var redisKey string
+	redisKey = %s.RedisKey()
+	err := global.REDIS.Del(context.Background(), redisKey).Err()
+	if err != nil {
+		return
+	}
+	return nil
+}
+func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.%s, e error) {
+	now := time.Now()
+	%s := &model.%s{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "DeleteByLocation", e, now)
+		}
+	}()
+	var str string
+	if repo.Pager.FieldsOrder != nil {
+		for _, v := range repo.Pager.FieldsOrder {
+			str += strings.Replace(v, " ", "", -1)
+		}
+	}
+	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
+	key, _ := repo.FindInRedisByKey(redisKey)
+	if key != "" {
+		e = json.Unmarshal([]byte(key), &list)
+		if e != nil {
+			return nil, e
+		}
+		db := global.DB.Model(%s)
+		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
+			var count64 int64
+			e = db.Count(&count64).Error
+			count := int(count64)
+			if e != nil {
+				return
+			}
+			if count != 0 {
+				//Calculate the length of the pagination
+				if count %` + ` repo.Pager.PageSize == 0 {
+					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+				} else {
+					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+				}
+			}
+		}
+		return
+	}
+	db := global.DB.Table(%s.TableName()).Where(query)
+	e = repo.Execute(db, &list)
+	if e != nil {
+		return nil, e
+	}
+	if len(list) == 0 {
+		return nil, exceptions.NotFoundData
+	}
+	marshal, e := json.Marshal(list)
+	if e != nil {
+		return nil, e
+	}
+	repo.SaveInRedisByKey(redisKey, string(marshal))
+	return
 }
 
-func (obj *%sRepository) GetDataByWhereMap(where map[string]interface{}) (e error) {
-	%sRepository.Repo.Model = &model.%s{}
-	return %sRepository.Repo.GetDataByWhereMap(where)
+func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.%s, e error) {
+	now := time.Now()
+	%s := &model.%s{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "GetDataListByWhere", e, now)
+		}
+	}()
+	var str string
+	if repo.Pager.FieldsOrder != nil {
+		for _, v := range repo.Pager.FieldsOrder {
+			str += strings.Replace(v, " ", "", -1)
+		}
+	}
+	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
+	key, _ := repo.FindInRedisByKey(redisKey)
+	if key != "" {
+		e = json.Unmarshal([]byte(key), &list)
+		if e != nil {
+			return nil, e
+		}
+		db := global.DB.Model(%s)
+		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
+			var count64 int64
+			e = db.Count(&count64).Error
+			count := int(count64)
+			if e != nil {
+				return
+			}
+			if count != 0 {
+				//Calculate the length of the pagination
+				if count %` + ` repo.Pager.PageSize == 0 {
+					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+				} else {
+					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+				}
+			}
+		}
+		return
+	}
+	db := global.DB.Table(%s.TableName())
+	if query != "" {
+		db = db.Where(query, args...)
+	}
+	e = repo.Execute(db, &list)
+	if e != nil {
+		return nil, e
+	}
+	if len(list) == 0 {
+		return nil, exceptions.NotFoundData
+	}
+	marshal, e := json.Marshal(list)
+	if e != nil {
+		return nil, e
+	}
+	repo.SaveInRedisByKey(redisKey, string(marshal))
+	return
 }
 
-func (obj *%sRepository) GetDataListByWhereMap(where map[string]interface{}) ([]model.Model,error) {
-	%sRepository.Repo.Model = &model.%s{}
-	return %sRepository.Repo.GetDataListByWhereMap(where)
+func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interface{}) (e error) {
+	now := time.Now()
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(%s.TableName(), "GetDataByWhereMap", e, now)
+		}
+	}()
+	db := global.DB.Table(%s.TableName()).Where(where).First(%s)
+	e = db.Error
+	if e != nil {
+		return
+	}
+	repo.SaveInRedis(%s)
+	return
 }
 
+func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
+	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
+		var count64 int64
+		e := db.Count(&count64).Error
+		count := int(count64)
+		if e != nil {
+			return e
+		}
+		if count != 0 {
+			//Calculate the length of the pagination
+			if count %` + ` repo.Pager.PageSize == 0 {
+				repo.Pager.TotalPage = count / repo.Pager.PageSize
+			} else {
+				repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+			}
+		}
+		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
+	}
+	orderValue := repo.Pager.FieldsOrder
+	if len(orderValue) > 0 {
+		for _, v := range orderValue {
+			db = db.Order(v)
+		}
+	}
+	resultDB := db.Find(object)
+	if resultDB.Error != nil {
+		return resultDB.Error
+	}
+	return nil
+}
 `
 	if t.config == nil {
 		t.config = new(T2tConfig)
@@ -241,20 +540,20 @@ func (obj *%sRepository) GetDataListByWhereMap(where map[string]interface{}) ([]
 		}*/
 		// newTableName forumAccess tableName ForumAccess tableRealName forum_access
 		newTableName := strings.ToLower(tableName[0:1]) + tableName[1:]
-		sprintf := fmt.Sprintf(formatStr,
-			newTableName, tableName, tableName, tableName, tableName, tableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, tableName, tableName, tableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, newTableName, tableName, tableName, newTableName, tableName, newTableName,
-			newTableName, tableName, tableName, tableName,
-			newTableName, tableName, tableName, tableName,
-			newTableName, tableName, tableName, tableName,
-			newTableName, tableName, tableName, tableName,
+		big := tableName
+		small := newTableName
+		sprintf := fmt.Sprintf(formatStr, newTableName, tableName, tableName, tableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, small, tableName, newTableName, newTableName,
+			newTableName, newTableName, big,
+			newTableName, newTableName, small, small, small, small, tableName, newTableName, newTableName, tableName,
+			newTableName /*63*/, tableName, newTableName, newTableName, newTableName, "", newTableName, newTableName, tableName,
+			newTableName, tableName, newTableName, newTableName, newTableName, "" /*77*/, newTableName, newTableName,
+			newTableName, tableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, "",
 		)
 		// 写入文件struct
 		var savePath = t.savePath
@@ -395,7 +694,7 @@ func (t *Table2Struct) RunEntity() error {
 			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
 		structContent += "type " + tableName + "Entity struct {\n"
-		structContent += fmt.Sprintf("model.%s\n", tableName)
+		structContent += fmt.Sprintf("*model.%s\n", tableName)
 		structContent += "}"
 		// 写入文件struct
 		var savePath = t.savePath

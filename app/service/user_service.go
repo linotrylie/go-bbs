@@ -10,7 +10,7 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
-	"go-bbs/app/respository"
+	"go-bbs/app/repository"
 	"go-bbs/global"
 	"go-bbs/utils"
 	"time"
@@ -30,14 +30,13 @@ func newUserService() *userService {
 func (serv *userService) IsHasUserByUsername(username string, user *model.User) bool {
 	where := make(map[string]interface{})
 	where["username"] = username
-	e := respository.UserRepository.GetDataByWhereMap(where)
+	e := repository.UserRepository.GetDataByWhereMap(user, where)
 	if e != nil {
 		return false
 	}
-	if respository.UserRepository.User == nil {
+	if user == nil {
 		return false
 	}
-	user = respository.UserRepository.User
 	return true
 }
 
@@ -54,8 +53,8 @@ func (serv *userService) Login(userLogin requests.UserLogin, ctx *gin.Context) (
 		return nil, nil, "", exceptions.FailedVerify
 	}
 	//用户通过验证后，对用户进行后续操作，如增加经验积分或者记录登录ip等等
-	go serv.LoginAfter(user, ctx)
-	jwtCustomClaims, token, err := serv.ReturnUserInfo(*respository.UserRepository.User)
+	go serv.LoginAfter(&user, ctx)
+	jwtCustomClaims, token, err := serv.ReturnUserInfo(&user)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -81,11 +80,11 @@ func (serv *userService) VerifyPassword(user *model.User, password string) bool 
 	return false
 }
 
-func (serv *userService) LoginAfter(user model.User, ctx *gin.Context) {
+func (serv *userService) LoginAfter(user *model.User, ctx *gin.Context) {
 	user.SetLogins(1).
 		SetLoginDate(time.Now().Unix()).
 		SetLoginIP(utils.Ip2long(ctx.ClientIP()))
-	_, err := respository.UserRepository.Update(user)
+	_, err := repository.UserRepository.Update(user)
 	if err != nil {
 		return
 	}
@@ -96,27 +95,27 @@ func (serv *userService) Logout() {
 }
 
 func (serv *userService) Detail(uid int) (*model.User, error) {
-	user := model.User{Uid: uid}
-	err := respository.UserRepository.FindByLocation(user)
+	user := &model.User{Uid: uid}
+	err := repository.UserRepository.First(user)
 	if err != nil {
 		return nil, err
 	}
-	return respository.UserRepository.User, nil
+	return user, nil
 }
 
 func (serv *userService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
-	user := model.User{Uid: global.User.Uid}
-	err = respository.UserRepository.FindByLocation(user)
+	user := &model.User{Uid: global.User.Uid}
+	err = repository.UserRepository.First(user)
 	if err != nil {
 		return
 	}
-	ok := serv.VerifyPassword(respository.UserRepository.User, userChangePassword.OldPassword)
+	ok := serv.VerifyPassword(user, userChangePassword.OldPassword)
 	if !ok {
 		err = exceptions.FailedVerify
 		return
 	}
-	serv.GeneratePassword(respository.UserRepository.User, userChangePassword.NewPassword)
-	update, err := respository.UserRepository.Update(user)
+	serv.GeneratePassword(user, userChangePassword.NewPassword)
+	update, err := repository.UserRepository.Update(user)
 	if err != nil {
 		return err
 	}
@@ -130,21 +129,21 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 }
 
 func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
-	user := model.User{Uid: global.User.Uid}
-	err = respository.UserRepository.FindByLocation(user)
+	user := &model.User{Uid: global.User.Uid}
+	err = repository.UserRepository.First(user)
 	if err != nil {
 		return err
 	}
-	if respository.UserRepository.User.Realname != userEdit.Realname {
+	if user.Realname != userEdit.Realname {
 		user.SetRealname(userEdit.Realname)
 	}
-	if respository.UserRepository.User.Qq != userEdit.Qq {
+	if user.Qq != userEdit.Qq {
 		user.SetQq(userEdit.Qq)
 	}
-	if respository.UserRepository.User.Mobile != userEdit.Mobile {
+	if user.Mobile != userEdit.Mobile {
 		user.SetMobile(userEdit.Mobile)
 	}
-	if respository.UserRepository.User.Email != userEdit.Email && !strutil.IsBlank(userEdit.Email) {
+	if user.Email != userEdit.Email && !strutil.IsBlank(userEdit.Email) {
 		//邮箱不为空 就检验邮箱验证码
 		var emailCaptchaVerify = &requests.EmailCaptchaVerify{Email: userEdit.Email, Value: userEdit.Value}
 		ok := verifyEmailCaptcha(emailCaptchaVerify)
@@ -155,7 +154,7 @@ func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 		user.SetEmail(userEdit.Email)
 	}
 	if &user != nil {
-		var update, e = respository.UserRepository.Update(user)
+		var update, e = repository.UserRepository.Update(user)
 		if e != nil {
 			err = e
 			return
@@ -181,7 +180,7 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 	//	return nil, nil, "", exceptions.FailedVerify
 	//}
 	createIp, err := ip.StringToLong(ctx.ClientIP())
-	var user = model.User{
+	var user = &model.User{
 		Username:   userRegister.Username,
 		Email:      userRegister.Email.Email,
 		CreateDate: time.Now().Unix(),
@@ -192,33 +191,33 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 		LoginIp:    uint32(createIp),
 		Signature:  "他什么也没留下~",
 	}
-	serv.GeneratePassword(&user, userRegister.Password)
-	insert, err := respository.UserRepository.Insert(user)
+	serv.GeneratePassword(user, userRegister.Password)
+	insert, err := repository.UserRepository.Insert(user)
 	if err != nil {
 		return nil, nil, "", err
 	}
 	if insert < 1 {
 		return nil, nil, "", exceptions.CreateError
 	}
-	jwtCustomClaims, token, err := serv.ReturnUserInfo(*respository.UserRepository.User)
+	jwtCustomClaims, token, err := serv.ReturnUserInfo(user)
 	if err != nil {
 		return nil, nil, "", err
 	}
-	return &user, jwtCustomClaims, token, nil
+	return user, jwtCustomClaims, token, nil
 }
 
-func (serv *userService) ReturnUserInfo(user model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {
+func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {
 	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
-	claims := ServiceGroupApp.JwtService.CreateClaims(&user)
+	claims := ServiceGroupApp.JwtService.CreateClaims(user)
 	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
 	if e != nil {
 		return nil, "", e
 	}
-	global.User = respository.UserRepository.User
+	global.User = user
 	jwtCustomClaims = &claims
 	//将用户登录信息记录在redis中
 	global.REDIS.Set(
-		context.Background(), respository.UserRepository.User.Username,
+		context.Background(), user.Username,
 		"login",
 		time.Duration(
 			utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix(),

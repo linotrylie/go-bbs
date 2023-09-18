@@ -6,7 +6,7 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/response"
-	"go-bbs/app/respository"
+	repository "go-bbs/app/repository"
 	"go-bbs/global"
 	"math"
 	"strconv"
@@ -32,7 +32,7 @@ func AuthForum() gin.HandlerFunc {
 			return
 		}
 		forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
-		respository.FindByLocation(forumAccess)
+		repository.ForumAccessRepository.First(forumAccess)
 		if forumAccess.Fid != 0 && forumAccess.Allowread == 0 {
 			response.FailWithMessage(exceptions.NotAuth.Error(), ctx)
 			ctx.Abort()
