@@ -61,18 +61,19 @@ func (repo *gitTagsRepository) Update(gitTags *model.GitTags) (rowsAffected int6
 		return 0, nil
 	}
 	result := global.DB.Table(gitTags.TableName()).Where(gitTags.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(gitTags)
-	repo.First(gitTags)
+	repo.First(gitTags, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *gitTagsRepository) First(gitTags *model.GitTags) (e error) {
+func (repo *gitTagsRepository) First(gitTags *model.GitTags, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *gitTagsRepository) First(gitTags *model.GitTags) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(gitTags)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(gitTags)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(gitTags.TableName()).Where(gitTags.Location()).First(gitTags)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(gitTags.TableName()).Where(gitTags.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(gitTags)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(gitTags)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *gitTagsRepository) DeleteByLocation(gitTags *model.GitTags) (rowsAff
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(gitTags.TableName()).Where(gitTags.Location()).Unscoped().Delete(gitTags)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(gitTags)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *gitTagsRepository) FindInRedis(gitTags *model.GitTags) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), gitTags)
 	}
-	return
+	return nil
 }
 
 func (repo *gitTagsRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *gitTagsRepository) FindInRedisByKey(redisKey string) (redisRes strin
 	return
 }
 
-func (repo *gitTagsRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *gitTagsRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *gitTagsRepository) DeleteInRedis(gitTags *model.GitTags) (e error) {
@@ -207,13 +206,13 @@ func (repo *gitTagsRepository) DeleteInRedis(gitTags *model.GitTags) (e error) {
 	}()
 	var redisKey string
 	redisKey = gitTags.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.GitTags, e error) {
+func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.GitTags, e error) {
 	now := time.Now()
 	gitTags := &model.GitTags{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(gitTags.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *gitTagsRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.GitTags, e error) {
+func (repo *gitTagsRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.GitTags, e error) {
 	now := time.Now()
 	gitTags := &model.GitTags{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *gitTagsRepository) GetDataListByWhere(query string, args []interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(gitTags.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *gitTagsRepository) GetDataListByWhere(query string, args []interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *gitTagsRepository) GetDataByWhereMap(gitTags *model.GitTags, where map[string]interface{}) (e error) {
+func (repo *gitTagsRepository) GetDataByWhereMap(gitTags *model.GitTags, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *gitTagsRepository) GetDataByWhereMap(gitTags *model.GitTags, where m
 			global.Prome.OrmWithLabelValues(gitTags.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(gitTags.TableName()).Where(where).First(gitTags)
+	db := global.DB.Table(gitTags.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(gitTags)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(gitTags)
-	return
+	return nil
 }
 
 func (repo *gitTagsRepository) Execute(db *gorm.DB, object interface{}) error {

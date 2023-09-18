@@ -61,18 +61,19 @@ func (repo *ipaccessRepository) Update(ipaccess *model.Ipaccess) (rowsAffected i
 		return 0, nil
 	}
 	result := global.DB.Table(ipaccess.TableName()).Where(ipaccess.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(ipaccess)
-	repo.First(ipaccess)
+	repo.First(ipaccess, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *ipaccessRepository) First(ipaccess *model.Ipaccess) (e error) {
+func (repo *ipaccessRepository) First(ipaccess *model.Ipaccess, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *ipaccessRepository) First(ipaccess *model.Ipaccess) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(ipaccess)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(ipaccess)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(ipaccess.TableName()).Where(ipaccess.Location()).First(ipaccess)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(ipaccess.TableName()).Where(ipaccess.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(ipaccess)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(ipaccess)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *ipaccessRepository) DeleteByLocation(ipaccess *model.Ipaccess) (rows
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(ipaccess.TableName()).Where(ipaccess.Location()).Unscoped().Delete(ipaccess)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(ipaccess)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *ipaccessRepository) FindInRedis(ipaccess *model.Ipaccess) (e error) 
 	} else {
 		e = json.Unmarshal([]byte(redisRes), ipaccess)
 	}
-	return
+	return nil
 }
 
 func (repo *ipaccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *ipaccessRepository) FindInRedisByKey(redisKey string) (redisRes stri
 	return
 }
 
-func (repo *ipaccessRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *ipaccessRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *ipaccessRepository) DeleteInRedis(ipaccess *model.Ipaccess) (e error) {
@@ -207,13 +206,13 @@ func (repo *ipaccessRepository) DeleteInRedis(ipaccess *model.Ipaccess) (e error
 	}()
 	var redisKey string
 	redisKey = ipaccess.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Ipaccess, e error) {
+func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Ipaccess, e error) {
 	now := time.Now()
 	ipaccess := &model.Ipaccess{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(ipaccess.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Ipaccess, e error) {
+func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Ipaccess, e error) {
 	now := time.Now()
 	ipaccess := &model.Ipaccess{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interfac
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(ipaccess.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interfac
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *ipaccessRepository) GetDataByWhereMap(ipaccess *model.Ipaccess, where map[string]interface{}) (e error) {
+func (repo *ipaccessRepository) GetDataByWhereMap(ipaccess *model.Ipaccess, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *ipaccessRepository) GetDataByWhereMap(ipaccess *model.Ipaccess, wher
 			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(ipaccess.TableName()).Where(where).First(ipaccess)
+	db := global.DB.Table(ipaccess.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(ipaccess)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(ipaccess)
-	return
+	return nil
 }
 
 func (repo *ipaccessRepository) Execute(db *gorm.DB, object interface{}) error {

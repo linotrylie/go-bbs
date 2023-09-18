@@ -8,7 +8,7 @@ import (
 )
 
 func TransformPost(post *model.Post) (postVo *response.PostVo) {
-	if post != nil {
+	if post == nil {
 		return nil
 	}
 	postVo = &response.PostVo{
@@ -33,5 +33,5 @@ func TransformPost(post *model.Post) (postVo *response.PostVo) {
 		LastUpdateReason: post.LastUpdateReason,
 		ReplyHide:        post.ReplyHide,
 	}
-	return
+	return postVo
 }

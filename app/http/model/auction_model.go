@@ -30,7 +30,7 @@ type Auction struct {
 	ProfitCopper              int     `gorm:"column:profitcopper" json:"profitcopper"`
 	HandlingChargeTax         int     `gorm:"column:handlingchargetax" json:"handlingchargetax"`
 	DailyIncomeTax            int     `gorm:"column:dailyincometax" json:"dailyincometax"`
-	CreateTime                string  `gorm:"column:create_time" json:"create_time"`
+	CreateTime                int64   `gorm:"column:create_time" json:"create_time"`
 	HandlingChargeDailyGold   int     `gorm:"column:handlingchargedailygold" json:"handlingchargedailygold"`
 	HandlingChargeDailyCoin   int     `gorm:"column:handlingchargedailycoin" json:"handlingchargedailycoin"`
 	HandlingChargeDailyCopper int     `gorm:"column:handlingchargedailycopper" json:"handlingchargedailycopper"`
@@ -74,4 +74,169 @@ func (obj *Auction) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *Auction) SetId(val int) *Auction {
+	obj.Id += val
+	obj.Update("id", obj.Id)
+	return obj
+}
+func (obj *Auction) SetUid(val int) *Auction {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Auction) SetCostSingleGold(val int) *Auction {
+	obj.CostSingleGold += val
+	obj.Update("costsinglegold", obj.CostSingleGold)
+	return obj
+}
+func (obj *Auction) SetCostSingleCoin(val int) *Auction {
+	obj.CostSingleCoin += val
+	obj.Update("costsinglecoin", obj.CostSingleCoin)
+	return obj
+}
+func (obj *Auction) SetCostSingleCopper(val int) *Auction {
+	obj.CostSingleCopper += val
+	obj.Update("costsinglecopper", obj.CostSingleCopper)
+	return obj
+}
+func (obj *Auction) SetSaleSingleGold(val int) *Auction {
+	obj.SaleSingleGold += val
+	obj.Update("salesinglegold", obj.SaleSingleGold)
+	return obj
+}
+func (obj *Auction) SetSaleSingleCoin(val int) *Auction {
+	obj.SaleSingleCoin += val
+	obj.Update("salesinglecoin", obj.SaleSingleCoin)
+	return obj
+}
+func (obj *Auction) SetSaleSingleCopper(val int) *Auction {
+	obj.SaleSingleCopper += val
+	obj.Update("salesinglecopper", obj.SaleSingleCopper)
+	return obj
+}
+func (obj *Auction) SetNums(val int) *Auction {
+	obj.Nums += val
+	obj.Update("nums", obj.Nums)
+	return obj
+}
+func (obj *Auction) SetItemName(val string) *Auction {
+	obj.ItemName = val
+	obj.Update("itemname", obj.ItemName)
+	return obj
+}
+func (obj *Auction) SetCostGold(val int) *Auction {
+	obj.CostGold += val
+	obj.Update("costgold", obj.CostGold)
+	return obj
+}
+func (obj *Auction) SetCostCoin(val int) *Auction {
+	obj.CostCoin += val
+	obj.Update("costcoin", obj.CostCoin)
+	return obj
+}
+func (obj *Auction) SetCostCopper(val int) *Auction {
+	obj.CostCopper += val
+	obj.Update("costcopper", obj.CostCopper)
+	return obj
+}
+func (obj *Auction) SetSaleGold(val int) *Auction {
+	obj.SaleGold += val
+	obj.Update("salegold", obj.SaleGold)
+	return obj
+}
+func (obj *Auction) SetSaleCoin(val int) *Auction {
+	obj.SaleCoin += val
+	obj.Update("salecoin", obj.SaleCoin)
+	return obj
+}
+func (obj *Auction) SetSaleCopper(val int) *Auction {
+	obj.SaleCopper += val
+	obj.Update("salecopper", obj.SaleCopper)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeGold(val int) *Auction {
+	obj.HandlingChargeGold += val
+	obj.Update("handlingchargegold", obj.HandlingChargeGold)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeCoin(val int) *Auction {
+	obj.HandlingChargeCoin += val
+	obj.Update("handlingchargecoin", obj.HandlingChargeCoin)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeCopper(val int) *Auction {
+	obj.HandlingChargeCopper += val
+	obj.Update("handlingchargecopper", obj.HandlingChargeCopper)
+	return obj
+}
+func (obj *Auction) SetProfitGold(val int) *Auction {
+	obj.ProfitGold += val
+	obj.Update("profitgold", obj.ProfitGold)
+	return obj
+}
+func (obj *Auction) SetProfitCoin(val int) *Auction {
+	obj.ProfitCoin += val
+	obj.Update("profitcoin", obj.ProfitCoin)
+	return obj
+}
+func (obj *Auction) SetProfitCopper(val int) *Auction {
+	obj.ProfitCopper += val
+	obj.Update("profitcopper", obj.ProfitCopper)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeTax(val int) *Auction {
+	obj.HandlingChargeTax += val
+	obj.Update("handlingchargetax", obj.HandlingChargeTax)
+	return obj
+}
+func (obj *Auction) SetDailyIncomeTax(val int) *Auction {
+	obj.DailyIncomeTax += val
+	obj.Update("dailyincometax", obj.DailyIncomeTax)
+	return obj
+}
+func (obj *Auction) SetCreateTime(val int64) *Auction {
+	obj.CreateTime += val
+	obj.Update("create_time", obj.CreateTime)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeDailyGold(val int) *Auction {
+	obj.HandlingChargeDailyGold += val
+	obj.Update("handlingchargedailygold", obj.HandlingChargeDailyGold)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeDailyCoin(val int) *Auction {
+	obj.HandlingChargeDailyCoin += val
+	obj.Update("handlingchargedailycoin", obj.HandlingChargeDailyCoin)
+	return obj
+}
+func (obj *Auction) SetHandlingChargeDailyCopper(val int) *Auction {
+	obj.HandlingChargeDailyCopper += val
+	obj.Update("handlingchargedailycopper", obj.HandlingChargeDailyCopper)
+	return obj
+}
+func (obj *Auction) SetRmb(val float64) *Auction {
+	obj.Rmb += val
+	obj.Update("rmb", obj.Rmb)
+	return obj
+}
+func (obj *Auction) SetRatio(val float64) *Auction {
+	obj.Ratio += val
+	obj.Update("ratio", obj.Ratio)
+	return obj
+}
+func (obj *Auction) SetDailyGold(val int) *Auction {
+	obj.DailyGold += val
+	obj.Update("dailygold", obj.DailyGold)
+	return obj
+}
+func (obj *Auction) SetDailyCoin(val int) *Auction {
+	obj.DailyCoin += val
+	obj.Update("dailycoin", obj.DailyCoin)
+	return obj
+}
+func (obj *Auction) SetDailyCopper(val int) *Auction {
+	obj.DailyCopper += val
+	obj.Update("dailycopper", obj.DailyCopper)
+	return obj
 }

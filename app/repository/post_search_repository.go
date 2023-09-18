@@ -61,18 +61,19 @@ func (repo *postSearchRepository) Update(postSearch *model.PostSearch) (rowsAffe
 		return 0, nil
 	}
 	result := global.DB.Table(postSearch.TableName()).Where(postSearch.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(postSearch)
-	repo.First(postSearch)
+	repo.First(postSearch, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *postSearchRepository) First(postSearch *model.PostSearch) (e error) {
+func (repo *postSearchRepository) First(postSearch *model.PostSearch, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *postSearchRepository) First(postSearch *model.PostSearch) (e error) 
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(postSearch)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(postSearch)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(postSearch.TableName()).Where(postSearch.Location()).First(postSearch)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(postSearch.TableName()).Where(postSearch.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(postSearch)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(postSearch)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *postSearchRepository) DeleteByLocation(postSearch *model.PostSearch)
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(postSearch.TableName()).Where(postSearch.Location()).Unscoped().Delete(postSearch)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(postSearch)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *postSearchRepository) FindInRedis(postSearch *model.PostSearch) (e e
 	} else {
 		e = json.Unmarshal([]byte(redisRes), postSearch)
 	}
-	return
+	return nil
 }
 
 func (repo *postSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *postSearchRepository) FindInRedisByKey(redisKey string) (redisRes st
 	return
 }
 
-func (repo *postSearchRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *postSearchRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *postSearchRepository) DeleteInRedis(postSearch *model.PostSearch) (e error) {
@@ -207,13 +206,13 @@ func (repo *postSearchRepository) DeleteInRedis(postSearch *model.PostSearch) (e
 	}()
 	var redisKey string
 	redisKey = postSearch.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *postSearchRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.PostSearch, e error) {
+func (repo *postSearchRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.PostSearch, e error) {
 	now := time.Now()
 	postSearch := &model.PostSearch{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *postSearchRepository) GetDataListByWhereMap(query map[string]interfa
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *postSearchRepository) GetDataListByWhereMap(query map[string]interfa
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(postSearch.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *postSearchRepository) GetDataListByWhereMap(query map[string]interfa
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postSearchRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.PostSearch, e error) {
+func (repo *postSearchRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.PostSearch, e error) {
 	now := time.Now()
 	postSearch := &model.PostSearch{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *postSearchRepository) GetDataListByWhere(query string, args []interf
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(postSearch.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *postSearchRepository) GetDataListByWhere(query string, args []interf
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postSearchRepository) GetDataByWhereMap(postSearch *model.PostSearch, where map[string]interface{}) (e error) {
+func (repo *postSearchRepository) GetDataByWhereMap(postSearch *model.PostSearch, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *postSearchRepository) GetDataByWhereMap(postSearch *model.PostSearch
 			global.Prome.OrmWithLabelValues(postSearch.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(postSearch.TableName()).Where(where).First(postSearch)
+	db := global.DB.Table(postSearch.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(postSearch)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(postSearch)
-	return
+	return nil
 }
 
 func (repo *postSearchRepository) Execute(db *gorm.DB, object interface{}) error {

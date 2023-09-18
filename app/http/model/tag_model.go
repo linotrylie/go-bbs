@@ -48,3 +48,33 @@ func (obj *Tag) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Tag) SetTagid(val int) *Tag {
+	obj.Tagid = val
+	obj.Update("tagid", obj.Tagid)
+	return obj
+}
+func (obj *Tag) SetCateid(val int) *Tag {
+	obj.Cateid = val
+	obj.Update("cateid", obj.Cateid)
+	return obj
+}
+func (obj *Tag) SetName(val string) *Tag {
+	obj.Name = val
+	obj.Update("name", obj.Name)
+	return obj
+}
+func (obj *Tag) SetRank(val int) *Tag {
+	obj.Rank += val
+	obj.Update("rank", obj.Rank)
+	return obj
+}
+func (obj *Tag) SetEnable(val int) *Tag {
+	obj.Enable += val
+	obj.Update("enable", obj.Enable)
+	return obj
+}
+func (obj *Tag) SetStyle(val string) *Tag {
+	obj.Style = val
+	obj.Update("style", obj.Style)
+	return obj
+}

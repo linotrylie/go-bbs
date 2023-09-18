@@ -45,3 +45,18 @@ func (obj *Cache) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Cache) SetK(val string) *Cache {
+	obj.K = val
+	obj.Update("k", obj.K)
+	return obj
+}
+func (obj *Cache) SetV(val string) *Cache {
+	obj.V = val
+	obj.Update("v", obj.V)
+	return obj
+}
+func (obj *Cache) SetExpiry(val int) *Cache {
+	obj.Expiry += val
+	obj.Update("expiry", obj.Expiry)
+	return obj
+}

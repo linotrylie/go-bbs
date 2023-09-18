@@ -45,3 +45,18 @@ func (obj *ThreadSearch) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *ThreadSearch) SetFid(val int) *ThreadSearch {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *ThreadSearch) SetTid(val int) *ThreadSearch {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *ThreadSearch) SetMessage(val string) *ThreadSearch {
+	obj.Message = val
+	obj.Update("message", obj.Message)
+	return obj
+}

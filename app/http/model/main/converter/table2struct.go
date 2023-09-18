@@ -189,18 +189,19 @@ func (repo *%sRepository) Update(%s *model.%s) (rowsAffected int64, e error) {
 		return 0, nil
 	}
 	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(%s)
-	repo.First(%s)
+	repo.First(%s,[]string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *%sRepository) First(%s *model.%s) (e error) {
+func (repo *%sRepository) First(%s *model.%s, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -212,18 +213,23 @@ func (repo *%sRepository) First(%s *model.%s) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(%s)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(%s)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(%s.TableName()).Where(%s.Location()).First(%s)
-	e = result.Error
-	if result.Error != nil {
-		
-		return
+	db := global.DB.Table(%s.TableName()).Where(%s.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(%s)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(%s)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -239,13 +245,12 @@ func (repo *%sRepository) DeleteByLocation(%s *model.%s) (rowsAffected int64, e 
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Unscoped().Delete(%s)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(%s)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected,nil
 }
 
 // 事务
@@ -297,7 +302,7 @@ func (repo *%sRepository) FindInRedis(%s *model.%s) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), %s)
 	}
-	return
+	return nil
 }
 
 func (repo *%sRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -317,14 +322,8 @@ func (repo *%sRepository) FindInRedisByKey(redisKey string) (redisRes string, e 
 	return
 }
 
-func (repo *%sRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *%sRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *%sRepository) DeleteInRedis(%s *model.%s) (e error) {
@@ -335,13 +334,13 @@ func (repo *%sRepository) DeleteInRedis(%s *model.%s) (e error) {
 	}()
 	var redisKey string
 	redisKey = %s.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.%s, e error) {
+func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.%s, e error) {
 	now := time.Now()
 	%s := &model.%s{}
 	defer func() {
@@ -369,7 +368,7 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}) (l
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -380,9 +379,14 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}) (l
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(%s.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -395,10 +399,10 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}) (l
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.%s, e error) {
+func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.%s, e error) {
 	now := time.Now()
 	%s := &model.%s{}
 	defer func() {
@@ -437,11 +441,16 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}) (
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(%s.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -455,10 +464,10 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}) (
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interface{}) (e error) {
+func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -466,13 +475,19 @@ func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interf
 			global.Prome.OrmWithLabelValues(%s.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(%s.TableName()).Where(where).First(%s)
+	db := global.DB.Table(%s.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(%s)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(%s)
-	return
+	return nil
 }
 
 func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
@@ -778,6 +793,21 @@ func (t *Table2Struct) Run() error {
 			if v.ColumnComment != "" {
 				clumnComment = fmt.Sprintf(" // %s", v.ColumnComment)
 			}
+			if strings.Contains(v.ColumnName, "Ip") {
+				v.Type = "uint32"
+			}
+			if strings.Contains(v.ColumnName, "ip") && !strings.Contains(v.ColumnName, "Vip") {
+				v.Type = "uint32"
+			}
+			if strings.Contains(v.ColumnName, "Date") {
+				v.Type = "int64"
+			}
+			if strings.Contains(v.ColumnName, "time") {
+				v.Type = "int64"
+			}
+			if strings.Contains(v.ColumnName, "Time") {
+				v.Type = "int64"
+			}
 			structContent += fmt.Sprintf("%s%s %s %s%s\n",
 				tab(depth), v.ColumnName, v.Type, v.Tag, clumnComment)
 		}
@@ -834,6 +864,43 @@ func (t *Table2Struct) Run() error {
 			importContent = "import (\"fmt\"\n\"time\"\n)\n"
 		} else {
 			importContent = "import (\"fmt\"\n)\n"
+		}
+
+		for _, v := range item {
+			if strings.Contains(v.ColumnName, "Ip") {
+				v.Type = "uint32"
+			}
+			if strings.Contains(v.ColumnName, "ip") && !strings.Contains(v.ColumnName, "Vip") {
+				v.Type = "uint32"
+			}
+			if strings.Contains(v.ColumnName, "Date") {
+				v.Type = "int64"
+			}
+			if strings.Contains(v.ColumnName, "time") {
+				v.Type = "int64"
+			}
+			if strings.Contains(v.ColumnName, "Time") {
+				v.Type = "int64"
+			}
+			if (strings.Contains(v.Type, "int") || strings.Contains(v.Type, "float")) &&
+				(!strings.Contains(v.ColumnName, "id")) {
+				structContent += fmt.Sprintf(`
+func (obj *%s) Set%s(val %s) *%s {
+	obj.%s += val
+	obj.Update("%s", obj.%s)
+	return obj
+}`,
+					tableName, v.ColumnName, v.Type, tableName, v.ColumnName, strings.ToLower(v.Tag), v.ColumnName)
+			} else {
+				structContent += fmt.Sprintf(`
+func (obj *%s) Set%s(val %s) *%s {
+	obj.%s = val
+	obj.Update("%s", obj.%s)
+	return obj
+}`,
+					tableName, v.ColumnName, v.Type, tableName, v.ColumnName, strings.ToLower(v.Tag), v.ColumnName)
+
+			}
 		}
 
 		// 写入文件struct

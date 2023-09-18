@@ -9,7 +9,7 @@ import (
 )
 
 func TransformAttach(attach *model.Attach) (attachVo *response.AttachVo) {
-	if attach != nil {
+	if attach == nil {
 		return nil
 	}
 	attachVo = &response.AttachVo{

@@ -45,3 +45,18 @@ func (obj *GgFavoriteThread) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *GgFavoriteThread) SetFavid(val int) *GgFavoriteThread {
+	obj.Favid = val
+	obj.Update("favid", obj.Favid)
+	return obj
+}
+func (obj *GgFavoriteThread) SetTid(val int) *GgFavoriteThread {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *GgFavoriteThread) SetUid(val int) *GgFavoriteThread {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}

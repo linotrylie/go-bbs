@@ -48,3 +48,33 @@ func (obj *Slide) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Slide) SetSlideid(val int) *Slide {
+	obj.Slideid = val
+	obj.Update("slideid", obj.Slideid)
+	return obj
+}
+func (obj *Slide) SetRank(val int) *Slide {
+	obj.Rank += val
+	obj.Update("rank", obj.Rank)
+	return obj
+}
+func (obj *Slide) SetName(val string) *Slide {
+	obj.Name = val
+	obj.Update("name", obj.Name)
+	return obj
+}
+func (obj *Slide) SetUrl(val string) *Slide {
+	obj.Url = val
+	obj.Update("url", obj.Url)
+	return obj
+}
+func (obj *Slide) SetSlidepic(val string) *Slide {
+	obj.Slidepic = val
+	obj.Update("slidepic", obj.Slidepic)
+	return obj
+}
+func (obj *Slide) SetPicheight(val string) *Slide {
+	obj.Picheight = val
+	obj.Update("picheight", obj.Picheight)
+	return obj
+}

@@ -45,3 +45,18 @@ func (obj *Kv) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Kv) SetK(val string) *Kv {
+	obj.K = val
+	obj.Update("k", obj.K)
+	return obj
+}
+func (obj *Kv) SetV(val string) *Kv {
+	obj.V = val
+	obj.Update("v", obj.V)
+	return obj
+}
+func (obj *Kv) SetExpiry(val int) *Kv {
+	obj.Expiry += val
+	obj.Update("expiry", obj.Expiry)
+	return obj
+}

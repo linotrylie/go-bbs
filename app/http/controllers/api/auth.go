@@ -24,7 +24,7 @@ func (c *AuthController) Index(ctx *gin.Context) {
 	}
 	var group = &model.Group{}
 	group.Gid = user.Gid
-	repository.GroupRepository.First(group)
+	repository.GroupRepository.First(group, nil)
 	user.SetCredits(1).SetGolds(1)
 	fmt.Println(user)
 	userEntity := entity.UserEntity{User: *user, Group: group}
@@ -33,7 +33,7 @@ func (c *AuthController) Index(ctx *gin.Context) {
 	args := make([]interface{}, 1)
 	args[0] = 1
 	repository.UserRepository.Pager = &pager
-	list, _ := repository.UserRepository.GetDataListByWhere("uid > ?", args)
+	list, _ := repository.UserRepository.GetDataListByWhere("uid > ?", args, nil)
 	var result = make(map[string]interface{})
 	result["list"] = list
 	result["page"] = pager.Page

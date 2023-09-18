@@ -45,3 +45,18 @@ func (obj *GitTags) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *GitTags) SetTagid(val int) *GitTags {
+	obj.Tagid = val
+	obj.Update("tagid", obj.Tagid)
+	return obj
+}
+func (obj *GitTags) SetName(val string) *GitTags {
+	obj.Name = val
+	obj.Update("name", obj.Name)
+	return obj
+}
+func (obj *GitTags) SetLink(val int) *GitTags {
+	obj.Link += val
+	obj.Update("link", obj.Link)
+	return obj
+}

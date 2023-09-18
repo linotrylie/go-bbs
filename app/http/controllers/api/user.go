@@ -56,7 +56,7 @@ func (controller *UserController) Login(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	userVo.Group = *group
+	userVo.Group = group
 	response.OkWithData(gin.H{
 		"token":      token,
 		"expired_at": jwtCustomClaims.ExpiresAt.Unix(),
@@ -94,7 +94,7 @@ func (controller *UserController) Detail(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	userVo.Group = *group
+	userVo.Group = group
 	response.OkWithData(gin.H{
 		"user": userVo,
 	}, ctx)
@@ -201,7 +201,7 @@ func (controller *UserController) Register(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	userVo.Group = *group
+	userVo.Group = group
 	response.OkWithData(gin.H{
 		"token":      token,
 		"expired_at": jwtCustomClaims.ExpiresAt.Unix(),

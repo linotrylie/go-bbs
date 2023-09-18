@@ -47,3 +47,28 @@ func (obj *Kami) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Kami) SetKahao(val int) *Kami {
+	obj.Kahao += val
+	obj.Update("kahao", obj.Kahao)
+	return obj
+}
+func (obj *Kami) SetKami(val string) *Kami {
+	obj.Kami = val
+	obj.Update("kami", obj.Kami)
+	return obj
+}
+func (obj *Kami) SetMianzhi(val int) *Kami {
+	obj.Mianzhi += val
+	obj.Update("mianzhi", obj.Mianzhi)
+	return obj
+}
+func (obj *Kami) SetUid(val int) *Kami {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Kami) SetRiqi(val string) *Kami {
+	obj.Riqi = val
+	obj.Update("riqi", obj.Riqi)
+	return obj
+}

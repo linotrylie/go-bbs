@@ -61,18 +61,19 @@ func (repo *mythreadRepository) Update(mythread *model.Mythread) (rowsAffected i
 		return 0, nil
 	}
 	result := global.DB.Table(mythread.TableName()).Where(mythread.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(mythread)
-	repo.First(mythread)
+	repo.First(mythread, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *mythreadRepository) First(mythread *model.Mythread) (e error) {
+func (repo *mythreadRepository) First(mythread *model.Mythread, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *mythreadRepository) First(mythread *model.Mythread) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(mythread)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(mythread)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(mythread.TableName()).Where(mythread.Location()).First(mythread)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(mythread.TableName()).Where(mythread.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(mythread)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(mythread)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *mythreadRepository) DeleteByLocation(mythread *model.Mythread) (rows
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(mythread.TableName()).Where(mythread.Location()).Unscoped().Delete(mythread)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(mythread)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *mythreadRepository) FindInRedis(mythread *model.Mythread) (e error) 
 	} else {
 		e = json.Unmarshal([]byte(redisRes), mythread)
 	}
-	return
+	return nil
 }
 
 func (repo *mythreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *mythreadRepository) FindInRedisByKey(redisKey string) (redisRes stri
 	return
 }
 
-func (repo *mythreadRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *mythreadRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *mythreadRepository) DeleteInRedis(mythread *model.Mythread) (e error) {
@@ -207,13 +206,13 @@ func (repo *mythreadRepository) DeleteInRedis(mythread *model.Mythread) (e error
 	}()
 	var redisKey string
 	redisKey = mythread.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Mythread, e error) {
+func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Mythread, e error) {
 	now := time.Now()
 	mythread := &model.Mythread{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(mythread.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *mythreadRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Mythread, e error) {
+func (repo *mythreadRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Mythread, e error) {
 	now := time.Now()
 	mythread := &model.Mythread{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *mythreadRepository) GetDataListByWhere(query string, args []interfac
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(mythread.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *mythreadRepository) GetDataListByWhere(query string, args []interfac
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *mythreadRepository) GetDataByWhereMap(mythread *model.Mythread, where map[string]interface{}) (e error) {
+func (repo *mythreadRepository) GetDataByWhereMap(mythread *model.Mythread, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *mythreadRepository) GetDataByWhereMap(mythread *model.Mythread, wher
 			global.Prome.OrmWithLabelValues(mythread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(mythread.TableName()).Where(where).First(mythread)
+	db := global.DB.Table(mythread.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(mythread)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(mythread)
-	return
+	return nil
 }
 
 func (repo *mythreadRepository) Execute(db *gorm.DB, object interface{}) error {

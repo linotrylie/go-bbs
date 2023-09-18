@@ -30,7 +30,7 @@ func newUserService() *userService {
 func (serv *userService) IsHasUserByUsername(username string, user *model.User) bool {
 	where := make(map[string]interface{})
 	where["username"] = username
-	e := repository.UserRepository.GetDataByWhereMap(user, where)
+	e := repository.UserRepository.GetDataByWhereMap(user, where, nil)
 	if e != nil {
 		return false
 	}
@@ -83,7 +83,7 @@ func (serv *userService) VerifyPassword(user *model.User, password string) bool 
 func (serv *userService) LoginAfter(user *model.User, ctx *gin.Context) {
 	user.SetLogins(1).
 		SetLoginDate(time.Now().Unix()).
-		SetLoginIP(utils.Ip2long(ctx.ClientIP()))
+		SetLoginIp(utils.Ip2long(ctx.ClientIP()))
 	_, err := repository.UserRepository.Update(user)
 	if err != nil {
 		return
@@ -96,7 +96,7 @@ func (serv *userService) Logout() {
 
 func (serv *userService) Detail(uid int) (*model.User, error) {
 	user := &model.User{Uid: uid}
-	err := repository.UserRepository.First(user)
+	err := repository.UserRepository.First(user, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (serv *userService) Detail(uid int) (*model.User, error) {
 
 func (serv *userService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user)
+	err = repository.UserRepository.First(user, nil)
 	if err != nil {
 		return
 	}
@@ -130,7 +130,7 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 
 func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user)
+	err = repository.UserRepository.First(user, nil)
 	if err != nil {
 		return err
 	}

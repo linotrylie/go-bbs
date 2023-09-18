@@ -61,18 +61,19 @@ func (repo *threadSearchRepository) Update(threadSearch *model.ThreadSearch) (ro
 		return 0, nil
 	}
 	result := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(threadSearch)
-	repo.First(threadSearch)
+	repo.First(threadSearch, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch) (e error) {
+func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch) (e e
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(threadSearch)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(threadSearch)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location()).First(threadSearch)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(threadSearch)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(threadSearch)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *threadSearchRepository) DeleteByLocation(threadSearch *model.ThreadS
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location()).Unscoped().Delete(threadSearch)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(threadSearch)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *threadSearchRepository) FindInRedis(threadSearch *model.ThreadSearch
 	} else {
 		e = json.Unmarshal([]byte(redisRes), threadSearch)
 	}
-	return
+	return nil
 }
 
 func (repo *threadSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *threadSearchRepository) FindInRedisByKey(redisKey string) (redisRes 
 	return
 }
 
-func (repo *threadSearchRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *threadSearchRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *threadSearchRepository) DeleteInRedis(threadSearch *model.ThreadSearch) (e error) {
@@ -207,13 +206,13 @@ func (repo *threadSearchRepository) DeleteInRedis(threadSearch *model.ThreadSear
 	}()
 	var redisKey string
 	redisKey = threadSearch.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.ThreadSearch, e error) {
+func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.ThreadSearch, e error) {
 	now := time.Now()
 	threadSearch := &model.ThreadSearch{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(threadSearch.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *threadSearchRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.ThreadSearch, e error) {
+func (repo *threadSearchRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.ThreadSearch, e error) {
 	now := time.Now()
 	threadSearch := &model.ThreadSearch{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *threadSearchRepository) GetDataListByWhere(query string, args []inte
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(threadSearch.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *threadSearchRepository) GetDataListByWhere(query string, args []inte
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.ThreadSearch, where map[string]interface{}) (e error) {
+func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.ThreadSearch, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.Thread
 			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(threadSearch.TableName()).Where(where).First(threadSearch)
+	db := global.DB.Table(threadSearch.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(threadSearch)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(threadSearch)
-	return
+	return nil
 }
 
 func (repo *threadSearchRepository) Execute(db *gorm.DB, object interface{}) error {

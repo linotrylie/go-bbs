@@ -45,3 +45,18 @@ func (obj *Mypost) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *Mypost) SetUid(val int) *Mypost {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Mypost) SetTid(val int) *Mypost {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *Mypost) SetPid(val int) *Mypost {
+	obj.Pid = val
+	obj.Update("pid", obj.Pid)
+	return obj
+}

@@ -61,18 +61,19 @@ func (repo *auctionRepository) Update(auction *model.Auction) (rowsAffected int6
 		return 0, nil
 	}
 	result := global.DB.Table(auction.TableName()).Where(auction.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(auction)
-	repo.First(auction)
+	repo.First(auction, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *auctionRepository) First(auction *model.Auction) (e error) {
+func (repo *auctionRepository) First(auction *model.Auction, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *auctionRepository) First(auction *model.Auction) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(auction)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(auction)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(auction.TableName()).Where(auction.Location()).First(auction)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(auction.TableName()).Where(auction.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(auction)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(auction)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *auctionRepository) DeleteByLocation(auction *model.Auction) (rowsAff
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(auction.TableName()).Where(auction.Location()).Unscoped().Delete(auction)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(auction)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *auctionRepository) FindInRedis(auction *model.Auction) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), auction)
 	}
-	return
+	return nil
 }
 
 func (repo *auctionRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *auctionRepository) FindInRedisByKey(redisKey string) (redisRes strin
 	return
 }
 
-func (repo *auctionRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *auctionRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *auctionRepository) DeleteInRedis(auction *model.Auction) (e error) {
@@ -207,13 +206,13 @@ func (repo *auctionRepository) DeleteInRedis(auction *model.Auction) (e error) {
 	}()
 	var redisKey string
 	redisKey = auction.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *auctionRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Auction, e error) {
+func (repo *auctionRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Auction, e error) {
 	now := time.Now()
 	auction := &model.Auction{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *auctionRepository) GetDataListByWhereMap(query map[string]interface{
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *auctionRepository) GetDataListByWhereMap(query map[string]interface{
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(auction.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *auctionRepository) GetDataListByWhereMap(query map[string]interface{
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *auctionRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Auction, e error) {
+func (repo *auctionRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Auction, e error) {
 	now := time.Now()
 	auction := &model.Auction{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *auctionRepository) GetDataListByWhere(query string, args []interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(auction.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *auctionRepository) GetDataListByWhere(query string, args []interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *auctionRepository) GetDataByWhereMap(auction *model.Auction, where map[string]interface{}) (e error) {
+func (repo *auctionRepository) GetDataByWhereMap(auction *model.Auction, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *auctionRepository) GetDataByWhereMap(auction *model.Auction, where m
 			global.Prome.OrmWithLabelValues(auction.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(auction.TableName()).Where(where).First(auction)
+	db := global.DB.Table(auction.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(auction)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(auction)
-	return
+	return nil
 }
 
 func (repo *auctionRepository) Execute(db *gorm.DB, object interface{}) error {

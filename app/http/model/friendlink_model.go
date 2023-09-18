@@ -9,7 +9,7 @@ type Friendlink struct {
 	Linkid     int    `gorm:"primaryKey;column:linkid" json:"linkid"`
 	Type       int    `gorm:"column:type" json:"type"`
 	Rank       int    `gorm:"column:rank" json:"rank"`
-	CreateDate int    `gorm:"column:create_date" json:"create_date"`
+	CreateDate int64  `gorm:"column:create_date" json:"create_date"`
 	Name       string `gorm:"column:name" json:"name"`
 	Url        string `gorm:"column:url" json:"url"`
 }
@@ -47,4 +47,34 @@ func (obj *Friendlink) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *Friendlink) SetLinkid(val int) *Friendlink {
+	obj.Linkid = val
+	obj.Update("linkid", obj.Linkid)
+	return obj
+}
+func (obj *Friendlink) SetType(val int) *Friendlink {
+	obj.Type += val
+	obj.Update("type", obj.Type)
+	return obj
+}
+func (obj *Friendlink) SetRank(val int) *Friendlink {
+	obj.Rank += val
+	obj.Update("rank", obj.Rank)
+	return obj
+}
+func (obj *Friendlink) SetCreateDate(val int64) *Friendlink {
+	obj.CreateDate += val
+	obj.Update("create_date", obj.CreateDate)
+	return obj
+}
+func (obj *Friendlink) SetName(val string) *Friendlink {
+	obj.Name = val
+	obj.Update("name", obj.Name)
+	return obj
+}
+func (obj *Friendlink) SetUrl(val string) *Friendlink {
+	obj.Url = val
+	obj.Update("url", obj.Url)
+	return obj
 }

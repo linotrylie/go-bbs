@@ -7,11 +7,11 @@ import (
 
 type PostLike struct {
 	changes    map[string]interface{}
-	Tid        int `gorm:"column:tid" json:"tid"`                 // 帖子ID
-	Pid        int `gorm:"column:pid" json:"pid"`                 // 回帖ID
-	Uid        int `gorm:"column:uid" json:"uid"`                 // 用户ID
-	CreateDate int `gorm:"column:create_date" json:"create_date"` // 添加时间
-	CreateIp   int `gorm:"column:create_ip" json:"create_ip"`     // 添加IP
+	Tid        int    `gorm:"column:tid" json:"tid"`                 // 帖子ID
+	Pid        int    `gorm:"column:pid" json:"pid"`                 // 回帖ID
+	Uid        int    `gorm:"column:uid" json:"uid"`                 // 用户ID
+	CreateDate int64  `gorm:"column:create_date" json:"create_date"` // 添加时间
+	CreateIp   uint32 `gorm:"column:create_ip" json:"create_ip"`     // 添加IP
 }
 
 func (*PostLike) TableName() string {
@@ -47,4 +47,29 @@ func (obj *PostLike) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *PostLike) SetTid(val int) *PostLike {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *PostLike) SetPid(val int) *PostLike {
+	obj.Pid = val
+	obj.Update("pid", obj.Pid)
+	return obj
+}
+func (obj *PostLike) SetUid(val int) *PostLike {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *PostLike) SetCreateDate(val int64) *PostLike {
+	obj.CreateDate += val
+	obj.Update("create_date", obj.CreateDate)
+	return obj
+}
+func (obj *PostLike) SetCreateIp(val uint32) *PostLike {
+	obj.CreateIp += val
+	obj.Update("create_ip", obj.CreateIp)
+	return obj
 }

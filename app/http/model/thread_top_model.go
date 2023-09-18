@@ -45,3 +45,18 @@ func (obj *ThreadTop) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *ThreadTop) SetFid(val int) *ThreadTop {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *ThreadTop) SetTid(val int) *ThreadTop {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *ThreadTop) SetTop(val int) *ThreadTop {
+	obj.Top += val
+	obj.Update("top", obj.Top)
+	return obj
+}

@@ -46,3 +46,23 @@ func (obj *ThreadDigest) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *ThreadDigest) SetFid(val int) *ThreadDigest {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *ThreadDigest) SetTid(val int) *ThreadDigest {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *ThreadDigest) SetUid(val int) *ThreadDigest {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *ThreadDigest) SetDigest(val int) *ThreadDigest {
+	obj.Digest += val
+	obj.Update("digest", obj.Digest)
+	return obj
+}

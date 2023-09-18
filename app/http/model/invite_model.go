@@ -6,9 +6,9 @@ import (
 
 type Invite struct {
 	changes map[string]interface{}
-	Uid     int `gorm:"primaryKey;column:uid" json:"uid"`
-	Ip      int `gorm:"column:ip" json:"ip"`
-	Regtime int `gorm:"column:regtime" json:"regtime"`
+	Uid     int    `gorm:"primaryKey;column:uid" json:"uid"`
+	Ip      uint32 `gorm:"column:ip" json:"ip"`
+	Regtime int64  `gorm:"column:regtime" json:"regtime"`
 }
 
 func (*Invite) TableName() string {
@@ -44,4 +44,19 @@ func (obj *Invite) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *Invite) SetUid(val int) *Invite {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Invite) SetIp(val uint32) *Invite {
+	obj.Ip += val
+	obj.Update("ip", obj.Ip)
+	return obj
+}
+func (obj *Invite) SetRegtime(val int64) *Invite {
+	obj.Regtime += val
+	obj.Update("regtime", obj.Regtime)
+	return obj
 }

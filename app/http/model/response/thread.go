@@ -32,7 +32,6 @@ type ThreadVo struct {
 	Tagids         string  `json:"tagids"`
 	TagidsTime     string  `json:"tagids_time"`
 	IsVote         int     `json:"is_vote"`
-	ActivityId     int     `json:"activity_id"`
 	AttachGolds    int     `json:"attach_golds"`
 	ContentGolds   int     `json:"content_golds"`
 	User           *UserVo `json:"user,omitempty"`

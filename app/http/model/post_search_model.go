@@ -45,3 +45,18 @@ func (obj *PostSearch) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *PostSearch) SetFid(val int) *PostSearch {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *PostSearch) SetPid(val int) *PostSearch {
+	obj.Pid = val
+	obj.Update("pid", obj.Pid)
+	return obj
+}
+func (obj *PostSearch) SetMessage(val string) *PostSearch {
+	obj.Message = val
+	obj.Update("message", obj.Message)
+	return obj
+}

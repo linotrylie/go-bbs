@@ -61,18 +61,19 @@ func (repo *sgSignSetRepository) Update(sgSignSet *model.SgSignSet) (rowsAffecte
 		return 0, nil
 	}
 	result := global.DB.Table(sgSignSet.TableName()).Where(sgSignSet.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(sgSignSet)
-	repo.First(sgSignSet)
+	repo.First(sgSignSet, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *sgSignSetRepository) First(sgSignSet *model.SgSignSet) (e error) {
+func (repo *sgSignSetRepository) First(sgSignSet *model.SgSignSet, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *sgSignSetRepository) First(sgSignSet *model.SgSignSet) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(sgSignSet)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(sgSignSet)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(sgSignSet.TableName()).Where(sgSignSet.Location()).First(sgSignSet)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(sgSignSet.TableName()).Where(sgSignSet.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(sgSignSet)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(sgSignSet)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *sgSignSetRepository) DeleteByLocation(sgSignSet *model.SgSignSet) (r
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(sgSignSet.TableName()).Where(sgSignSet.Location()).Unscoped().Delete(sgSignSet)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(sgSignSet)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *sgSignSetRepository) FindInRedis(sgSignSet *model.SgSignSet) (e erro
 	} else {
 		e = json.Unmarshal([]byte(redisRes), sgSignSet)
 	}
-	return
+	return nil
 }
 
 func (repo *sgSignSetRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *sgSignSetRepository) FindInRedisByKey(redisKey string) (redisRes str
 	return
 }
 
-func (repo *sgSignSetRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *sgSignSetRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *sgSignSetRepository) DeleteInRedis(sgSignSet *model.SgSignSet) (e error) {
@@ -207,13 +206,13 @@ func (repo *sgSignSetRepository) DeleteInRedis(sgSignSet *model.SgSignSet) (e er
 	}()
 	var redisKey string
 	redisKey = sgSignSet.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.SgSignSet, e error) {
+func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.SgSignSet, e error) {
 	now := time.Now()
 	sgSignSet := &model.SgSignSet{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interfac
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interfac
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(sgSignSet.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interfac
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.SgSignSet, e error) {
+func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.SgSignSet, e error) {
 	now := time.Now()
 	sgSignSet := &model.SgSignSet{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interfa
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(sgSignSet.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interfa
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *sgSignSetRepository) GetDataByWhereMap(sgSignSet *model.SgSignSet, where map[string]interface{}) (e error) {
+func (repo *sgSignSetRepository) GetDataByWhereMap(sgSignSet *model.SgSignSet, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *sgSignSetRepository) GetDataByWhereMap(sgSignSet *model.SgSignSet, w
 			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(sgSignSet.TableName()).Where(where).First(sgSignSet)
+	db := global.DB.Table(sgSignSet.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(sgSignSet)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(sgSignSet)
-	return
+	return nil
 }
 
 func (repo *sgSignSetRepository) Execute(db *gorm.DB, object interface{}) error {

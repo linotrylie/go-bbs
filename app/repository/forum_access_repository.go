@@ -61,18 +61,19 @@ func (repo *forumAccessRepository) Update(forumAccess *model.ForumAccess) (rowsA
 		return 0, nil
 	}
 	result := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(forumAccess)
-	repo.First(forumAccess)
+	repo.First(forumAccess, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *forumAccessRepository) First(forumAccess *model.ForumAccess) (e error) {
+func (repo *forumAccessRepository) First(forumAccess *model.ForumAccess, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *forumAccessRepository) First(forumAccess *model.ForumAccess) (e erro
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(forumAccess)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(forumAccess)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location()).First(forumAccess)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(forumAccess)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(forumAccess)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *forumAccessRepository) DeleteByLocation(forumAccess *model.ForumAcce
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location()).Unscoped().Delete(forumAccess)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(forumAccess)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *forumAccessRepository) FindInRedis(forumAccess *model.ForumAccess) (
 	} else {
 		e = json.Unmarshal([]byte(redisRes), forumAccess)
 	}
-	return
+	return nil
 }
 
 func (repo *forumAccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *forumAccessRepository) FindInRedisByKey(redisKey string) (redisRes s
 	return
 }
 
-func (repo *forumAccessRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *forumAccessRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *forumAccessRepository) DeleteInRedis(forumAccess *model.ForumAccess) (e error) {
@@ -207,13 +206,13 @@ func (repo *forumAccessRepository) DeleteInRedis(forumAccess *model.ForumAccess)
 	}()
 	var redisKey string
 	redisKey = forumAccess.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.ForumAccess, e error) {
+func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.ForumAccess, e error) {
 	now := time.Now()
 	forumAccess := &model.ForumAccess{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interf
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interf
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(forumAccess.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interf
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *forumAccessRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.ForumAccess, e error) {
+func (repo *forumAccessRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.ForumAccess, e error) {
 	now := time.Now()
 	forumAccess := &model.ForumAccess{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *forumAccessRepository) GetDataListByWhere(query string, args []inter
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(forumAccess.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *forumAccessRepository) GetDataListByWhere(query string, args []inter
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *forumAccessRepository) GetDataByWhereMap(forumAccess *model.ForumAccess, where map[string]interface{}) (e error) {
+func (repo *forumAccessRepository) GetDataByWhereMap(forumAccess *model.ForumAccess, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *forumAccessRepository) GetDataByWhereMap(forumAccess *model.ForumAcc
 			global.Prome.OrmWithLabelValues(forumAccess.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(forumAccess.TableName()).Where(where).First(forumAccess)
+	db := global.DB.Table(forumAccess.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(forumAccess)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(forumAccess)
-	return
+	return nil
 }
 
 func (repo *forumAccessRepository) Execute(db *gorm.DB, object interface{}) error {

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/response"
 	"go-bbs/app/repository"
@@ -18,48 +17,91 @@ func newThreadService() *threadService {
 }
 func (serv *threadService) List(fid, page, pageSize int, order, sort string) (threadList []*model.Thread, totalPage int, e error) {
 	repository.ThreadRepository.Pager = &repository.Pager{Page: page, PageSize: pageSize, FieldsOrder: []string{order + " " + sort}}
-	where := make(map[string]interface{})
-	where["fid"] = fid
-	threadList, e = repository.ThreadRepository.GetDataListByWhereMap(where)
+	var query string
+	if fid < 1 {
+		query = "fid > ?"
+	} else {
+		query = "fid = ?"
+	}
+	threadList, e = repository.ThreadRepository.GetDataListByWhere(query, []interface{}{fid}, nil)
 	if e != nil {
 		return nil, 0, e
 	}
 	return threadList, repository.ThreadRepository.Pager.TotalPage, nil
 }
-func (serv *threadService) Detail(fid, tid int) (err error) {
+func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.PostVo, []*response.PostVo, error) {
 	thread := &model.Thread{Fid: fid, Tid: tid}
-	err = repository.ThreadRepository.First(thread)
+	err := repository.ThreadRepository.First(thread, nil)
 	if err != nil {
-		return
+		return nil, nil, nil, err
 	}
 	threadVo := transform.TransformThread(thread)
-	where := map[string]interface{}{
+	//获取文章详情
+	post := &model.Post{}
+	wherePost := map[string]interface{}{
 		"tid":     tid,
 		"deleted": 0,
+		"isfirst": 1,
 	}
-	postList, err := repository.PostRepository.GetDataListByWhereMap(where)
+	err = repository.PostRepository.GetDataByWhereMap(post, wherePost, []string{"LastUpdateUser", "CreateUser"})
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
-	var postVo *response.PostVo
+	postVo := serv.GetPostTransform(post)
+	//获取评论
+	wherePostList := map[string]interface{}{
+		"tid":     tid,
+		"deleted": 0,
+		"isfirst": 0,
+	}
+	repository.PostRepository.Pager = &repository.Pager{
+		Page:        1,
+		PageSize:    5,
+		FieldsOrder: []string{"create_date asc"},
+	}
+	postList, err := repository.PostRepository.GetDataListByWhereMap(wherePostList, []string{"LastUpdateUser", "CreateUser"})
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	var commentList []*response.PostVo
 	for _, v := range postList {
-		pv := transform.TransformPost(v)
-		pv.LastUpdateUser = transform.TransformUser(&v.LastUpdateUser)
-		group, _ := ServiceGroupApp.GroupService.Detail(pv.LastUpdateUser.Gid)
-		pv.LastUpdateUser.Group = *group
-		pv.User = transform.TransformUser(&v.CreateUser)
-		group, _ = ServiceGroupApp.GroupService.Detail(pv.User.Gid)
-		pv.User.Group = *group
-		if v.Isfirst == 1 {
-			postVo = pv
-		} else {
-			commentList = append(commentList, pv)
-		}
+		commentList = append(commentList, serv.GetPostTransform(v))
 	}
-	fmt.Println(threadVo, postVo, commentList)
-	return
+	go serv.After(thread)
+	return threadVo, postVo, commentList, nil
 }
+
+func (serv *threadService) After(thread *model.Thread) {
+	thread.SetViews(1)
+	repository.ThreadRepository.Update(thread)
+}
+
+func (serv *threadService) GetPostTransform(post *model.Post) *response.PostVo {
+	var group *model.Group
+	pv := transform.TransformPost(post)
+	if post.LastUpdateUser != nil {
+		pv.LastUpdateUser = transform.TransformUser(post.LastUpdateUser)
+		group, _ = ServiceGroupApp.GroupService.Detail(pv.LastUpdateUser.Gid)
+		if group != nil {
+			pv.LastUpdateUser.Group = group
+		}
+	} else {
+		pv.LastUpdateUser = nil
+		pv.LastUpdateUser.Group = nil
+	}
+	if post.CreateUser != nil {
+		pv.User = transform.TransformUser(post.CreateUser)
+		group, _ = ServiceGroupApp.GroupService.Detail(pv.User.Gid)
+		if group != nil {
+			pv.User.Group = group
+		}
+	} else {
+		pv.User = nil
+		pv.User.Group = nil
+	}
+	return pv
+}
+
 func (serv *threadService) name() {
 
 }

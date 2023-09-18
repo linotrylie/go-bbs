@@ -25,7 +25,6 @@ func TransformThread(thread *model.Thread) (threadVo *response.ThreadVo) {
 	threadVo.Tagids = thread.Tagids
 	threadVo.TagidsTime = time.Unix(int64(thread.TagidsTime), 0).Format(time.DateTime)
 	threadVo.Digest = thread.Digest
-	threadVo.ActivityId = thread.ActivityId
 	threadVo.Highlight = thread.Highlight
 	threadVo.Subject = thread.Subject
 	threadVo.Views = thread.Views

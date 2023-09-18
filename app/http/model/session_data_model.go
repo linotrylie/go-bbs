@@ -7,7 +7,7 @@ import (
 type SessionData struct {
 	changes  map[string]interface{}
 	Sid      string `gorm:"primaryKey;column:sid" json:"sid"`
-	LastDate int    `gorm:"column:last_date" json:"last_date"`
+	LastDate int64  `gorm:"column:last_date" json:"last_date"`
 	Data     string `gorm:"column:data" json:"data"`
 }
 
@@ -44,4 +44,19 @@ func (obj *SessionData) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *SessionData) SetSid(val string) *SessionData {
+	obj.Sid = val
+	obj.Update("sid", obj.Sid)
+	return obj
+}
+func (obj *SessionData) SetLastDate(val int64) *SessionData {
+	obj.LastDate += val
+	obj.Update("last_date", obj.LastDate)
+	return obj
+}
+func (obj *SessionData) SetData(val string) *SessionData {
+	obj.Data = val
+	obj.Update("data", obj.Data)
+	return obj
 }

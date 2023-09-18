@@ -2,6 +2,7 @@ package service
 
 import (
 	"go-bbs/app/http/model"
+	"go-bbs/app/repository"
 	"go-bbs/global"
 	"go-bbs/utils/upload"
 	"mime/multipart"
@@ -33,9 +34,12 @@ func (e *uploadService) Upload(file model.Attach) (model.Attach, error) {
 //@param: id uint
 //@return: model.ExaFileUploadAndDownload, error
 
-func (e *uploadService) FindFile(id uint) (model.Attach, error) {
-	var file model.Attach
-	err := global.DB.Where("aid = ?", id).First(&file).Error
+func (e *uploadService) FindFile(id int) (model.Attach, error) {
+	var file = model.Attach{Aid: id}
+	err := repository.AttachRepository.First(&file, nil)
+	if err != nil {
+		return model.Attach{}, err
+	}
 	return file, err
 }
 

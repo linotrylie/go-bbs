@@ -61,18 +61,19 @@ func (repo *kamiRepository) Update(kami *model.Kami) (rowsAffected int64, e erro
 		return 0, nil
 	}
 	result := global.DB.Table(kami.TableName()).Where(kami.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(kami)
-	repo.First(kami)
+	repo.First(kami, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *kamiRepository) First(kami *model.Kami) (e error) {
+func (repo *kamiRepository) First(kami *model.Kami, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *kamiRepository) First(kami *model.Kami) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(kami)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(kami)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(kami.TableName()).Where(kami.Location()).First(kami)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(kami.TableName()).Where(kami.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(kami)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(kami)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *kamiRepository) DeleteByLocation(kami *model.Kami) (rowsAffected int
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(kami.TableName()).Where(kami.Location()).Unscoped().Delete(kami)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(kami)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *kamiRepository) FindInRedis(kami *model.Kami) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), kami)
 	}
-	return
+	return nil
 }
 
 func (repo *kamiRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *kamiRepository) FindInRedisByKey(redisKey string) (redisRes string, 
 	return
 }
 
-func (repo *kamiRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *kamiRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *kamiRepository) DeleteInRedis(kami *model.Kami) (e error) {
@@ -207,13 +206,13 @@ func (repo *kamiRepository) DeleteInRedis(kami *model.Kami) (e error) {
 	}()
 	var redisKey string
 	redisKey = kami.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Kami, e error) {
+func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Kami, e error) {
 	now := time.Now()
 	kami := &model.Kami{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}) 
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}) 
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(kami.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}) 
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *kamiRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Kami, e error) {
+func (repo *kamiRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Kami, e error) {
 	now := time.Now()
 	kami := &model.Kami{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *kamiRepository) GetDataListByWhere(query string, args []interface{})
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(kami.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *kamiRepository) GetDataListByWhere(query string, args []interface{})
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *kamiRepository) GetDataByWhereMap(kami *model.Kami, where map[string]interface{}) (e error) {
+func (repo *kamiRepository) GetDataByWhereMap(kami *model.Kami, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *kamiRepository) GetDataByWhereMap(kami *model.Kami, where map[string
 			global.Prome.OrmWithLabelValues(kami.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(kami.TableName()).Where(where).First(kami)
+	db := global.DB.Table(kami.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(kami)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(kami)
-	return
+	return nil
 }
 
 func (repo *kamiRepository) Execute(db *gorm.DB, object interface{}) error {

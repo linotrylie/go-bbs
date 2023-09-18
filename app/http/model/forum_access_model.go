@@ -49,3 +49,38 @@ func (obj *ForumAccess) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *ForumAccess) SetFid(val int) *ForumAccess {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *ForumAccess) SetGid(val int) *ForumAccess {
+	obj.Gid = val
+	obj.Update("gid", obj.Gid)
+	return obj
+}
+func (obj *ForumAccess) SetAllowread(val int) *ForumAccess {
+	obj.Allowread += val
+	obj.Update("allowread", obj.Allowread)
+	return obj
+}
+func (obj *ForumAccess) SetAllowthread(val int) *ForumAccess {
+	obj.Allowthread += val
+	obj.Update("allowthread", obj.Allowthread)
+	return obj
+}
+func (obj *ForumAccess) SetAllowpost(val int) *ForumAccess {
+	obj.Allowpost += val
+	obj.Update("allowpost", obj.Allowpost)
+	return obj
+}
+func (obj *ForumAccess) SetAllowattach(val int) *ForumAccess {
+	obj.Allowattach += val
+	obj.Update("allowattach", obj.Allowattach)
+	return obj
+}
+func (obj *ForumAccess) SetAllowdown(val int) *ForumAccess {
+	obj.Allowdown += val
+	obj.Update("allowdown", obj.Allowdown)
+	return obj
+}

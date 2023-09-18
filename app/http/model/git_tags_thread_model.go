@@ -44,3 +44,13 @@ func (obj *GitTagsThread) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *GitTagsThread) SetTagid(val int) *GitTagsThread {
+	obj.Tagid = val
+	obj.Update("tagid", obj.Tagid)
+	return obj
+}
+func (obj *GitTagsThread) SetTid(val int) *GitTagsThread {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}

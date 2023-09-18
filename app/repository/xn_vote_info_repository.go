@@ -61,18 +61,19 @@ func (repo *xnVoteInfoRepository) Update(xnVoteInfo *model.XnVoteInfo) (rowsAffe
 		return 0, nil
 	}
 	result := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(xnVoteInfo)
-	repo.First(xnVoteInfo)
+	repo.First(xnVoteInfo, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *xnVoteInfoRepository) First(xnVoteInfo *model.XnVoteInfo) (e error) {
+func (repo *xnVoteInfoRepository) First(xnVoteInfo *model.XnVoteInfo, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *xnVoteInfoRepository) First(xnVoteInfo *model.XnVoteInfo) (e error) 
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(xnVoteInfo)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(xnVoteInfo)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location()).First(xnVoteInfo)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(xnVoteInfo)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(xnVoteInfo)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *xnVoteInfoRepository) DeleteByLocation(xnVoteInfo *model.XnVoteInfo)
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location()).Unscoped().Delete(xnVoteInfo)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(xnVoteInfo)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *xnVoteInfoRepository) FindInRedis(xnVoteInfo *model.XnVoteInfo) (e e
 	} else {
 		e = json.Unmarshal([]byte(redisRes), xnVoteInfo)
 	}
-	return
+	return nil
 }
 
 func (repo *xnVoteInfoRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *xnVoteInfoRepository) FindInRedisByKey(redisKey string) (redisRes st
 	return
 }
 
-func (repo *xnVoteInfoRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *xnVoteInfoRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *xnVoteInfoRepository) DeleteInRedis(xnVoteInfo *model.XnVoteInfo) (e error) {
@@ -207,13 +206,13 @@ func (repo *xnVoteInfoRepository) DeleteInRedis(xnVoteInfo *model.XnVoteInfo) (e
 	}()
 	var redisKey string
 	redisKey = xnVoteInfo.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.XnVoteInfo, e error) {
+func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.XnVoteInfo, e error) {
 	now := time.Now()
 	xnVoteInfo := &model.XnVoteInfo{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interfa
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interfa
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(xnVoteInfo.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interfa
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *xnVoteInfoRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.XnVoteInfo, e error) {
+func (repo *xnVoteInfoRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.XnVoteInfo, e error) {
 	now := time.Now()
 	xnVoteInfo := &model.XnVoteInfo{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *xnVoteInfoRepository) GetDataListByWhere(query string, args []interf
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(xnVoteInfo.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *xnVoteInfoRepository) GetDataListByWhere(query string, args []interf
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *xnVoteInfoRepository) GetDataByWhereMap(xnVoteInfo *model.XnVoteInfo, where map[string]interface{}) (e error) {
+func (repo *xnVoteInfoRepository) GetDataByWhereMap(xnVoteInfo *model.XnVoteInfo, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *xnVoteInfoRepository) GetDataByWhereMap(xnVoteInfo *model.XnVoteInfo
 			global.Prome.OrmWithLabelValues(xnVoteInfo.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(xnVoteInfo.TableName()).Where(where).First(xnVoteInfo)
+	db := global.DB.Table(xnVoteInfo.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(xnVoteInfo)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(xnVoteInfo)
-	return
+	return nil
 }
 
 func (repo *xnVoteInfoRepository) Execute(db *gorm.DB, object interface{}) error {

@@ -44,3 +44,13 @@ func (obj *TagThread) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *TagThread) SetTagid(val int) *TagThread {
+	obj.Tagid = val
+	obj.Update("tagid", obj.Tagid)
+	return obj
+}
+func (obj *TagThread) SetTid(val int) *TagThread {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}

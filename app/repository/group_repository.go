@@ -61,18 +61,19 @@ func (repo *groupRepository) Update(group *model.Group) (rowsAffected int64, e e
 		return 0, nil
 	}
 	result := global.DB.Table(group.TableName()).Where(group.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(group)
-	repo.First(group)
+	repo.First(group, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *groupRepository) First(group *model.Group) (e error) {
+func (repo *groupRepository) First(group *model.Group, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *groupRepository) First(group *model.Group) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(group)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(group)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(group.TableName()).Where(group.Location()).First(group)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(group.TableName()).Where(group.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(group)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(group)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *groupRepository) DeleteByLocation(group *model.Group) (rowsAffected 
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(group.TableName()).Where(group.Location()).Unscoped().Delete(group)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(group)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *groupRepository) FindInRedis(group *model.Group) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), group)
 	}
-	return
+	return nil
 }
 
 func (repo *groupRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *groupRepository) FindInRedisByKey(redisKey string) (redisRes string,
 	return
 }
 
-func (repo *groupRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *groupRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *groupRepository) DeleteInRedis(group *model.Group) (e error) {
@@ -207,13 +206,13 @@ func (repo *groupRepository) DeleteInRedis(group *model.Group) (e error) {
 	}()
 	var redisKey string
 	redisKey = group.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Group, e error) {
+func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Group, e error) {
 	now := time.Now()
 	group := &model.Group{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{})
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{})
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(group.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{})
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *groupRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Group, e error) {
+func (repo *groupRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Group, e error) {
 	now := time.Now()
 	group := &model.Group{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *groupRepository) GetDataListByWhere(query string, args []interface{}
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(group.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *groupRepository) GetDataListByWhere(query string, args []interface{}
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *groupRepository) GetDataByWhereMap(group *model.Group, where map[string]interface{}) (e error) {
+func (repo *groupRepository) GetDataByWhereMap(group *model.Group, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *groupRepository) GetDataByWhereMap(group *model.Group, where map[str
 			global.Prome.OrmWithLabelValues(group.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(group.TableName()).Where(where).First(group)
+	db := global.DB.Table(group.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(group)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(group)
-	return
+	return nil
 }
 
 func (repo *groupRepository) Execute(db *gorm.DB, object interface{}) error {

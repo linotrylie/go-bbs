@@ -10,7 +10,7 @@ type PostUpdateLog struct {
 	Pid        int    `gorm:"column:pid" json:"pid"`
 	Reason     string `gorm:"column:reason" json:"reason"`
 	Message    string `gorm:"column:message" json:"message"`
-	CreateDate int    `gorm:"column:create_date" json:"create_date"`
+	CreateDate int64  `gorm:"column:create_date" json:"create_date"`
 	Uid        int    `gorm:"column:uid" json:"uid"`
 }
 
@@ -47,4 +47,34 @@ func (obj *PostUpdateLog) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *PostUpdateLog) SetLogid(val int) *PostUpdateLog {
+	obj.Logid = val
+	obj.Update("logid", obj.Logid)
+	return obj
+}
+func (obj *PostUpdateLog) SetPid(val int) *PostUpdateLog {
+	obj.Pid = val
+	obj.Update("pid", obj.Pid)
+	return obj
+}
+func (obj *PostUpdateLog) SetReason(val string) *PostUpdateLog {
+	obj.Reason = val
+	obj.Update("reason", obj.Reason)
+	return obj
+}
+func (obj *PostUpdateLog) SetMessage(val string) *PostUpdateLog {
+	obj.Message = val
+	obj.Update("message", obj.Message)
+	return obj
+}
+func (obj *PostUpdateLog) SetCreateDate(val int64) *PostUpdateLog {
+	obj.CreateDate += val
+	obj.Update("create_date", obj.CreateDate)
+	return obj
+}
+func (obj *PostUpdateLog) SetUid(val int) *PostUpdateLog {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
 }

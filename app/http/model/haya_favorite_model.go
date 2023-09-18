@@ -7,10 +7,10 @@ import (
 
 type HayaFavorite struct {
 	changes    map[string]interface{}
-	Tid        int `gorm:"column:tid" json:"tid"`                 // 帖子ID
-	Uid        int `gorm:"column:uid" json:"uid"`                 // 用户ID
-	CreateDate int `gorm:"column:create_date" json:"create_date"` // 添加时间
-	CreateIp   int `gorm:"column:create_ip" json:"create_ip"`     // 添加IP
+	Tid        int    `gorm:"column:tid" json:"tid"`                 // 帖子ID
+	Uid        int    `gorm:"column:uid" json:"uid"`                 // 用户ID
+	CreateDate int64  `gorm:"column:create_date" json:"create_date"` // 添加时间
+	CreateIp   uint32 `gorm:"column:create_ip" json:"create_ip"`     // 添加IP
 }
 
 func (*HayaFavorite) TableName() string {
@@ -46,4 +46,24 @@ func (obj *HayaFavorite) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *HayaFavorite) SetTid(val int) *HayaFavorite {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *HayaFavorite) SetUid(val int) *HayaFavorite {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *HayaFavorite) SetCreateDate(val int64) *HayaFavorite {
+	obj.CreateDate += val
+	obj.Update("create_date", obj.CreateDate)
+	return obj
+}
+func (obj *HayaFavorite) SetCreateIp(val uint32) *HayaFavorite {
+	obj.CreateIp += val
+	obj.Update("create_ip", obj.CreateIp)
+	return obj
 }

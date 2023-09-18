@@ -19,7 +19,7 @@ func (serv *groupService) name() {
 
 func (serv *groupService) Detail(gid int) (*model.Group, error) {
 	group := &model.Group{Gid: gid}
-	err := repository.GroupRepository.First(group)
+	err := repository.GroupRepository.First(group, nil)
 	if err != nil {
 		return nil, err
 	}

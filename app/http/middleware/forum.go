@@ -31,14 +31,16 @@ func AuthForum() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
-		repository.ForumAccessRepository.First(forumAccess)
-		if forumAccess.Fid != 0 && forumAccess.Allowread == 0 {
-			response.FailWithMessage(exceptions.NotAuth.Error(), ctx)
-			ctx.Abort()
-			return
+		if fid > 0 {
+			forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
+			repository.ForumAccessRepository.First(forumAccess, nil)
+			if forumAccess.Fid != 0 && forumAccess.Allowread == 0 {
+				response.FailWithMessage(exceptions.NotAuth.Error(), ctx)
+				ctx.Abort()
+				return
+			}
+			ctx.Set("forum_access", forumAccess)
 		}
-		ctx.Set("forum_access", forumAccess)
 		ctx.Next()
 	}
 }

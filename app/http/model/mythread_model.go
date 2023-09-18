@@ -21,7 +21,7 @@ func (obj *Mythread) Location() map[string]interface{} {
 
 // Redis Key .
 func (obj *Mythread) RedisKey() string {
-	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Uid) + "_" + fmt.Sprintf("%v", obj.Tid)
+	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Tid) + "_" + fmt.Sprintf("%v", obj.Uid)
 }
 
 // GetChanges .
@@ -43,4 +43,14 @@ func (obj *Mythread) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *Mythread) SetUid(val int) *Mythread {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Mythread) SetTid(val int) *Mythread {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
 }

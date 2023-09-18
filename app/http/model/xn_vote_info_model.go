@@ -46,3 +46,23 @@ func (obj *XnVoteInfo) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *XnVoteInfo) SetOid(val int) *XnVoteInfo {
+	obj.Oid = val
+	obj.Update("oid", obj.Oid)
+	return obj
+}
+func (obj *XnVoteInfo) SetVoteId(val int) *XnVoteInfo {
+	obj.VoteId += val
+	obj.Update("vote_id", obj.VoteId)
+	return obj
+}
+func (obj *XnVoteInfo) SetTid(val int) *XnVoteInfo {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *XnVoteInfo) SetContent(val string) *XnVoteInfo {
+	obj.Content = val
+	obj.Update("content", obj.Content)
+	return obj
+}

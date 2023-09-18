@@ -34,7 +34,7 @@ func main() {
 		// 是否添加结构体方法获取表名
 		RealNameMethod("TableName").
 		// 生成的结构体保存路径
-		SavePath("D:\\Code\\go-bbs\\app\\http\\model\\").
+		SavePath("H:\\gocode\\go-bbs\\app\\http\\model\\").
 		// 数据库dsn,这里可以使用 t2t.DB() 代替,参数为 *sql.DB 对象
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		// 执行

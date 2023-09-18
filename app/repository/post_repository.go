@@ -61,18 +61,19 @@ func (repo *postRepository) Update(post *model.Post) (rowsAffected int64, e erro
 		return 0, nil
 	}
 	result := global.DB.Table(post.TableName()).Where(post.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(post)
-	repo.First(post)
+	repo.First(post, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *postRepository) First(post *model.Post) (e error) {
+func (repo *postRepository) First(post *model.Post, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *postRepository) First(post *model.Post) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(post)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(post)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(post.TableName()).Where(post.Location()).First(post)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(post.TableName()).Where(post.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(post)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(post)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *postRepository) DeleteByLocation(post *model.Post) (rowsAffected int
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(post.TableName()).Where(post.Location()).Unscoped().Delete(post)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(post)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *postRepository) FindInRedis(post *model.Post) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), post)
 	}
-	return
+	return nil
 }
 
 func (repo *postRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *postRepository) FindInRedisByKey(redisKey string) (redisRes string, 
 	return
 }
 
-func (repo *postRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *postRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *postRepository) DeleteInRedis(post *model.Post) (e error) {
@@ -207,13 +206,13 @@ func (repo *postRepository) DeleteInRedis(post *model.Post) (e error) {
 	}()
 	var redisKey string
 	redisKey = post.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Post, e error) {
+func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Post, e error) {
 	now := time.Now()
 	post := &model.Post{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}) 
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}) 
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(post.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}) 
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Post, e error) {
+func (repo *postRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Post, e error) {
 	now := time.Now()
 	post := &model.Post{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *postRepository) GetDataListByWhere(query string, args []interface{})
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(post.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *postRepository) GetDataListByWhere(query string, args []interface{})
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postRepository) GetDataByWhereMap(post *model.Post, where map[string]interface{}) (e error) {
+func (repo *postRepository) GetDataByWhereMap(post *model.Post, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *postRepository) GetDataByWhereMap(post *model.Post, where map[string
 			global.Prome.OrmWithLabelValues(post.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(post.TableName()).Where(where).First(post)
+	db := global.DB.Table(post.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(post)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(post)
-	return
+	return nil
 }
 
 func (repo *postRepository) Execute(db *gorm.DB, object interface{}) error {

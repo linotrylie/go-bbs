@@ -13,7 +13,7 @@ type Modlog struct {
 	Subject    string `gorm:"column:subject" json:"subject"`
 	Comment    string `gorm:"column:comment" json:"comment"`
 	Rmbs       int    `gorm:"column:rmbs" json:"rmbs"`
-	CreateDate int    `gorm:"column:create_date" json:"create_date"`
+	CreateDate int64  `gorm:"column:create_date" json:"create_date"`
 	Action     string `gorm:"column:action" json:"action"`
 }
 
@@ -50,4 +50,49 @@ func (obj *Modlog) Update(name string, value interface{}) {
 		obj.changes = make(map[string]interface{})
 	}
 	obj.changes[name] = value
+}
+func (obj *Modlog) SetLogid(val int) *Modlog {
+	obj.Logid = val
+	obj.Update("logid", obj.Logid)
+	return obj
+}
+func (obj *Modlog) SetUid(val int) *Modlog {
+	obj.Uid = val
+	obj.Update("uid", obj.Uid)
+	return obj
+}
+func (obj *Modlog) SetTid(val int) *Modlog {
+	obj.Tid = val
+	obj.Update("tid", obj.Tid)
+	return obj
+}
+func (obj *Modlog) SetPid(val int) *Modlog {
+	obj.Pid = val
+	obj.Update("pid", obj.Pid)
+	return obj
+}
+func (obj *Modlog) SetSubject(val string) *Modlog {
+	obj.Subject = val
+	obj.Update("subject", obj.Subject)
+	return obj
+}
+func (obj *Modlog) SetComment(val string) *Modlog {
+	obj.Comment = val
+	obj.Update("comment", obj.Comment)
+	return obj
+}
+func (obj *Modlog) SetRmbs(val int) *Modlog {
+	obj.Rmbs += val
+	obj.Update("rmbs", obj.Rmbs)
+	return obj
+}
+func (obj *Modlog) SetCreateDate(val int64) *Modlog {
+	obj.CreateDate += val
+	obj.Update("create_date", obj.CreateDate)
+	return obj
+}
+func (obj *Modlog) SetAction(val string) *Modlog {
+	obj.Action = val
+	obj.Update("action", obj.Action)
+	return obj
 }

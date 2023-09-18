@@ -20,7 +20,7 @@ func JWT() gin.HandlerFunc {
 		if global.CONFIG.System.Env == "develop" {
 			global.User = &model.User{}
 			global.User.Uid = 1
-			err := repository.UserRepository.First(global.User)
+			err := repository.UserRepository.First(global.User, nil)
 			if err != nil {
 				c.JSON(419, gin.H{
 					"code": 7,
@@ -51,7 +51,7 @@ func JWT() gin.HandlerFunc {
 		}
 		global.User = &model.User{}
 		global.User.Uid = claims.UID
-		err = repository.UserRepository.First(global.User)
+		err = repository.UserRepository.First(global.User, nil)
 		if err != nil {
 			c.JSON(419, gin.H{
 				"code": 7,

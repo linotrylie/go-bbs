@@ -61,18 +61,19 @@ func (repo *tagCateRepository) Update(tagCate *model.TagCate) (rowsAffected int6
 		return 0, nil
 	}
 	result := global.DB.Table(tagCate.TableName()).Where(tagCate.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(tagCate)
-	repo.First(tagCate)
+	repo.First(tagCate, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *tagCateRepository) First(tagCate *model.TagCate) (e error) {
+func (repo *tagCateRepository) First(tagCate *model.TagCate, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *tagCateRepository) First(tagCate *model.TagCate) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(tagCate)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(tagCate)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(tagCate.TableName()).Where(tagCate.Location()).First(tagCate)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(tagCate.TableName()).Where(tagCate.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(tagCate)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(tagCate)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *tagCateRepository) DeleteByLocation(tagCate *model.TagCate) (rowsAff
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(tagCate.TableName()).Where(tagCate.Location()).Unscoped().Delete(tagCate)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(tagCate)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *tagCateRepository) FindInRedis(tagCate *model.TagCate) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), tagCate)
 	}
-	return
+	return nil
 }
 
 func (repo *tagCateRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *tagCateRepository) FindInRedisByKey(redisKey string) (redisRes strin
 	return
 }
 
-func (repo *tagCateRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *tagCateRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *tagCateRepository) DeleteInRedis(tagCate *model.TagCate) (e error) {
@@ -207,13 +206,13 @@ func (repo *tagCateRepository) DeleteInRedis(tagCate *model.TagCate) (e error) {
 	}()
 	var redisKey string
 	redisKey = tagCate.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *tagCateRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.TagCate, e error) {
+func (repo *tagCateRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.TagCate, e error) {
 	now := time.Now()
 	tagCate := &model.TagCate{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *tagCateRepository) GetDataListByWhereMap(query map[string]interface{
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *tagCateRepository) GetDataListByWhereMap(query map[string]interface{
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(tagCate.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *tagCateRepository) GetDataListByWhereMap(query map[string]interface{
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *tagCateRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.TagCate, e error) {
+func (repo *tagCateRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.TagCate, e error) {
 	now := time.Now()
 	tagCate := &model.TagCate{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *tagCateRepository) GetDataListByWhere(query string, args []interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(tagCate.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *tagCateRepository) GetDataListByWhere(query string, args []interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *tagCateRepository) GetDataByWhereMap(tagCate *model.TagCate, where map[string]interface{}) (e error) {
+func (repo *tagCateRepository) GetDataByWhereMap(tagCate *model.TagCate, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *tagCateRepository) GetDataByWhereMap(tagCate *model.TagCate, where m
 			global.Prome.OrmWithLabelValues(tagCate.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(tagCate.TableName()).Where(where).First(tagCate)
+	db := global.DB.Table(tagCate.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(tagCate)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(tagCate)
-	return
+	return nil
 }
 
 func (repo *tagCateRepository) Execute(db *gorm.DB, object interface{}) error {

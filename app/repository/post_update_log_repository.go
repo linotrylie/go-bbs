@@ -61,18 +61,19 @@ func (repo *postUpdateLogRepository) Update(postUpdateLog *model.PostUpdateLog) 
 		return 0, nil
 	}
 	result := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(postUpdateLog)
-	repo.First(postUpdateLog)
+	repo.First(postUpdateLog, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *postUpdateLogRepository) First(postUpdateLog *model.PostUpdateLog) (e error) {
+func (repo *postUpdateLogRepository) First(postUpdateLog *model.PostUpdateLog, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *postUpdateLogRepository) First(postUpdateLog *model.PostUpdateLog) (
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(postUpdateLog)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(postUpdateLog)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location()).First(postUpdateLog)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(postUpdateLog)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(postUpdateLog)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *postUpdateLogRepository) DeleteByLocation(postUpdateLog *model.PostU
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location()).Unscoped().Delete(postUpdateLog)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(postUpdateLog)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *postUpdateLogRepository) FindInRedis(postUpdateLog *model.PostUpdate
 	} else {
 		e = json.Unmarshal([]byte(redisRes), postUpdateLog)
 	}
-	return
+	return nil
 }
 
 func (repo *postUpdateLogRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *postUpdateLogRepository) FindInRedisByKey(redisKey string) (redisRes
 	return
 }
 
-func (repo *postUpdateLogRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *postUpdateLogRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *postUpdateLogRepository) DeleteInRedis(postUpdateLog *model.PostUpdateLog) (e error) {
@@ -207,13 +206,13 @@ func (repo *postUpdateLogRepository) DeleteInRedis(postUpdateLog *model.PostUpda
 	}()
 	var redisKey string
 	redisKey = postUpdateLog.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.PostUpdateLog, e error) {
+func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.PostUpdateLog, e error) {
 	now := time.Now()
 	postUpdateLog := &model.PostUpdateLog{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]inte
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]inte
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(postUpdateLog.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]inte
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postUpdateLogRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.PostUpdateLog, e error) {
+func (repo *postUpdateLogRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.PostUpdateLog, e error) {
 	now := time.Now()
 	postUpdateLog := &model.PostUpdateLog{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *postUpdateLogRepository) GetDataListByWhere(query string, args []int
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(postUpdateLog.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *postUpdateLogRepository) GetDataListByWhere(query string, args []int
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *postUpdateLogRepository) GetDataByWhereMap(postUpdateLog *model.PostUpdateLog, where map[string]interface{}) (e error) {
+func (repo *postUpdateLogRepository) GetDataByWhereMap(postUpdateLog *model.PostUpdateLog, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *postUpdateLogRepository) GetDataByWhereMap(postUpdateLog *model.Post
 			global.Prome.OrmWithLabelValues(postUpdateLog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(postUpdateLog.TableName()).Where(where).First(postUpdateLog)
+	db := global.DB.Table(postUpdateLog.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(postUpdateLog)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(postUpdateLog)
-	return
+	return nil
 }
 
 func (repo *postUpdateLogRepository) Execute(db *gorm.DB, object interface{}) error {

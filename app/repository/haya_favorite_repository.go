@@ -61,18 +61,19 @@ func (repo *hayaFavoriteRepository) Update(hayaFavorite *model.HayaFavorite) (ro
 		return 0, nil
 	}
 	result := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(hayaFavorite)
-	repo.First(hayaFavorite)
+	repo.First(hayaFavorite, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *hayaFavoriteRepository) First(hayaFavorite *model.HayaFavorite) (e error) {
+func (repo *hayaFavoriteRepository) First(hayaFavorite *model.HayaFavorite, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *hayaFavoriteRepository) First(hayaFavorite *model.HayaFavorite) (e e
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(hayaFavorite)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(hayaFavorite)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location()).First(hayaFavorite)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(hayaFavorite)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(hayaFavorite)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *hayaFavoriteRepository) DeleteByLocation(hayaFavorite *model.HayaFav
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location()).Unscoped().Delete(hayaFavorite)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(hayaFavorite)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *hayaFavoriteRepository) FindInRedis(hayaFavorite *model.HayaFavorite
 	} else {
 		e = json.Unmarshal([]byte(redisRes), hayaFavorite)
 	}
-	return
+	return nil
 }
 
 func (repo *hayaFavoriteRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *hayaFavoriteRepository) FindInRedisByKey(redisKey string) (redisRes 
 	return
 }
 
-func (repo *hayaFavoriteRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *hayaFavoriteRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *hayaFavoriteRepository) DeleteInRedis(hayaFavorite *model.HayaFavorite) (e error) {
@@ -207,13 +206,13 @@ func (repo *hayaFavoriteRepository) DeleteInRedis(hayaFavorite *model.HayaFavori
 	}()
 	var redisKey string
 	redisKey = hayaFavorite.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.HayaFavorite, e error) {
+func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.HayaFavorite, e error) {
 	now := time.Now()
 	hayaFavorite := &model.HayaFavorite{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]inter
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]inter
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(hayaFavorite.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]inter
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *hayaFavoriteRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.HayaFavorite, e error) {
+func (repo *hayaFavoriteRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.HayaFavorite, e error) {
 	now := time.Now()
 	hayaFavorite := &model.HayaFavorite{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *hayaFavoriteRepository) GetDataListByWhere(query string, args []inte
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(hayaFavorite.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *hayaFavoriteRepository) GetDataListByWhere(query string, args []inte
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *hayaFavoriteRepository) GetDataByWhereMap(hayaFavorite *model.HayaFavorite, where map[string]interface{}) (e error) {
+func (repo *hayaFavoriteRepository) GetDataByWhereMap(hayaFavorite *model.HayaFavorite, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *hayaFavoriteRepository) GetDataByWhereMap(hayaFavorite *model.HayaFa
 			global.Prome.OrmWithLabelValues(hayaFavorite.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(hayaFavorite.TableName()).Where(where).First(hayaFavorite)
+	db := global.DB.Table(hayaFavorite.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(hayaFavorite)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(hayaFavorite)
-	return
+	return nil
 }
 
 func (repo *hayaFavoriteRepository) Execute(db *gorm.DB, object interface{}) error {

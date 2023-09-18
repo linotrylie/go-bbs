@@ -61,18 +61,19 @@ func (repo *userPayRepository) Update(userPay *model.UserPay) (rowsAffected int6
 		return 0, nil
 	}
 	result := global.DB.Table(userPay.TableName()).Where(userPay.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(userPay)
-	repo.First(userPay)
+	repo.First(userPay, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *userPayRepository) First(userPay *model.UserPay) (e error) {
+func (repo *userPayRepository) First(userPay *model.UserPay, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *userPayRepository) First(userPay *model.UserPay) (e error) {
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(userPay)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(userPay)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(userPay.TableName()).Where(userPay.Location()).First(userPay)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(userPay.TableName()).Where(userPay.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(userPay)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(userPay)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *userPayRepository) DeleteByLocation(userPay *model.UserPay) (rowsAff
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(userPay.TableName()).Where(userPay.Location()).Unscoped().Delete(userPay)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(userPay)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *userPayRepository) FindInRedis(userPay *model.UserPay) (e error) {
 	} else {
 		e = json.Unmarshal([]byte(redisRes), userPay)
 	}
-	return
+	return nil
 }
 
 func (repo *userPayRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *userPayRepository) FindInRedisByKey(redisKey string) (redisRes strin
 	return
 }
 
-func (repo *userPayRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *userPayRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *userPayRepository) DeleteInRedis(userPay *model.UserPay) (e error) {
@@ -207,13 +206,13 @@ func (repo *userPayRepository) DeleteInRedis(userPay *model.UserPay) (e error) {
 	}()
 	var redisKey string
 	redisKey = userPay.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *userPayRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.UserPay, e error) {
+func (repo *userPayRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.UserPay, e error) {
 	now := time.Now()
 	userPay := &model.UserPay{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *userPayRepository) GetDataListByWhereMap(query map[string]interface{
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *userPayRepository) GetDataListByWhereMap(query map[string]interface{
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(userPay.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *userPayRepository) GetDataListByWhereMap(query map[string]interface{
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *userPayRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.UserPay, e error) {
+func (repo *userPayRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.UserPay, e error) {
 	now := time.Now()
 	userPay := &model.UserPay{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *userPayRepository) GetDataListByWhere(query string, args []interface
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(userPay.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *userPayRepository) GetDataListByWhere(query string, args []interface
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *userPayRepository) GetDataByWhereMap(userPay *model.UserPay, where map[string]interface{}) (e error) {
+func (repo *userPayRepository) GetDataByWhereMap(userPay *model.UserPay, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *userPayRepository) GetDataByWhereMap(userPay *model.UserPay, where m
 			global.Prome.OrmWithLabelValues(userPay.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(userPay.TableName()).Where(where).First(userPay)
+	db := global.DB.Table(userPay.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(userPay)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(userPay)
-	return
+	return nil
 }
 
 func (repo *userPayRepository) Execute(db *gorm.DB, object interface{}) error {

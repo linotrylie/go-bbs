@@ -41,7 +41,16 @@ func (controller *ThreadController) Detail(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	response.OkWithData(threadId, ctx)
+	threadVo, postVo, CommentList, err := threadService.Detail(forumId, threadId)
+	if err != nil {
+		return
+	}
+	result := map[string]interface{}{
+		"thread":  threadVo,
+		"post":    postVo,
+		"comment": CommentList,
+	}
+	response.OkWithData(result, ctx)
 	return
 }
 

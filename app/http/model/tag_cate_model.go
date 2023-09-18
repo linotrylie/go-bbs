@@ -49,3 +49,38 @@ func (obj *TagCate) Update(name string, value interface{}) {
 	}
 	obj.changes[name] = value
 }
+func (obj *TagCate) SetCateid(val int) *TagCate {
+	obj.Cateid = val
+	obj.Update("cateid", obj.Cateid)
+	return obj
+}
+func (obj *TagCate) SetFid(val int) *TagCate {
+	obj.Fid = val
+	obj.Update("fid", obj.Fid)
+	return obj
+}
+func (obj *TagCate) SetName(val string) *TagCate {
+	obj.Name = val
+	obj.Update("name", obj.Name)
+	return obj
+}
+func (obj *TagCate) SetRank(val int) *TagCate {
+	obj.Rank += val
+	obj.Update("rank", obj.Rank)
+	return obj
+}
+func (obj *TagCate) SetEnable(val int) *TagCate {
+	obj.Enable += val
+	obj.Update("enable", obj.Enable)
+	return obj
+}
+func (obj *TagCate) SetDefaulttagid(val int) *TagCate {
+	obj.Defaulttagid = val
+	obj.Update("defaulttagid", obj.Defaulttagid)
+	return obj
+}
+func (obj *TagCate) SetIsforce(val int) *TagCate {
+	obj.Isforce += val
+	obj.Update("isforce", obj.Isforce)
+	return obj
+}

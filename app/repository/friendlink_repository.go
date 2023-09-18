@@ -61,18 +61,19 @@ func (repo *friendlinkRepository) Update(friendlink *model.Friendlink) (rowsAffe
 		return 0, nil
 	}
 	result := global.DB.Table(friendlink.TableName()).Where(friendlink.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(friendlink)
-	repo.First(friendlink)
+	repo.First(friendlink, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *friendlinkRepository) First(friendlink *model.Friendlink) (e error) {
+func (repo *friendlinkRepository) First(friendlink *model.Friendlink, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *friendlinkRepository) First(friendlink *model.Friendlink) (e error) 
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(friendlink)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(friendlink)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(friendlink.TableName()).Where(friendlink.Location()).First(friendlink)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(friendlink.TableName()).Where(friendlink.Location())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(friendlink)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(friendlink)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -111,13 +117,12 @@ func (repo *friendlinkRepository) DeleteByLocation(friendlink *model.Friendlink)
 		return 0, errors.New("location cannot be empty")
 	}
 	result := global.DB.Table(friendlink.TableName()).Where(friendlink.Location()).Unscoped().Delete(friendlink)
-	if result.Error != nil {
-		return
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(friendlink)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *friendlinkRepository) FindInRedis(friendlink *model.Friendlink) (e e
 	} else {
 		e = json.Unmarshal([]byte(redisRes), friendlink)
 	}
-	return
+	return nil
 }
 
 func (repo *friendlinkRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *friendlinkRepository) FindInRedisByKey(redisKey string) (redisRes st
 	return
 }
 
-func (repo *friendlinkRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *friendlinkRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *friendlinkRepository) DeleteInRedis(friendlink *model.Friendlink) (e error) {
@@ -207,13 +206,13 @@ func (repo *friendlinkRepository) DeleteInRedis(friendlink *model.Friendlink) (e
 	}()
 	var redisKey string
 	redisKey = friendlink.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.Friendlink, e error) {
+func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Friendlink, e error) {
 	now := time.Now()
 	friendlink := &model.Friendlink{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interfa
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interfa
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(friendlink.TableName()).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interfa
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *friendlinkRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.Friendlink, e error) {
+func (repo *friendlinkRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Friendlink, e error) {
 	now := time.Now()
 	friendlink := &model.Friendlink{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *friendlinkRepository) GetDataListByWhere(query string, args []interf
 				}
 			}
 		}
-		return
+		return list, e
 	}
 	db := global.DB.Table(friendlink.TableName())
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *friendlinkRepository) GetDataListByWhere(query string, args []interf
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *friendlinkRepository) GetDataByWhereMap(friendlink *model.Friendlink, where map[string]interface{}) (e error) {
+func (repo *friendlinkRepository) GetDataByWhereMap(friendlink *model.Friendlink, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *friendlinkRepository) GetDataByWhereMap(friendlink *model.Friendlink
 			global.Prome.OrmWithLabelValues(friendlink.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(friendlink.TableName()).Where(where).First(friendlink)
+	db := global.DB.Table(friendlink.TableName()).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(friendlink)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(friendlink)
-	return
+	return nil
 }
 
 func (repo *friendlinkRepository) Execute(db *gorm.DB, object interface{}) error {

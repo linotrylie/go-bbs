@@ -23,7 +23,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		forumModel.Name = "全部"
 	} else {
 		forum := &model.Forum{Fid: fid}
-		err := repository.ForumRepository.First(forum)
+		err := repository.ForumRepository.First(forum, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +38,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		threadVo := transform.TransformThread(v)
 		threadVo.User = transform.TransformUser(&v.User)
 		group, _ := ServiceGroupApp.GroupService.Detail(threadVo.User.Gid)
-		threadVo.User.Group = *group
+		threadVo.User.Group = group
 		threadVoList = append(threadVoList, threadVo)
 	}
 	mapRes := make(map[string]interface{})
@@ -54,7 +54,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 
 func (serv *forumService) List() ([]*model.Forum, error) {
 	repository.ForumRepository.Pager = &repository.Pager{Page: 0, PageSize: 0}
-	list, err := repository.ForumRepository.GetDataListByWhereMap(nil)
+	list, err := repository.ForumRepository.GetDataListByWhereMap(nil, nil)
 	if err != nil {
 		return nil, err
 	}
