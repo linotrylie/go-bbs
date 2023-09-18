@@ -11,11 +11,11 @@ type forumService struct {
 }
 
 var ForumService = newForumService()
-var forumRepository = repository.ForumRepository
 
 func newForumService() *forumService {
 	return new(forumService)
 }
+
 func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string) (map[string]interface{}, error) {
 	forumModel := &model.Forum{}
 	if fid <= 0 {

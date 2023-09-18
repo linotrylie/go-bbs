@@ -568,6 +568,7 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 			return err
 		}
 		defer f.Close()
+		sprintf = strings.Replace(sprintf, "%!r(string=)epo", "%repo", -1)
 		f.WriteString(sprintf)
 		cmd := exec.Command("gofmt", "-w", filePath)
 		cmd.Run()

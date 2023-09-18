@@ -64,11 +64,8 @@ Database:
     DBType: mysql
     DBName: freebns
     UserName: root
-#    UserName: freebns
     Password: root
-#    Password: exWZy3facA42ZTpP
     Host: 127.0.0.1:3306
-#    Host: 154.12.37.144:3306
     TablePrefix: bbs_
     Charset: utf8mb4
     ParseTime: true

@@ -45,7 +45,7 @@ func main() {
 	/*err := t2t.Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\http\\model\\requests\\").
 	Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 	RunRequest()*/
-	err := t2t.Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("D:\\Code\\go-bbs\\app\\repository\\").
+	err := t2t.Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("H:\\gocode\\go-bbs\\app\\repository\\").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunRepository()
 	fmt.Println(err)
