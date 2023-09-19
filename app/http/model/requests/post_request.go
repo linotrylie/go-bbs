@@ -29,9 +29,12 @@ type PostRequest struct {
 }
 
 type PostList struct {
-	Tid int `form:"tid" binding:"tid"`
-	Pid int `form:"pid" binding:"pid"`
-	Pager
+	Tid int `form:"tid"`
+	//Pid      int    `form:"pid" binding:"pid"`
+	Page     int    `form:"page" `
+	PageSize int    `form:"page_size"`
+	Order    string `form:"order"`
+	Sort     string `form:"sort"`
 }
 
 func (param *PostList) Validate() error {
@@ -41,11 +44,28 @@ func (param *PostList) Validate() error {
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
 			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
 		),
-		validation.Field(&param.Pid,
+		//validation.Field(&param.Pid,
+		//	validation.Required.Error(exceptions.ParamInvalid.Error()),
+		//	validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+		//	validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		//),
+		validation.Field(&param.Page,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
 			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
 			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
 		),
-		validation.Field(&param.Pager),
+		validation.Field(&param.PageSize,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Order,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.In("create_date", "last_date", "posts", "views").Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Sort,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.In("desc", "asc").Error(exceptions.ParamInvalid.Error()),
+		),
 	)
 }

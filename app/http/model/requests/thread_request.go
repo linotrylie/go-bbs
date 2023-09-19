@@ -1,5 +1,11 @@
 package requests
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation"
+	"go-bbs/app/exceptions"
+	"math"
+)
+
 type ThreadRequest struct {
 	Fid            int    ` json:"fid"`
 	Tid            int    ` json:"tid"`
@@ -33,7 +39,22 @@ type ThreadRequest struct {
 	TagidsTime     int    ` json:"tagidstime"`
 }
 
-type ThreadListRequest struct {
+type ThreadList struct {
 	Fid int `form:"fid"`
 	Tid int `form:"tid"`
+}
+
+func (param *ThreadList) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Tid,
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Fid,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+	)
 }

@@ -19,8 +19,8 @@ func (controller *PostController) CommentList(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	var request *requests.PostList
-	if err = ctx.ShouldBindQuery(request); err != nil {
+	var request requests.PostList
+	if err = ctx.ShouldBindQuery(&request); err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
@@ -28,5 +28,16 @@ func (controller *PostController) CommentList(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-
+	postVoList, totalPage, err := postService.CommentList(request.Tid, request.Page, request.PageSize, request.Order, request.Sort)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.OkWithData(response.PageResult{
+		Page:     request.Page,
+		PageSize: request.PageSize,
+		Total:    totalPage,
+		List:     postVoList,
+	}, ctx)
+	return
 }

@@ -10,6 +10,7 @@ type ApiGroup struct {
 	UserController
 	ForumController
 	ThreadController
+	PostController
 }
 
 var (
@@ -19,4 +20,5 @@ var (
 	groupService   = service.GroupService
 	forumService   = service.ForumService
 	threadService  = service.ThreadService
+	postService    = service.PostService
 )

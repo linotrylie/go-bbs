@@ -16,7 +16,7 @@ func newForumService() *forumService {
 	return new(forumService)
 }
 
-func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string) (map[string]interface{}, error) {
+func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string) (*model.Forum, []*response.ThreadVo, int64, error) {
 	forumModel := &model.Forum{}
 	if fid <= 0 {
 		forumModel.Fid = 0
@@ -25,13 +25,13 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		forum := &model.Forum{Fid: fid}
 		err := repository.ForumRepository.First(forum, nil)
 		if err != nil {
-			return nil, err
+			return nil, nil, 0, err
 		}
 		forumModel = forum
 	}
 	list, totalPage, err := ServiceGroupApp.ThreadService.List(fid, page, pageSize, order, sort)
 	if err != nil {
-		return nil, err
+		return nil, nil, 0, err
 	}
 	var threadVoList []*response.ThreadVo
 	for _, v := range list {
@@ -41,15 +41,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		threadVo.User.Group = group
 		threadVoList = append(threadVoList, threadVo)
 	}
-	mapRes := make(map[string]interface{})
-	mapRes["forum"] = forumModel
-	mapRes["thread"] = map[string]interface{}{
-		"list":       threadVoList,
-		"page":       page,
-		"page_size":  pageSize,
-		"total_page": totalPage,
-	}
-	return mapRes, err
+	return forumModel, threadVoList, totalPage, err
 }
 
 func (serv *forumService) List() ([]*model.Forum, error) {

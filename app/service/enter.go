@@ -8,6 +8,7 @@ type ServiceGroup struct {
 	GroupService   groupService
 	UploadService  uploadService
 	ForumService   forumService
+	PostService    postService
 }
 
 var ServiceGroupApp = new(ServiceGroup)

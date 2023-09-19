@@ -37,12 +37,12 @@ func (repo *postRepository) Insert(post *model.Post) (rowsAffected int64, e erro
 		}
 	}()
 	result := global.DB.Create(post)
-	if result.Error != nil {
-
+	e = result.Error
+	if e != nil {
 		return
 	}
 	repo.SaveInRedis(post)
-	return result.RowsAffected, result.Error
+	return result.RowsAffected, e
 }
 
 func (repo *postRepository) Update(post *model.Post) (rowsAffected int64, e error) {
@@ -54,11 +54,11 @@ func (repo *postRepository) Update(post *model.Post) (rowsAffected int64, e erro
 		}
 	}()
 	if len(post.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新条件！")
 	}
 	updateValues := post.GetChanges()
 	if len(updateValues) == 0 {
-		return 0, nil
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Model(post).Updates(updateValues)
 	e = result.Error
@@ -82,7 +82,7 @@ func (repo *postRepository) First(post *model.Post, preload []string) (e error) 
 		}
 	}()
 	if len(post.Location()) == 0 {
-		return errors.New("location cannot be empty")
+		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
 	e = repo.FindInRedis(post)
@@ -114,7 +114,7 @@ func (repo *postRepository) DeleteByLocation(post *model.Post) (rowsAffected int
 		}
 	}()
 	if len(post.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Table(post.TableName()).Unscoped().Delete(post)
 	e = result.Error
@@ -215,6 +215,9 @@ func (repo *postRepository) DeleteInRedis(post *model.Post) (e error) {
 func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Post, e error) {
 	now := time.Now()
 	post := &model.Post{}
+	if query == nil {
+		return nil, errors.New("无查询条件！")
+	}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
@@ -227,14 +230,22 @@ func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}, 
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	for k, vv := range query {
+		str += k + Strval(vv)
+	}
 	redisKey := post.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	db := global.DB.Model(post).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(post)
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -245,19 +256,13 @@ func (repo *postRepository) GetDataListByWhereMap(query map[string]interface{}, 
 			if count != 0 {
 				//Calculate the length of the pagination
 				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(post).Where(query)
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -289,14 +294,26 @@ func (repo *postRepository) GetDataListByWhere(query string, args []interface{},
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	db := global.DB.Model(post)
+	if query != "" {
+		db = db.Where(query, args...)
+		for _, vv := range args {
+			str += Strval(vv)
+		}
+	}
 	redisKey := post.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(post)
+
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -307,22 +324,13 @@ func (repo *postRepository) GetDataListByWhere(query string, args []interface{},
 			if count != 0 {
 				//Calculate the length of the pagination
 				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(post)
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -373,9 +381,9 @@ func (repo *postRepository) Execute(db *gorm.DB, object interface{}) error {
 		if count != 0 {
 			//Calculate the length of the pagination
 			if count%repo.Pager.PageSize == 0 {
-				repo.Pager.TotalPage = count / repo.Pager.PageSize
+				repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 			} else {
-				repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 			}
 		}
 		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)

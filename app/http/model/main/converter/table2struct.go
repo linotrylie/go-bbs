@@ -165,12 +165,12 @@ func (repo *%sRepository) Insert(%s *model.%s) (rowsAffected int64, e error) {
 		}
 	}()
 	result := global.DB.Create(%s)
-	if result.Error != nil {
-		
+	e = result.Error
+	if e != nil {
 		return
 	}
 	repo.SaveInRedis(%s)
-	return result.RowsAffected, result.Error
+	return result.RowsAffected, e
 }
 
 func (repo *%sRepository) Update(%s *model.%s) (rowsAffected int64, e error) {
@@ -182,11 +182,11 @@ func (repo *%sRepository) Update(%s *model.%s) (rowsAffected int64, e error) {
 		}
 	}()
 	if len(%s.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新条件！")
 	}
 	updateValues := %s.GetChanges()
 	if len(updateValues) == 0 {
-		return 0, nil
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Model(%s).Updates(updateValues)
 	e = result.Error
@@ -210,7 +210,7 @@ func (repo *%sRepository) First(%s *model.%s, preload []string) (e error) {
 		}
 	}()
 	if len(%s.Location()) == 0 {
-		return errors.New("location cannot be empty")
+		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
 	e = repo.FindInRedis(%s)
@@ -242,7 +242,7 @@ func (repo *%sRepository) DeleteByLocation(%s *model.%s) (rowsAffected int64, e 
 		}
 	}()
 	if len(%s.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Table(%s.TableName()).Unscoped().Delete(%s)
 	e = result.Error
@@ -343,6 +343,9 @@ func (repo *%sRepository) DeleteInRedis(%s *model.%s) (e error) {
 func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.%s, e error) {
 	now := time.Now()
 	%s := &model.%s{}
+	if query == nil {
+		return nil, errors.New("无查询条件！")
+	}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
@@ -355,14 +358,22 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	for k,vv := range query {
+		str += k + Strval(vv)
+	}
 	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	db := global.DB.Model(%s).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(%s)
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -372,20 +383,14 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
-				if count %` + ` repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+				if count % repo.Pager.PageSize == 0 {
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(%s).Where(query)
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -417,14 +422,26 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, p
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	db := global.DB.Model(%s)
+	if query != "" {
+		db = db.Where(query, args...)
+		for _, vv := range args {
+			str += Strval(vv)
+		}
+	}
 	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(%s)
+		
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -434,23 +451,14 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, p
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
-				if count %` + ` repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+				if count % repo.Pager.PageSize == 0 {
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(%s)
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -500,10 +508,10 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 		}
 		if count != 0 {
 			//Calculate the length of the pagination
-			if count %` + ` repo.Pager.PageSize == 0 {
-				repo.Pager.TotalPage = count / repo.Pager.PageSize
+			if count % repo.Pager.PageSize == 0 {
+				repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 			} else {
-				repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 			}
 		}
 		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
@@ -557,18 +565,23 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 		newTableName := strings.ToLower(tableName[0:1]) + tableName[1:]
 		big := tableName
 		small := newTableName
-		sprintf := fmt.Sprintf(formatStr, newTableName, tableName, tableName, tableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, small, tableName, newTableName, newTableName,
-			newTableName, newTableName, big,
-			newTableName, newTableName, small, small, small, small, tableName, newTableName, newTableName, tableName,
-			newTableName /*63*/, tableName, newTableName, newTableName, newTableName, "", newTableName, newTableName, tableName,
-			newTableName, tableName, newTableName, newTableName, newTableName, "" /*77*/, newTableName, newTableName,
-			newTableName, tableName, newTableName, newTableName, newTableName, newTableName,
-			newTableName, "",
+		sprintf := fmt.Sprintf(formatStr,
+			small, tableName, tableName, tableName, small,
+			small, small, small, tableName, small,
+			small, small, small, small, tableName,
+			small, small, small, small, small,
+			small, small, small, tableName, small,
+			small, small, small, small, small,
+			small, small, tableName, small, small,
+			small, small, small, small, small,
+			small, tableName, small, small, small,
+			small, big, small, small, small,
+			small, small, small /*53*/, tableName, small,
+			small, tableName, small, tableName /*59*/, small,
+			small, small, "", small, tableName, small, tableName, /*65*/
+			small, small, small /*70*/, "", small,
+			small, tableName, small, small, small, small,
+			small, "",
 		)
 		// 写入文件struct
 		var savePath = t.savePath

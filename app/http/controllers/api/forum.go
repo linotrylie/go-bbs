@@ -18,21 +18,27 @@ func (controller *ForumController) ThreadList(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	var threadList requests.ThreadList
-	if err = ctx.ShouldBindQuery(&threadList); err != nil {
+	var ForumThreadList requests.ForumThreadList
+	if err = ctx.ShouldBindQuery(&ForumThreadList); err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	if err = threadList.Validate(); err != nil {
+	if err = ForumThreadList.Validate(); err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	list, err := forumService.ThreadList(threadList.Fid, threadList.Page, threadList.PageSize, threadList.Order, threadList.Sort)
+	forum, threadVoList, totalPage, err := forumService.ThreadList(ForumThreadList.Fid, ForumThreadList.Page,
+		ForumThreadList.PageSize, ForumThreadList.Order, ForumThreadList.Sort)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	response.OkWithData(list, ctx)
+	pageRes := response.PageResult{Page: ForumThreadList.Page, PageSize: ForumThreadList.PageSize,
+		Total: totalPage, List: threadVoList}
+	response.OkWithData(gin.H{
+		"forum":       forum,
+		"thread_list": pageRes,
+	}, ctx)
 	return
 }
 func (controller *ForumController) List(ctx *gin.Context) {

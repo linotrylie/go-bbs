@@ -37,12 +37,12 @@ func (repo *ipaccessRepository) Insert(ipaccess *model.Ipaccess) (rowsAffected i
 		}
 	}()
 	result := global.DB.Create(ipaccess)
-	if result.Error != nil {
-
+	e = result.Error
+	if e != nil {
 		return
 	}
 	repo.SaveInRedis(ipaccess)
-	return result.RowsAffected, result.Error
+	return result.RowsAffected, e
 }
 
 func (repo *ipaccessRepository) Update(ipaccess *model.Ipaccess) (rowsAffected int64, e error) {
@@ -54,11 +54,11 @@ func (repo *ipaccessRepository) Update(ipaccess *model.Ipaccess) (rowsAffected i
 		}
 	}()
 	if len(ipaccess.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新条件！")
 	}
 	updateValues := ipaccess.GetChanges()
 	if len(updateValues) == 0 {
-		return 0, nil
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Model(ipaccess).Updates(updateValues)
 	e = result.Error
@@ -82,7 +82,7 @@ func (repo *ipaccessRepository) First(ipaccess *model.Ipaccess, preload []string
 		}
 	}()
 	if len(ipaccess.Location()) == 0 {
-		return errors.New("location cannot be empty")
+		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
 	e = repo.FindInRedis(ipaccess)
@@ -114,7 +114,7 @@ func (repo *ipaccessRepository) DeleteByLocation(ipaccess *model.Ipaccess) (rows
 		}
 	}()
 	if len(ipaccess.Location()) == 0 {
-		return 0, errors.New("location cannot be empty")
+		return 0, errors.New("无更新字段！")
 	}
 	result := global.DB.Table(ipaccess.TableName()).Unscoped().Delete(ipaccess)
 	e = result.Error
@@ -215,6 +215,9 @@ func (repo *ipaccessRepository) DeleteInRedis(ipaccess *model.Ipaccess) (e error
 func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Ipaccess, e error) {
 	now := time.Now()
 	ipaccess := &model.Ipaccess{}
+	if query == nil {
+		return nil, errors.New("无查询条件！")
+	}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
@@ -227,14 +230,22 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	for k, vv := range query {
+		str += k + Strval(vv)
+	}
 	redisKey := ipaccess.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	db := global.DB.Model(ipaccess).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(ipaccess)
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -245,19 +256,13 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 			if count != 0 {
 				//Calculate the length of the pagination
 				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(ipaccess).Where(query)
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -289,14 +294,26 @@ func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interfac
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
+	db := global.DB.Model(ipaccess)
+	if query != "" {
+		db = db.Where(query, args...)
+		for _, vv := range args {
+			str += Strval(vv)
+		}
+	}
 	redisKey := ipaccess.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	key, _ := repo.FindInRedisByKey(redisKey)
-	if key != "" {
-		e = json.Unmarshal([]byte(key), &list)
+	val, _ := repo.FindInRedisByKey(redisKey)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	if val != "" {
+		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		db := global.DB.Model(ipaccess)
+
 		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 			var count64 int64
 			e = db.Count(&count64).Error
@@ -307,22 +324,13 @@ func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interfac
 			if count != 0 {
 				//Calculate the length of the pagination
 				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 0
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 				} else {
-					repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 				}
 			}
 		}
 		return list, e
-	}
-	db := global.DB.Model(ipaccess)
-	if query != "" {
-		db = db.Where(query, args...)
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db = db.Preload(v)
-		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -373,9 +381,9 @@ func (repo *ipaccessRepository) Execute(db *gorm.DB, object interface{}) error {
 		if count != 0 {
 			//Calculate the length of the pagination
 			if count%repo.Pager.PageSize == 0 {
-				repo.Pager.TotalPage = count / repo.Pager.PageSize
+				repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
 			} else {
-				repo.Pager.TotalPage = count/repo.Pager.PageSize + 1
+				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 			}
 		}
 		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)

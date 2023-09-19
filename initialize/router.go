@@ -66,6 +66,7 @@ func Routers() *gin.Engine {
 		apiRouter.InitUserRouter(PrivateGroup, PublicGroup)   //前端用户
 		apiRouter.InitForumRouter(PrivateGroup, PublicGroup)  //版块
 		apiRouter.InitThreadRouter(PrivateGroup, PublicGroup) //帖子
+		apiRouter.InitPostRouter(PrivateGroup, PublicGroup)   //帖子评论，回复帖子，发表帖子等等
 		commonRouter.InitUploadRouter(PrivateGroup)
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "views/backend",

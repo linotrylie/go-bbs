@@ -29,7 +29,7 @@ type ForumRequest struct {
 	PostGolds     int    ` json:"postgolds"`
 	AllowOffer    int    ` json:"allowoffer"`
 }
-type ThreadList struct {
+type ForumThreadList struct {
 	Fid      int    `form:"fid"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"page_size"`
@@ -37,13 +37,13 @@ type ThreadList struct {
 	Sort     string `form:"sort"`
 }
 
-func (param *ThreadList) Validate() error {
+func (param *ForumThreadList) Validate() error {
 	return validation.ValidateStruct(param,
-		//validation.Field(&param.Fid,
-		//	validation.Min(-1).Error(exceptions.ParamInvalid.Error()),
-		//	validation.Required.Error(exceptions.ParamInvalid.Error()),
-		//	validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		//),
+		validation.Field(&param.Fid,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
 		validation.Field(&param.Page,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
 			validation.Min(1).Error(exceptions.ParamInvalid.Error()),

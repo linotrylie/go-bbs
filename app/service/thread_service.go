@@ -15,7 +15,7 @@ var ThreadService = newThreadService()
 func newThreadService() *threadService {
 	return new(threadService)
 }
-func (serv *threadService) List(fid, page, pageSize int, order, sort string) (threadList []*model.Thread, totalPage int, e error) {
+func (serv *threadService) List(fid, page, pageSize int, order, sort string) (threadList []*model.Thread, totalPage int64, e error) {
 	repository.ThreadRepository.Pager = &repository.Pager{Page: page, PageSize: pageSize, FieldsOrder: []string{order + " " + sort}}
 	var query string
 	if fid < 1 {
@@ -29,11 +29,11 @@ func (serv *threadService) List(fid, page, pageSize int, order, sort string) (th
 	}
 	return threadList, repository.ThreadRepository.Pager.TotalPage, nil
 }
-func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.PostVo, []*response.PostVo, error) {
+func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.PostVo, error) {
 	thread := &model.Thread{Fid: fid, Tid: tid}
 	err := repository.ThreadRepository.First(thread, nil)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	threadVo := transform.TransformThread(thread)
 	//获取文章详情
@@ -45,54 +45,16 @@ func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.P
 	}
 	err = repository.PostRepository.GetDataByWhereMap(post, wherePost, []string{"LastUpdateUser", "CreateUser"})
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	postVo := serv.GetPostTransform(post)
-	//获取评论
-	wherePostList := map[string]interface{}{
-		"tid":     tid,
-		"deleted": 0,
-		"isfirst": 0,
-	}
-	repository.PostRepository.Pager = &repository.Pager{
-		Page:        1,
-		PageSize:    5,
-		FieldsOrder: []string{"create_date asc"},
-	}
-	postList, err := repository.PostRepository.GetDataListByWhereMap(wherePostList, []string{"LastUpdateUser", "CreateUser"})
-	var commentList []*response.PostVo
-	if err == nil {
-		for _, v := range postList {
-			commentList = append(commentList, serv.GetPostTransform(v))
-		}
-	}
+	postVo := ServiceGroupApp.PostService.GetPostTransform(post)
 	go serv.After(thread)
-	return threadVo, postVo, commentList, nil
+	return threadVo, postVo, nil
 }
 
 func (serv *threadService) After(thread *model.Thread) {
 	thread.SetViews(1)
 	repository.ThreadRepository.Update(thread)
-}
-
-func (serv *threadService) GetPostTransform(post *model.Post) *response.PostVo {
-	var group *model.Group
-	pv := transform.TransformPost(post)
-	if post.LastUpdateUser != nil {
-		pv.LastUpdateUser = transform.TransformUser(post.LastUpdateUser)
-		group, _ = ServiceGroupApp.GroupService.Detail(pv.LastUpdateUser.Gid)
-		if group != nil {
-			pv.LastUpdateUser.Group = group
-		}
-	}
-	if post.CreateUser != nil {
-		pv.User = transform.TransformUser(post.CreateUser)
-		group, _ = ServiceGroupApp.GroupService.Detail(pv.User.Gid)
-		if group != nil {
-			pv.User.Group = group
-		}
-	}
-	return pv
 }
 
 func (serv *threadService) name() {
