@@ -60,7 +60,7 @@ func (repo *mythreadRepository) Update(mythread *model.Mythread) (rowsAffected i
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(mythread.TableName()).Where(mythread.Location()).Updates(updateValues)
+	result := global.DB.Model(mythread).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *mythreadRepository) First(mythread *model.Mythread, preload []string
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(mythread.TableName()).Where(mythread.Location())
+	db := global.DB.Table(mythread.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *mythreadRepository) DeleteByLocation(mythread *model.Mythread) (rows
 	if len(mythread.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(mythread.TableName()).Where(mythread.Location()).Unscoped().Delete(mythread)
+	result := global.DB.Table(mythread.TableName()).Unscoped().Delete(mythread)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *mythreadRepository) GetDataListByWhereMap(query map[string]interface
 		}
 		return list, e
 	}
-	db := global.DB.Table(mythread.TableName()).Where(query)
+	db := global.DB.Model(mythread).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *mythreadRepository) GetDataListByWhere(query string, args []interfac
 		}
 		return list, e
 	}
-	db := global.DB.Table(mythread.TableName())
+	db := global.DB.Model(mythread)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *mythreadRepository) GetDataByWhereMap(mythread *model.Mythread, wher
 			global.Prome.OrmWithLabelValues(mythread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(mythread.TableName()).Where(where)
+	db := global.DB.Model(mythread).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

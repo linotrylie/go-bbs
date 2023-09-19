@@ -33,7 +33,11 @@ func AuthForum() gin.HandlerFunc {
 		}
 		if fid > 0 {
 			forumAccess := &model.ForumAccess{Gid: gid, Fid: fid}
-			repository.ForumAccessRepository.First(forumAccess, nil)
+			err := repository.ForumAccessRepository.First(forumAccess, nil)
+			if err != nil {
+				ctx.Next()
+				return
+			}
 			if forumAccess.Fid != 0 && forumAccess.Allowread == 0 {
 				response.FailWithMessage(exceptions.NotAuth.Error(), ctx)
 				ctx.Abort()

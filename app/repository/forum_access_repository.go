@@ -60,7 +60,7 @@ func (repo *forumAccessRepository) Update(forumAccess *model.ForumAccess) (rowsA
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location()).Updates(updateValues)
+	result := global.DB.Model(forumAccess).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *forumAccessRepository) First(forumAccess *model.ForumAccess, preload
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location())
+	db := global.DB.Table(forumAccess.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *forumAccessRepository) DeleteByLocation(forumAccess *model.ForumAcce
 	if len(forumAccess.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(forumAccess.TableName()).Where(forumAccess.Location()).Unscoped().Delete(forumAccess)
+	result := global.DB.Table(forumAccess.TableName()).Unscoped().Delete(forumAccess)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *forumAccessRepository) GetDataListByWhereMap(query map[string]interf
 		}
 		return list, e
 	}
-	db := global.DB.Table(forumAccess.TableName()).Where(query)
+	db := global.DB.Model(forumAccess).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *forumAccessRepository) GetDataListByWhere(query string, args []inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(forumAccess.TableName())
+	db := global.DB.Model(forumAccess)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *forumAccessRepository) GetDataByWhereMap(forumAccess *model.ForumAcc
 			global.Prome.OrmWithLabelValues(forumAccess.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(forumAccess.TableName()).Where(where)
+	db := global.DB.Model(forumAccess).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

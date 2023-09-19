@@ -60,7 +60,7 @@ func (repo *queueRepository) Update(queue *model.Queue) (rowsAffected int64, e e
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(queue.TableName()).Where(queue.Location()).Updates(updateValues)
+	result := global.DB.Model(queue).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *queueRepository) First(queue *model.Queue, preload []string) (e erro
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(queue.TableName()).Where(queue.Location())
+	db := global.DB.Table(queue.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *queueRepository) DeleteByLocation(queue *model.Queue) (rowsAffected 
 	if len(queue.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(queue.TableName()).Where(queue.Location()).Unscoped().Delete(queue)
+	result := global.DB.Table(queue.TableName()).Unscoped().Delete(queue)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *queueRepository) GetDataListByWhereMap(query map[string]interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(queue.TableName()).Where(query)
+	db := global.DB.Model(queue).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *queueRepository) GetDataListByWhere(query string, args []interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(queue.TableName())
+	db := global.DB.Model(queue)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *queueRepository) GetDataByWhereMap(queue *model.Queue, where map[str
 			global.Prome.OrmWithLabelValues(queue.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(queue.TableName()).Where(where)
+	db := global.DB.Model(queue).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

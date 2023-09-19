@@ -60,7 +60,7 @@ func (repo *paylistRepository) Update(paylist *model.Paylist) (rowsAffected int6
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(paylist.TableName()).Where(paylist.Location()).Updates(updateValues)
+	result := global.DB.Model(paylist).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *paylistRepository) First(paylist *model.Paylist, preload []string) (
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(paylist.TableName()).Where(paylist.Location())
+	db := global.DB.Table(paylist.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *paylistRepository) DeleteByLocation(paylist *model.Paylist) (rowsAff
 	if len(paylist.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(paylist.TableName()).Where(paylist.Location()).Unscoped().Delete(paylist)
+	result := global.DB.Table(paylist.TableName()).Unscoped().Delete(paylist)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *paylistRepository) GetDataListByWhereMap(query map[string]interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(paylist.TableName()).Where(query)
+	db := global.DB.Model(paylist).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *paylistRepository) GetDataListByWhere(query string, args []interface
 		}
 		return list, e
 	}
-	db := global.DB.Table(paylist.TableName())
+	db := global.DB.Model(paylist)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *paylistRepository) GetDataByWhereMap(paylist *model.Paylist, where m
 			global.Prome.OrmWithLabelValues(paylist.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(paylist.TableName()).Where(where)
+	db := global.DB.Model(paylist).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

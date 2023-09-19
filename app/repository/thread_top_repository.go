@@ -60,7 +60,7 @@ func (repo *threadTopRepository) Update(threadTop *model.ThreadTop) (rowsAffecte
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(threadTop.TableName()).Where(threadTop.Location()).Updates(updateValues)
+	result := global.DB.Model(threadTop).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *threadTopRepository) First(threadTop *model.ThreadTop, preload []str
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(threadTop.TableName()).Where(threadTop.Location())
+	db := global.DB.Table(threadTop.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *threadTopRepository) DeleteByLocation(threadTop *model.ThreadTop) (r
 	if len(threadTop.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(threadTop.TableName()).Where(threadTop.Location()).Unscoped().Delete(threadTop)
+	result := global.DB.Table(threadTop.TableName()).Unscoped().Delete(threadTop)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *threadTopRepository) GetDataListByWhereMap(query map[string]interfac
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadTop.TableName()).Where(query)
+	db := global.DB.Model(threadTop).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *threadTopRepository) GetDataListByWhere(query string, args []interfa
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadTop.TableName())
+	db := global.DB.Model(threadTop)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *threadTopRepository) GetDataByWhereMap(threadTop *model.ThreadTop, w
 			global.Prome.OrmWithLabelValues(threadTop.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(threadTop.TableName()).Where(where)
+	db := global.DB.Model(threadTop).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

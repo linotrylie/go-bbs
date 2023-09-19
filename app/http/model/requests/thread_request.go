@@ -34,5 +34,6 @@ type ThreadRequest struct {
 }
 
 type ThreadListRequest struct {
-	Fid int `json:"fid"`
+	Fid int `form:"fid"`
+	Tid int `form:"tid"`
 }

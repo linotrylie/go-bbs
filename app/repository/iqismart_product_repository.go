@@ -60,19 +60,20 @@ func (repo *iqismartProductRepository) Update(iqismartProduct *model.IqismartPro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(iqismartProduct.TableName()).Where(iqismartProduct.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	result := global.DB.Model(iqismartProduct).Updates(updateValues)
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(iqismartProduct)
-	repo.First(iqismartProduct)
+	repo.First(iqismartProduct, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *iqismartProductRepository) First(iqismartProduct *model.IqismartProduct) (e error) {
+func (repo *iqismartProductRepository) First(iqismartProduct *model.IqismartProduct, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *iqismartProductRepository) First(iqismartProduct *model.IqismartProd
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(iqismartProduct)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(iqismartProduct)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(iqismartProduct.TableName()).Where(iqismartProduct.Location()).First(iqismartProduct)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(iqismartProduct.TableName())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(iqismartProduct)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(iqismartProduct)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -110,14 +116,13 @@ func (repo *iqismartProductRepository) DeleteByLocation(iqismartProduct *model.I
 	if len(iqismartProduct.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(iqismartProduct.TableName()).Where(iqismartProduct.Location()).Unscoped().Delete(iqismartProduct)
-	if result.Error != nil {
-		return
+	result := global.DB.Table(iqismartProduct.TableName()).Unscoped().Delete(iqismartProduct)
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(iqismartProduct)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *iqismartProductRepository) FindInRedis(iqismartProduct *model.Iqisma
 	} else {
 		e = json.Unmarshal([]byte(redisRes), iqismartProduct)
 	}
-	return
+	return nil
 }
 
 func (repo *iqismartProductRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *iqismartProductRepository) FindInRedisByKey(redisKey string) (redisR
 	return
 }
 
-func (repo *iqismartProductRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *iqismartProductRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *iqismartProductRepository) DeleteInRedis(iqismartProduct *model.IqismartProduct) (e error) {
@@ -207,13 +206,13 @@ func (repo *iqismartProductRepository) DeleteInRedis(iqismartProduct *model.Iqis
 	}()
 	var redisKey string
 	redisKey = iqismartProduct.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *iqismartProductRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.IqismartProduct, e error) {
+func (repo *iqismartProductRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.IqismartProduct, e error) {
 	now := time.Now()
 	iqismartProduct := &model.IqismartProduct{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *iqismartProductRepository) GetDataListByWhereMap(query map[string]in
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *iqismartProductRepository) GetDataListByWhereMap(query map[string]in
 				}
 			}
 		}
-		return
+		return list, e
 	}
-	db := global.DB.Table(iqismartProduct.TableName()).Where(query)
+	db := global.DB.Model(iqismartProduct).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *iqismartProductRepository) GetDataListByWhereMap(query map[string]in
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *iqismartProductRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.IqismartProduct, e error) {
+func (repo *iqismartProductRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.IqismartProduct, e error) {
 	now := time.Now()
 	iqismartProduct := &model.IqismartProduct{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *iqismartProductRepository) GetDataListByWhere(query string, args []i
 				}
 			}
 		}
-		return
+		return list, e
 	}
-	db := global.DB.Table(iqismartProduct.TableName())
+	db := global.DB.Model(iqismartProduct)
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *iqismartProductRepository) GetDataListByWhere(query string, args []i
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *iqismartProductRepository) GetDataByWhereMap(iqismartProduct *model.IqismartProduct, where map[string]interface{}) (e error) {
+func (repo *iqismartProductRepository) GetDataByWhereMap(iqismartProduct *model.IqismartProduct, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *iqismartProductRepository) GetDataByWhereMap(iqismartProduct *model.
 			global.Prome.OrmWithLabelValues(iqismartProduct.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(iqismartProduct.TableName()).Where(where).First(iqismartProduct)
+	db := global.DB.Model(iqismartProduct).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(iqismartProduct)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(iqismartProduct)
-	return
+	return nil
 }
 
 func (repo *iqismartProductRepository) Execute(db *gorm.DB, object interface{}) error {

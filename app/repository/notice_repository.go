@@ -60,7 +60,7 @@ func (repo *noticeRepository) Update(notice *model.Notice) (rowsAffected int64, 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(notice.TableName()).Where(notice.Location()).Updates(updateValues)
+	result := global.DB.Model(notice).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *noticeRepository) First(notice *model.Notice, preload []string) (e e
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(notice.TableName()).Where(notice.Location())
+	db := global.DB.Table(notice.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *noticeRepository) DeleteByLocation(notice *model.Notice) (rowsAffect
 	if len(notice.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(notice.TableName()).Where(notice.Location()).Unscoped().Delete(notice)
+	result := global.DB.Table(notice.TableName()).Unscoped().Delete(notice)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *noticeRepository) GetDataListByWhereMap(query map[string]interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(notice.TableName()).Where(query)
+	db := global.DB.Model(notice).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *noticeRepository) GetDataListByWhere(query string, args []interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(notice.TableName())
+	db := global.DB.Model(notice)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *noticeRepository) GetDataByWhereMap(notice *model.Notice, where map[
 			global.Prome.OrmWithLabelValues(notice.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(notice.TableName()).Where(where)
+	db := global.DB.Model(notice).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

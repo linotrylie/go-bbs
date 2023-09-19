@@ -60,7 +60,7 @@ func (repo *modlogRepository) Update(modlog *model.Modlog) (rowsAffected int64, 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(modlog.TableName()).Where(modlog.Location()).Updates(updateValues)
+	result := global.DB.Model(modlog).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *modlogRepository) First(modlog *model.Modlog, preload []string) (e e
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(modlog.TableName()).Where(modlog.Location())
+	db := global.DB.Table(modlog.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *modlogRepository) DeleteByLocation(modlog *model.Modlog) (rowsAffect
 	if len(modlog.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(modlog.TableName()).Where(modlog.Location()).Unscoped().Delete(modlog)
+	result := global.DB.Table(modlog.TableName()).Unscoped().Delete(modlog)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *modlogRepository) GetDataListByWhereMap(query map[string]interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(modlog.TableName()).Where(query)
+	db := global.DB.Model(modlog).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *modlogRepository) GetDataListByWhere(query string, args []interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(modlog.TableName())
+	db := global.DB.Model(modlog)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *modlogRepository) GetDataByWhereMap(modlog *model.Modlog, where map[
 			global.Prome.OrmWithLabelValues(modlog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(modlog.TableName()).Where(where)
+	db := global.DB.Model(modlog).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

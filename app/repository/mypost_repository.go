@@ -60,7 +60,7 @@ func (repo *mypostRepository) Update(mypost *model.Mypost) (rowsAffected int64, 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(mypost.TableName()).Where(mypost.Location()).Updates(updateValues)
+	result := global.DB.Model(mypost).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *mypostRepository) First(mypost *model.Mypost, preload []string) (e e
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(mypost.TableName()).Where(mypost.Location())
+	db := global.DB.Table(mypost.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *mypostRepository) DeleteByLocation(mypost *model.Mypost) (rowsAffect
 	if len(mypost.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(mypost.TableName()).Where(mypost.Location()).Unscoped().Delete(mypost)
+	result := global.DB.Table(mypost.TableName()).Unscoped().Delete(mypost)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *mypostRepository) GetDataListByWhereMap(query map[string]interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(mypost.TableName()).Where(query)
+	db := global.DB.Model(mypost).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *mypostRepository) GetDataListByWhere(query string, args []interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(mypost.TableName())
+	db := global.DB.Model(mypost)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *mypostRepository) GetDataByWhereMap(mypost *model.Mypost, where map[
 			global.Prome.OrmWithLabelValues(mypost.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(mypost.TableName()).Where(where)
+	db := global.DB.Model(mypost).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

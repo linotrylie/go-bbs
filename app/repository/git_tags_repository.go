@@ -60,7 +60,7 @@ func (repo *gitTagsRepository) Update(gitTags *model.GitTags) (rowsAffected int6
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(gitTags.TableName()).Where(gitTags.Location()).Updates(updateValues)
+	result := global.DB.Model(gitTags).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *gitTagsRepository) First(gitTags *model.GitTags, preload []string) (
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(gitTags.TableName()).Where(gitTags.Location())
+	db := global.DB.Table(gitTags.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *gitTagsRepository) DeleteByLocation(gitTags *model.GitTags) (rowsAff
 	if len(gitTags.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(gitTags.TableName()).Where(gitTags.Location()).Unscoped().Delete(gitTags)
+	result := global.DB.Table(gitTags.TableName()).Unscoped().Delete(gitTags)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *gitTagsRepository) GetDataListByWhereMap(query map[string]interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(gitTags.TableName()).Where(query)
+	db := global.DB.Model(gitTags).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *gitTagsRepository) GetDataListByWhere(query string, args []interface
 		}
 		return list, e
 	}
-	db := global.DB.Table(gitTags.TableName())
+	db := global.DB.Model(gitTags)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *gitTagsRepository) GetDataByWhereMap(gitTags *model.GitTags, where m
 			global.Prome.OrmWithLabelValues(gitTags.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(gitTags.TableName()).Where(where)
+	db := global.DB.Model(gitTags).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

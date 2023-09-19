@@ -43,6 +43,7 @@ func (controller *ThreadController) Detail(ctx *gin.Context) {
 	}
 	threadVo, postVo, CommentList, err := threadService.Detail(forumId, threadId)
 	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
 	result := map[string]interface{}{

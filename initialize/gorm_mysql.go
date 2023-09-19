@@ -24,7 +24,7 @@ func GormMysql() *gorm.DB {
 // NewDBEngine 实例化数据库连接
 func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 	ds := server.Mysql
-	logLevel := logger.Warn
+	logLevel := logger.Info
 	/*	if utils.RunModeIsDebug() {
 		logLevel = logger.Info
 	}*/
@@ -55,7 +55,7 @@ func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 	)*/
 
 	db, err := gorm.Open(mysql.Open(dbMasterDsn), &gorm.Config{
-		Logger: newLogger,
+		Logger: newLogger.LogMode(logLevel),
 	})
 	if err != nil {
 		return nil, err

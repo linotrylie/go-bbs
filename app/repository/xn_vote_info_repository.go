@@ -60,7 +60,7 @@ func (repo *xnVoteInfoRepository) Update(xnVoteInfo *model.XnVoteInfo) (rowsAffe
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location()).Updates(updateValues)
+	result := global.DB.Model(xnVoteInfo).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *xnVoteInfoRepository) First(xnVoteInfo *model.XnVoteInfo, preload []
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location())
+	db := global.DB.Table(xnVoteInfo.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *xnVoteInfoRepository) DeleteByLocation(xnVoteInfo *model.XnVoteInfo)
 	if len(xnVoteInfo.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(xnVoteInfo.TableName()).Where(xnVoteInfo.Location()).Unscoped().Delete(xnVoteInfo)
+	result := global.DB.Table(xnVoteInfo.TableName()).Unscoped().Delete(xnVoteInfo)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *xnVoteInfoRepository) GetDataListByWhereMap(query map[string]interfa
 		}
 		return list, e
 	}
-	db := global.DB.Table(xnVoteInfo.TableName()).Where(query)
+	db := global.DB.Model(xnVoteInfo).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *xnVoteInfoRepository) GetDataListByWhere(query string, args []interf
 		}
 		return list, e
 	}
-	db := global.DB.Table(xnVoteInfo.TableName())
+	db := global.DB.Model(xnVoteInfo)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *xnVoteInfoRepository) GetDataByWhereMap(xnVoteInfo *model.XnVoteInfo
 			global.Prome.OrmWithLabelValues(xnVoteInfo.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(xnVoteInfo.TableName()).Where(where)
+	db := global.DB.Model(xnVoteInfo).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

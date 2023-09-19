@@ -2,13 +2,10 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	validation "github.com/go-ozzo/ozzo-validation"
-	"go-bbs/app/exceptions"
+	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
 	"go-bbs/global"
 	"go.uber.org/zap"
-	"math"
-	"strconv"
 )
 
 type ForumController struct {
@@ -21,54 +18,16 @@ func (controller *ForumController) ThreadList(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	forumId, _ := strconv.Atoi(ctx.DefaultQuery("fid", "0"))
-	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "20"))
-	order := ctx.DefaultQuery("order", "create_date")
-	sort := ctx.DefaultQuery("sort", "desc")
-	err = validation.Validate(forumId,
-		validation.Min(0).Error(exceptions.ParamInvalid.Error()),
-		validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-	)
-	if err != nil {
+	var threadList requests.ThreadList
+	if err = ctx.ShouldBindQuery(&threadList); err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	err = validation.Validate(page,
-		validation.Required.Error(exceptions.ParamInvalid.Error()),
-		validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-		validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-	)
-	if err != nil {
+	if err = threadList.Validate(); err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	err = validation.Validate(pageSize,
-		validation.Required.Error(exceptions.ParamInvalid.Error()),
-		validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-		validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-	)
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	err = validation.Validate(order,
-		validation.Required.Error(exceptions.ParamInvalid.Error()),
-		validation.In("create_date", "last_date", "posts", "views").Error(exceptions.ParamInvalid.Error()),
-	)
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	err = validation.Validate(sort,
-		validation.Required.Error(exceptions.ParamInvalid.Error()),
-		validation.In("desc", "asc").Error(exceptions.ParamInvalid.Error()),
-	)
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	list, err := forumService.ThreadList(forumId, page, pageSize, order, sort)
+	list, err := forumService.ThreadList(threadList.Fid, threadList.Page, threadList.PageSize, threadList.Order, threadList.Sort)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return

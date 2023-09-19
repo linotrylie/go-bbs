@@ -60,7 +60,7 @@ func (repo *friendlinkRepository) Update(friendlink *model.Friendlink) (rowsAffe
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(friendlink.TableName()).Where(friendlink.Location()).Updates(updateValues)
+	result := global.DB.Model(friendlink).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *friendlinkRepository) First(friendlink *model.Friendlink, preload []
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(friendlink.TableName()).Where(friendlink.Location())
+	db := global.DB.Table(friendlink.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *friendlinkRepository) DeleteByLocation(friendlink *model.Friendlink)
 	if len(friendlink.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(friendlink.TableName()).Where(friendlink.Location()).Unscoped().Delete(friendlink)
+	result := global.DB.Table(friendlink.TableName()).Unscoped().Delete(friendlink)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *friendlinkRepository) GetDataListByWhereMap(query map[string]interfa
 		}
 		return list, e
 	}
-	db := global.DB.Table(friendlink.TableName()).Where(query)
+	db := global.DB.Model(friendlink).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *friendlinkRepository) GetDataListByWhere(query string, args []interf
 		}
 		return list, e
 	}
-	db := global.DB.Table(friendlink.TableName())
+	db := global.DB.Model(friendlink)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *friendlinkRepository) GetDataByWhereMap(friendlink *model.Friendlink
 			global.Prome.OrmWithLabelValues(friendlink.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(friendlink.TableName()).Where(where)
+	db := global.DB.Model(friendlink).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

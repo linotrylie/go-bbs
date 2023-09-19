@@ -60,7 +60,7 @@ func (repo *threadDigestRepository) Update(threadDigest *model.ThreadDigest) (ro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(threadDigest.TableName()).Where(threadDigest.Location()).Updates(updateValues)
+	result := global.DB.Model(threadDigest).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *threadDigestRepository) First(threadDigest *model.ThreadDigest, prel
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(threadDigest.TableName()).Where(threadDigest.Location())
+	db := global.DB.Table(threadDigest.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *threadDigestRepository) DeleteByLocation(threadDigest *model.ThreadD
 	if len(threadDigest.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(threadDigest.TableName()).Where(threadDigest.Location()).Unscoped().Delete(threadDigest)
+	result := global.DB.Table(threadDigest.TableName()).Unscoped().Delete(threadDigest)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *threadDigestRepository) GetDataListByWhereMap(query map[string]inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadDigest.TableName()).Where(query)
+	db := global.DB.Model(threadDigest).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *threadDigestRepository) GetDataListByWhere(query string, args []inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadDigest.TableName())
+	db := global.DB.Model(threadDigest)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *threadDigestRepository) GetDataByWhereMap(threadDigest *model.Thread
 			global.Prome.OrmWithLabelValues(threadDigest.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(threadDigest.TableName()).Where(where)
+	db := global.DB.Model(threadDigest).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

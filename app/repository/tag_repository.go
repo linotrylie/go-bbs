@@ -60,7 +60,7 @@ func (repo *tagRepository) Update(tag *model.Tag) (rowsAffected int64, e error) 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(tag.TableName()).Where(tag.Location()).Updates(updateValues)
+	result := global.DB.Model(tag).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *tagRepository) First(tag *model.Tag, preload []string) (e error) {
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(tag.TableName()).Where(tag.Location())
+	db := global.DB.Table(tag.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *tagRepository) DeleteByLocation(tag *model.Tag) (rowsAffected int64,
 	if len(tag.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(tag.TableName()).Where(tag.Location()).Unscoped().Delete(tag)
+	result := global.DB.Table(tag.TableName()).Unscoped().Delete(tag)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *tagRepository) GetDataListByWhereMap(query map[string]interface{}, p
 		}
 		return list, e
 	}
-	db := global.DB.Table(tag.TableName()).Where(query)
+	db := global.DB.Model(tag).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *tagRepository) GetDataListByWhere(query string, args []interface{}, 
 		}
 		return list, e
 	}
-	db := global.DB.Table(tag.TableName())
+	db := global.DB.Model(tag)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *tagRepository) GetDataByWhereMap(tag *model.Tag, where map[string]in
 			global.Prome.OrmWithLabelValues(tag.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(tag.TableName()).Where(where)
+	db := global.DB.Model(tag).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

@@ -60,7 +60,7 @@ func (repo *wsThreadPayRepository) Update(wsThreadPay *model.WsThreadPay) (rowsA
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(wsThreadPay.TableName()).Where(wsThreadPay.Location()).Updates(updateValues)
+	result := global.DB.Model(wsThreadPay).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *wsThreadPayRepository) First(wsThreadPay *model.WsThreadPay, preload
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(wsThreadPay.TableName()).Where(wsThreadPay.Location())
+	db := global.DB.Table(wsThreadPay.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *wsThreadPayRepository) DeleteByLocation(wsThreadPay *model.WsThreadP
 	if len(wsThreadPay.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(wsThreadPay.TableName()).Where(wsThreadPay.Location()).Unscoped().Delete(wsThreadPay)
+	result := global.DB.Table(wsThreadPay.TableName()).Unscoped().Delete(wsThreadPay)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *wsThreadPayRepository) GetDataListByWhereMap(query map[string]interf
 		}
 		return list, e
 	}
-	db := global.DB.Table(wsThreadPay.TableName()).Where(query)
+	db := global.DB.Model(wsThreadPay).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *wsThreadPayRepository) GetDataListByWhere(query string, args []inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(wsThreadPay.TableName())
+	db := global.DB.Model(wsThreadPay)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *wsThreadPayRepository) GetDataByWhereMap(wsThreadPay *model.WsThread
 			global.Prome.OrmWithLabelValues(wsThreadPay.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(wsThreadPay.TableName()).Where(where)
+	db := global.DB.Model(wsThreadPay).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

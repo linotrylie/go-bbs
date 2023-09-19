@@ -60,7 +60,7 @@ func (repo *sessionDataRepository) Update(sessionData *model.SessionData) (rowsA
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(sessionData.TableName()).Where(sessionData.Location()).Updates(updateValues)
+	result := global.DB.Model(sessionData).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *sessionDataRepository) First(sessionData *model.SessionData, preload
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(sessionData.TableName()).Where(sessionData.Location())
+	db := global.DB.Table(sessionData.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *sessionDataRepository) DeleteByLocation(sessionData *model.SessionDa
 	if len(sessionData.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(sessionData.TableName()).Where(sessionData.Location()).Unscoped().Delete(sessionData)
+	result := global.DB.Table(sessionData.TableName()).Unscoped().Delete(sessionData)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *sessionDataRepository) GetDataListByWhereMap(query map[string]interf
 		}
 		return list, e
 	}
-	db := global.DB.Table(sessionData.TableName()).Where(query)
+	db := global.DB.Model(sessionData).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *sessionDataRepository) GetDataListByWhere(query string, args []inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(sessionData.TableName())
+	db := global.DB.Model(sessionData)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *sessionDataRepository) GetDataByWhereMap(sessionData *model.SessionD
 			global.Prome.OrmWithLabelValues(sessionData.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(sessionData.TableName()).Where(where)
+	db := global.DB.Model(sessionData).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

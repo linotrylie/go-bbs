@@ -60,7 +60,7 @@ func (repo *threadRepository) Update(thread *model.Thread) (rowsAffected int64, 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(thread.TableName()).Where(thread.Location()).Updates(updateValues)
+	result := global.DB.Model(thread).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *threadRepository) First(thread *model.Thread, preload []string) (e e
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(thread.TableName()).Where(thread.Location())
+	db := global.DB.Table(thread.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *threadRepository) DeleteByLocation(thread *model.Thread) (rowsAffect
 	if len(thread.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(thread.TableName()).Where(thread.Location()).Unscoped().Delete(thread)
+	result := global.DB.Table(thread.TableName()).Unscoped().Delete(thread)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *threadRepository) GetDataListByWhereMap(query map[string]interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(thread.TableName()).Where(query)
+	db := global.DB.Model(thread).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *threadRepository) GetDataListByWhere(query string, args []interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(thread.TableName())
+	db := global.DB.Model(thread)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *threadRepository) GetDataByWhereMap(thread *model.Thread, where map[
 			global.Prome.OrmWithLabelValues(thread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(thread.TableName()).Where(where)
+	db := global.DB.Model(thread).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

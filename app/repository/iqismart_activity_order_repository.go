@@ -60,19 +60,20 @@ func (repo *iqismartActivityOrderRepository) Update(iqismartActivityOrder *model
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(iqismartActivityOrder.TableName()).Where(iqismartActivityOrder.Location()).Updates(updateValues)
-	if result.Error != nil {
-		return
+	result := global.DB.Model(iqismartActivityOrder).Updates(updateValues)
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	//更新完成后，重新缓存
 	repo.DeleteInRedis(iqismartActivityOrder)
-	repo.First(iqismartActivityOrder)
+	repo.First(iqismartActivityOrder, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *iqismartActivityOrderRepository) First(iqismartActivityOrder *model.IqismartActivityOrder) (e error) {
+func (repo *iqismartActivityOrderRepository) First(iqismartActivityOrder *model.IqismartActivityOrder, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -84,18 +85,23 @@ func (repo *iqismartActivityOrderRepository) First(iqismartActivityOrder *model.
 		return errors.New("location cannot be empty")
 	}
 	//先查询redis缓存
-	err := repo.FindInRedis(iqismartActivityOrder)
-	if err != nil && err != redis.Nil {
-		return err
+	e = repo.FindInRedis(iqismartActivityOrder)
+	if e != nil && e != redis.Nil {
+		return e
 	}
-	result := global.DB.Table(iqismartActivityOrder.TableName()).Where(iqismartActivityOrder.Location()).First(iqismartActivityOrder)
-	e = result.Error
-	if result.Error != nil {
-
-		return
+	db := global.DB.Table(iqismartActivityOrder.TableName())
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db.First(iqismartActivityOrder)
+	e = db.Error
+	if e != nil {
+		return e
 	}
 	repo.SaveInRedis(iqismartActivityOrder)
-	return
+	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
@@ -110,14 +116,13 @@ func (repo *iqismartActivityOrderRepository) DeleteByLocation(iqismartActivityOr
 	if len(iqismartActivityOrder.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(iqismartActivityOrder.TableName()).Where(iqismartActivityOrder.Location()).Unscoped().Delete(iqismartActivityOrder)
-	if result.Error != nil {
-		return
+	result := global.DB.Table(iqismartActivityOrder.TableName()).Unscoped().Delete(iqismartActivityOrder)
+	e = result.Error
+	if e != nil {
+		return 0, e
 	}
 	repo.DeleteInRedis(iqismartActivityOrder)
-	rowsAffected = result.RowsAffected
-	e = result.Error
-	return
+	return result.RowsAffected, nil
 }
 
 // 事务
@@ -169,7 +174,7 @@ func (repo *iqismartActivityOrderRepository) FindInRedis(iqismartActivityOrder *
 	} else {
 		e = json.Unmarshal([]byte(redisRes), iqismartActivityOrder)
 	}
-	return
+	return nil
 }
 
 func (repo *iqismartActivityOrderRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
@@ -189,14 +194,8 @@ func (repo *iqismartActivityOrderRepository) FindInRedisByKey(redisKey string) (
 	return
 }
 
-func (repo *iqismartActivityOrderRepository) SaveInRedisByKey(redisKey string, data string) (e error) {
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-		}
-	}()
+func (repo *iqismartActivityOrderRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
-	return nil
 }
 
 func (repo *iqismartActivityOrderRepository) DeleteInRedis(iqismartActivityOrder *model.IqismartActivityOrder) (e error) {
@@ -207,13 +206,13 @@ func (repo *iqismartActivityOrderRepository) DeleteInRedis(iqismartActivityOrder
 	}()
 	var redisKey string
 	redisKey = iqismartActivityOrder.RedisKey()
-	err := global.REDIS.Del(context.Background(), redisKey).Err()
-	if err != nil {
-		return
+	e = global.REDIS.Del(context.Background(), redisKey).Err()
+	if e != nil {
+		return e
 	}
 	return nil
 }
-func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[string]interface{}) (list []*model.IqismartActivityOrder, e error) {
+func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.IqismartActivityOrder, e error) {
 	now := time.Now()
 	iqismartActivityOrder := &model.IqismartActivityOrder{}
 	defer func() {
@@ -241,7 +240,7 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[str
 			e = db.Count(&count64).Error
 			count := int(count64)
 			if e != nil {
-				return
+				return nil, e
 			}
 			if count != 0 {
 				//Calculate the length of the pagination
@@ -252,9 +251,14 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[str
 				}
 			}
 		}
-		return
+		return list, e
 	}
-	db := global.DB.Table(iqismartActivityOrder.TableName()).Where(query)
+	db := global.DB.Model(iqismartActivityOrder).Where(query)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
 	e = repo.Execute(db, &list)
 	if e != nil {
 		return nil, e
@@ -267,10 +271,10 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[str
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *iqismartActivityOrderRepository) GetDataListByWhere(query string, args []interface{}) (list []*model.IqismartActivityOrder, e error) {
+func (repo *iqismartActivityOrderRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.IqismartActivityOrder, e error) {
 	now := time.Now()
 	iqismartActivityOrder := &model.IqismartActivityOrder{}
 	defer func() {
@@ -309,11 +313,16 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhere(query string, ar
 				}
 			}
 		}
-		return
+		return list, e
 	}
-	db := global.DB.Table(iqismartActivityOrder.TableName())
+	db := global.DB.Model(iqismartActivityOrder)
 	if query != "" {
 		db = db.Where(query, args...)
+	}
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -327,10 +336,10 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhere(query string, ar
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return
+	return list, nil
 }
 
-func (repo *iqismartActivityOrderRepository) GetDataByWhereMap(iqismartActivityOrder *model.IqismartActivityOrder, where map[string]interface{}) (e error) {
+func (repo *iqismartActivityOrderRepository) GetDataByWhereMap(iqismartActivityOrder *model.IqismartActivityOrder, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
@@ -338,13 +347,19 @@ func (repo *iqismartActivityOrderRepository) GetDataByWhereMap(iqismartActivityO
 			global.Prome.OrmWithLabelValues(iqismartActivityOrder.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(iqismartActivityOrder.TableName()).Where(where).First(iqismartActivityOrder)
+	db := global.DB.Model(iqismartActivityOrder).Where(where)
+	if preload != nil {
+		for _, v := range preload {
+			db = db.Preload(v)
+		}
+	}
+	db = db.First(iqismartActivityOrder)
 	e = db.Error
 	if e != nil {
-		return
+		return e
 	}
 	repo.SaveInRedis(iqismartActivityOrder)
-	return
+	return nil
 }
 
 func (repo *iqismartActivityOrderRepository) Execute(db *gorm.DB, object interface{}) error {

@@ -60,7 +60,7 @@ func (repo *xnVoteDetailRepository) Update(xnVoteDetail *model.XnVoteDetail) (ro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(xnVoteDetail.TableName()).Where(xnVoteDetail.Location()).Updates(updateValues)
+	result := global.DB.Model(xnVoteDetail).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *xnVoteDetailRepository) First(xnVoteDetail *model.XnVoteDetail, prel
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(xnVoteDetail.TableName()).Where(xnVoteDetail.Location())
+	db := global.DB.Table(xnVoteDetail.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *xnVoteDetailRepository) DeleteByLocation(xnVoteDetail *model.XnVoteD
 	if len(xnVoteDetail.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(xnVoteDetail.TableName()).Where(xnVoteDetail.Location()).Unscoped().Delete(xnVoteDetail)
+	result := global.DB.Table(xnVoteDetail.TableName()).Unscoped().Delete(xnVoteDetail)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *xnVoteDetailRepository) GetDataListByWhereMap(query map[string]inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(xnVoteDetail.TableName()).Where(query)
+	db := global.DB.Model(xnVoteDetail).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *xnVoteDetailRepository) GetDataListByWhere(query string, args []inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(xnVoteDetail.TableName())
+	db := global.DB.Model(xnVoteDetail)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *xnVoteDetailRepository) GetDataByWhereMap(xnVoteDetail *model.XnVote
 			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(xnVoteDetail.TableName()).Where(where)
+	db := global.DB.Model(xnVoteDetail).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

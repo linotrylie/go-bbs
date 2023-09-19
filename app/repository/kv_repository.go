@@ -60,7 +60,7 @@ func (repo *kvRepository) Update(kv *model.Kv) (rowsAffected int64, e error) {
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(kv.TableName()).Where(kv.Location()).Updates(updateValues)
+	result := global.DB.Model(kv).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *kvRepository) First(kv *model.Kv, preload []string) (e error) {
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(kv.TableName()).Where(kv.Location())
+	db := global.DB.Table(kv.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *kvRepository) DeleteByLocation(kv *model.Kv) (rowsAffected int64, e 
 	if len(kv.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(kv.TableName()).Where(kv.Location()).Unscoped().Delete(kv)
+	result := global.DB.Table(kv.TableName()).Unscoped().Delete(kv)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *kvRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 		}
 		return list, e
 	}
-	db := global.DB.Table(kv.TableName()).Where(query)
+	db := global.DB.Model(kv).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *kvRepository) GetDataListByWhere(query string, args []interface{}, p
 		}
 		return list, e
 	}
-	db := global.DB.Table(kv.TableName())
+	db := global.DB.Model(kv)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *kvRepository) GetDataByWhereMap(kv *model.Kv, where map[string]inter
 			global.Prome.OrmWithLabelValues(kv.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(kv.TableName()).Where(where)
+	db := global.DB.Model(kv).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

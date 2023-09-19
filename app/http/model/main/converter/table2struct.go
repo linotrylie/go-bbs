@@ -188,7 +188,7 @@ func (repo *%sRepository) Update(%s *model.%s) (rowsAffected int64, e error) {
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Updates(updateValues)
+	result := global.DB.Model(%s).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -217,7 +217,7 @@ func (repo *%sRepository) First(%s *model.%s, preload []string) (e error) {
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(%s.TableName()).Where(%s.Location())
+	db := global.DB.Table(%s.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -244,7 +244,7 @@ func (repo *%sRepository) DeleteByLocation(%s *model.%s) (rowsAffected int64, e 
 	if len(%s.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(%s.TableName()).Where(%s.Location()).Unscoped().Delete(%s)
+	result := global.DB.Table(%s.TableName()).Unscoped().Delete(%s)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -381,7 +381,7 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 		}
 		return list, e
 	}
-	db := global.DB.Table(%s.TableName()).Where(query)
+	db := global.DB.Model(%s).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -443,7 +443,7 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, p
 		}
 		return list, e
 	}
-	db := global.DB.Table(%s.TableName())
+	db := global.DB.Model(%s)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -475,7 +475,7 @@ func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interf
 			global.Prome.OrmWithLabelValues(%s.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(%s.TableName()).Where(where)
+	db := global.DB.Model(%s).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -559,9 +559,9 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 		small := newTableName
 		sprintf := fmt.Sprintf(formatStr, newTableName, tableName, tableName, tableName, newTableName, newTableName,
 			newTableName, newTableName, tableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
-			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
 			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName, newTableName,
+			newTableName, newTableName, tableName, newTableName, newTableName, newTableName, newTableName, newTableName,
 			newTableName, newTableName, small, tableName, newTableName, newTableName,
 			newTableName, newTableName, big,
 			newTableName, newTableName, small, small, small, small, tableName, newTableName, newTableName, tableName,

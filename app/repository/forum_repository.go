@@ -60,7 +60,7 @@ func (repo *forumRepository) Update(forum *model.Forum) (rowsAffected int64, e e
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(forum.TableName()).Where(forum.Location()).Updates(updateValues)
+	result := global.DB.Model(forum).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *forumRepository) First(forum *model.Forum, preload []string) (e erro
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(forum.TableName()).Where(forum.Location())
+	db := global.DB.Table(forum.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *forumRepository) DeleteByLocation(forum *model.Forum) (rowsAffected 
 	if len(forum.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(forum.TableName()).Where(forum.Location()).Unscoped().Delete(forum)
+	result := global.DB.Table(forum.TableName()).Unscoped().Delete(forum)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *forumRepository) GetDataListByWhereMap(query map[string]interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(forum.TableName()).Where(query)
+	db := global.DB.Model(forum).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *forumRepository) GetDataListByWhere(query string, args []interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(forum.TableName())
+	db := global.DB.Model(forum)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *forumRepository) GetDataByWhereMap(forum *model.Forum, where map[str
 			global.Prome.OrmWithLabelValues(forum.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(forum.TableName()).Where(where)
+	db := global.DB.Model(forum).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

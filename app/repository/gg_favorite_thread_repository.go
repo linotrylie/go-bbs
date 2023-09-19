@@ -60,7 +60,7 @@ func (repo *ggFavoriteThreadRepository) Update(ggFavoriteThread *model.GgFavorit
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(ggFavoriteThread.TableName()).Where(ggFavoriteThread.Location()).Updates(updateValues)
+	result := global.DB.Model(ggFavoriteThread).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *ggFavoriteThreadRepository) First(ggFavoriteThread *model.GgFavorite
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(ggFavoriteThread.TableName()).Where(ggFavoriteThread.Location())
+	db := global.DB.Table(ggFavoriteThread.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *ggFavoriteThreadRepository) DeleteByLocation(ggFavoriteThread *model
 	if len(ggFavoriteThread.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(ggFavoriteThread.TableName()).Where(ggFavoriteThread.Location()).Unscoped().Delete(ggFavoriteThread)
+	result := global.DB.Table(ggFavoriteThread.TableName()).Unscoped().Delete(ggFavoriteThread)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhereMap(query map[string]i
 		}
 		return list, e
 	}
-	db := global.DB.Table(ggFavoriteThread.TableName()).Where(query)
+	db := global.DB.Model(ggFavoriteThread).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhere(query string, args []
 		}
 		return list, e
 	}
-	db := global.DB.Table(ggFavoriteThread.TableName())
+	db := global.DB.Model(ggFavoriteThread)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *ggFavoriteThreadRepository) GetDataByWhereMap(ggFavoriteThread *mode
 			global.Prome.OrmWithLabelValues(ggFavoriteThread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(ggFavoriteThread.TableName()).Where(where)
+	db := global.DB.Model(ggFavoriteThread).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

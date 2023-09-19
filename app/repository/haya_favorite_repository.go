@@ -60,7 +60,7 @@ func (repo *hayaFavoriteRepository) Update(hayaFavorite *model.HayaFavorite) (ro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location()).Updates(updateValues)
+	result := global.DB.Model(hayaFavorite).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *hayaFavoriteRepository) First(hayaFavorite *model.HayaFavorite, prel
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location())
+	db := global.DB.Table(hayaFavorite.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *hayaFavoriteRepository) DeleteByLocation(hayaFavorite *model.HayaFav
 	if len(hayaFavorite.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(hayaFavorite.TableName()).Where(hayaFavorite.Location()).Unscoped().Delete(hayaFavorite)
+	result := global.DB.Table(hayaFavorite.TableName()).Unscoped().Delete(hayaFavorite)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *hayaFavoriteRepository) GetDataListByWhereMap(query map[string]inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(hayaFavorite.TableName()).Where(query)
+	db := global.DB.Model(hayaFavorite).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *hayaFavoriteRepository) GetDataListByWhere(query string, args []inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(hayaFavorite.TableName())
+	db := global.DB.Model(hayaFavorite)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *hayaFavoriteRepository) GetDataByWhereMap(hayaFavorite *model.HayaFa
 			global.Prome.OrmWithLabelValues(hayaFavorite.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(hayaFavorite.TableName()).Where(where)
+	db := global.DB.Model(hayaFavorite).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

@@ -1,5 +1,11 @@
 package requests
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation"
+	"go-bbs/app/exceptions"
+	"math"
+)
+
 type PostRequest struct {
 	Tid              int    ` json:"tid"`
 	Pid              int    ` json:"pid"`
@@ -20,4 +26,26 @@ type PostRequest struct {
 	LastUpdateDate   int    ` json:"lastupdatedate"`
 	LastUpdateUid    int    ` json:"lastupdateuid"`
 	LastUpdateReason string ` json:"lastupdatereason"`
+}
+
+type PostList struct {
+	Tid int `form:"tid" binding:"tid"`
+	Pid int `form:"pid" binding:"pid"`
+	Pager
+}
+
+func (param *PostList) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Tid,
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Pid,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Pager),
+	)
 }

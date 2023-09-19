@@ -23,7 +23,7 @@ func (serv *threadService) List(fid, page, pageSize int, order, sort string) (th
 	} else {
 		query = "fid = ?"
 	}
-	threadList, e = repository.ThreadRepository.GetDataListByWhere(query, []interface{}{fid}, nil)
+	threadList, e = repository.ThreadRepository.GetDataListByWhere(query, []interface{}{fid}, []string{"User"})
 	if e != nil {
 		return nil, 0, e
 	}
@@ -60,12 +60,11 @@ func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.P
 		FieldsOrder: []string{"create_date asc"},
 	}
 	postList, err := repository.PostRepository.GetDataListByWhereMap(wherePostList, []string{"LastUpdateUser", "CreateUser"})
-	if err != nil {
-		return nil, nil, nil, err
-	}
 	var commentList []*response.PostVo
-	for _, v := range postList {
-		commentList = append(commentList, serv.GetPostTransform(v))
+	if err == nil {
+		for _, v := range postList {
+			commentList = append(commentList, serv.GetPostTransform(v))
+		}
 	}
 	go serv.After(thread)
 	return threadVo, postVo, commentList, nil
@@ -85,9 +84,6 @@ func (serv *threadService) GetPostTransform(post *model.Post) *response.PostVo {
 		if group != nil {
 			pv.LastUpdateUser.Group = group
 		}
-	} else {
-		pv.LastUpdateUser = nil
-		pv.LastUpdateUser.Group = nil
 	}
 	if post.CreateUser != nil {
 		pv.User = transform.TransformUser(post.CreateUser)
@@ -95,9 +91,6 @@ func (serv *threadService) GetPostTransform(post *model.Post) *response.PostVo {
 		if group != nil {
 			pv.User.Group = group
 		}
-	} else {
-		pv.User = nil
-		pv.User.Group = nil
 	}
 	return pv
 }

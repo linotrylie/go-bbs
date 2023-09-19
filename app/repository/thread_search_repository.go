@@ -60,7 +60,7 @@ func (repo *threadSearchRepository) Update(threadSearch *model.ThreadSearch) (ro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location()).Updates(updateValues)
+	result := global.DB.Model(threadSearch).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch, prel
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location())
+	db := global.DB.Table(threadSearch.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *threadSearchRepository) DeleteByLocation(threadSearch *model.ThreadS
 	if len(threadSearch.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(threadSearch.TableName()).Where(threadSearch.Location()).Unscoped().Delete(threadSearch)
+	result := global.DB.Table(threadSearch.TableName()).Unscoped().Delete(threadSearch)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadSearch.TableName()).Where(query)
+	db := global.DB.Model(threadSearch).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *threadSearchRepository) GetDataListByWhere(query string, args []inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(threadSearch.TableName())
+	db := global.DB.Model(threadSearch)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.Thread
 			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(threadSearch.TableName()).Where(where)
+	db := global.DB.Model(threadSearch).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

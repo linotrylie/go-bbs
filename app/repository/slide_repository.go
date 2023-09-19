@@ -60,7 +60,7 @@ func (repo *slideRepository) Update(slide *model.Slide) (rowsAffected int64, e e
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(slide.TableName()).Where(slide.Location()).Updates(updateValues)
+	result := global.DB.Model(slide).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *slideRepository) First(slide *model.Slide, preload []string) (e erro
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(slide.TableName()).Where(slide.Location())
+	db := global.DB.Table(slide.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *slideRepository) DeleteByLocation(slide *model.Slide) (rowsAffected 
 	if len(slide.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(slide.TableName()).Where(slide.Location()).Unscoped().Delete(slide)
+	result := global.DB.Table(slide.TableName()).Unscoped().Delete(slide)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *slideRepository) GetDataListByWhereMap(query map[string]interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(slide.TableName()).Where(query)
+	db := global.DB.Model(slide).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *slideRepository) GetDataListByWhere(query string, args []interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(slide.TableName())
+	db := global.DB.Model(slide)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *slideRepository) GetDataByWhereMap(slide *model.Slide, where map[str
 			global.Prome.OrmWithLabelValues(slide.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(slide.TableName()).Where(where)
+	db := global.DB.Model(slide).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

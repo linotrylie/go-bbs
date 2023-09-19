@@ -60,7 +60,7 @@ func (repo *kamiRepository) Update(kami *model.Kami) (rowsAffected int64, e erro
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(kami.TableName()).Where(kami.Location()).Updates(updateValues)
+	result := global.DB.Model(kami).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *kamiRepository) First(kami *model.Kami, preload []string) (e error) 
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(kami.TableName()).Where(kami.Location())
+	db := global.DB.Table(kami.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *kamiRepository) DeleteByLocation(kami *model.Kami) (rowsAffected int
 	if len(kami.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(kami.TableName()).Where(kami.Location()).Unscoped().Delete(kami)
+	result := global.DB.Table(kami.TableName()).Unscoped().Delete(kami)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *kamiRepository) GetDataListByWhereMap(query map[string]interface{}, 
 		}
 		return list, e
 	}
-	db := global.DB.Table(kami.TableName()).Where(query)
+	db := global.DB.Model(kami).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *kamiRepository) GetDataListByWhere(query string, args []interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(kami.TableName())
+	db := global.DB.Model(kami)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *kamiRepository) GetDataByWhereMap(kami *model.Kami, where map[string
 			global.Prome.OrmWithLabelValues(kami.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(kami.TableName()).Where(where)
+	db := global.DB.Model(kami).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

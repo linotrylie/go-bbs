@@ -60,7 +60,7 @@ func (repo *gitTagsThreadRepository) Update(gitTagsThread *model.GitTagsThread) 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(gitTagsThread.TableName()).Where(gitTagsThread.Location()).Updates(updateValues)
+	result := global.DB.Model(gitTagsThread).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *gitTagsThreadRepository) First(gitTagsThread *model.GitTagsThread, p
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(gitTagsThread.TableName()).Where(gitTagsThread.Location())
+	db := global.DB.Table(gitTagsThread.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *gitTagsThreadRepository) DeleteByLocation(gitTagsThread *model.GitTa
 	if len(gitTagsThread.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(gitTagsThread.TableName()).Where(gitTagsThread.Location()).Unscoped().Delete(gitTagsThread)
+	result := global.DB.Table(gitTagsThread.TableName()).Unscoped().Delete(gitTagsThread)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *gitTagsThreadRepository) GetDataListByWhereMap(query map[string]inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(gitTagsThread.TableName()).Where(query)
+	db := global.DB.Model(gitTagsThread).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *gitTagsThreadRepository) GetDataListByWhere(query string, args []int
 		}
 		return list, e
 	}
-	db := global.DB.Table(gitTagsThread.TableName())
+	db := global.DB.Model(gitTagsThread)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *gitTagsThreadRepository) GetDataByWhereMap(gitTagsThread *model.GitT
 			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(gitTagsThread.TableName()).Where(where)
+	db := global.DB.Model(gitTagsThread).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

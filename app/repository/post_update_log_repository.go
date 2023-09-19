@@ -60,7 +60,7 @@ func (repo *postUpdateLogRepository) Update(postUpdateLog *model.PostUpdateLog) 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location()).Updates(updateValues)
+	result := global.DB.Model(postUpdateLog).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *postUpdateLogRepository) First(postUpdateLog *model.PostUpdateLog, p
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location())
+	db := global.DB.Table(postUpdateLog.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *postUpdateLogRepository) DeleteByLocation(postUpdateLog *model.PostU
 	if len(postUpdateLog.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(postUpdateLog.TableName()).Where(postUpdateLog.Location()).Unscoped().Delete(postUpdateLog)
+	result := global.DB.Table(postUpdateLog.TableName()).Unscoped().Delete(postUpdateLog)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *postUpdateLogRepository) GetDataListByWhereMap(query map[string]inte
 		}
 		return list, e
 	}
-	db := global.DB.Table(postUpdateLog.TableName()).Where(query)
+	db := global.DB.Model(postUpdateLog).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *postUpdateLogRepository) GetDataListByWhere(query string, args []int
 		}
 		return list, e
 	}
-	db := global.DB.Table(postUpdateLog.TableName())
+	db := global.DB.Model(postUpdateLog)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *postUpdateLogRepository) GetDataByWhereMap(postUpdateLog *model.Post
 			global.Prome.OrmWithLabelValues(postUpdateLog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(postUpdateLog.TableName()).Where(where)
+	db := global.DB.Model(postUpdateLog).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

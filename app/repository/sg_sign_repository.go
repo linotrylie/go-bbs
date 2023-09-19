@@ -60,7 +60,7 @@ func (repo *sgSignRepository) Update(sgSign *model.SgSign) (rowsAffected int64, 
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(sgSign.TableName()).Where(sgSign.Location()).Updates(updateValues)
+	result := global.DB.Model(sgSign).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *sgSignRepository) First(sgSign *model.SgSign, preload []string) (e e
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(sgSign.TableName()).Where(sgSign.Location())
+	db := global.DB.Table(sgSign.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *sgSignRepository) DeleteByLocation(sgSign *model.SgSign) (rowsAffect
 	if len(sgSign.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(sgSign.TableName()).Where(sgSign.Location()).Unscoped().Delete(sgSign)
+	result := global.DB.Table(sgSign.TableName()).Unscoped().Delete(sgSign)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *sgSignRepository) GetDataListByWhereMap(query map[string]interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(sgSign.TableName()).Where(query)
+	db := global.DB.Model(sgSign).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *sgSignRepository) GetDataListByWhere(query string, args []interface{
 		}
 		return list, e
 	}
-	db := global.DB.Table(sgSign.TableName())
+	db := global.DB.Model(sgSign)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *sgSignRepository) GetDataByWhereMap(sgSign *model.SgSign, where map[
 			global.Prome.OrmWithLabelValues(sgSign.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(sgSign.TableName()).Where(where)
+	db := global.DB.Model(sgSign).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

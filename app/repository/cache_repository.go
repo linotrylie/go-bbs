@@ -60,7 +60,7 @@ func (repo *cacheRepository) Update(cache *model.Cache) (rowsAffected int64, e e
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(cache.TableName()).Where(cache.Location()).Updates(updateValues)
+	result := global.DB.Model(cache).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *cacheRepository) First(cache *model.Cache, preload []string) (e erro
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(cache.TableName()).Where(cache.Location())
+	db := global.DB.Table(cache.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *cacheRepository) DeleteByLocation(cache *model.Cache) (rowsAffected 
 	if len(cache.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(cache.TableName()).Where(cache.Location()).Unscoped().Delete(cache)
+	result := global.DB.Table(cache.TableName()).Unscoped().Delete(cache)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *cacheRepository) GetDataListByWhereMap(query map[string]interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(cache.TableName()).Where(query)
+	db := global.DB.Model(cache).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *cacheRepository) GetDataListByWhere(query string, args []interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(cache.TableName())
+	db := global.DB.Model(cache)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *cacheRepository) GetDataByWhereMap(cache *model.Cache, where map[str
 			global.Prome.OrmWithLabelValues(cache.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(cache.TableName()).Where(where)
+	db := global.DB.Model(cache).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)

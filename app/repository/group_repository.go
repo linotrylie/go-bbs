@@ -60,7 +60,7 @@ func (repo *groupRepository) Update(group *model.Group) (rowsAffected int64, e e
 	if len(updateValues) == 0 {
 		return 0, nil
 	}
-	result := global.DB.Table(group.TableName()).Where(group.Location()).Updates(updateValues)
+	result := global.DB.Model(group).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -89,7 +89,7 @@ func (repo *groupRepository) First(group *model.Group, preload []string) (e erro
 	if e != nil && e != redis.Nil {
 		return e
 	}
-	db := global.DB.Table(group.TableName()).Where(group.Location())
+	db := global.DB.Table(group.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -116,7 +116,7 @@ func (repo *groupRepository) DeleteByLocation(group *model.Group) (rowsAffected 
 	if len(group.Location()) == 0 {
 		return 0, errors.New("location cannot be empty")
 	}
-	result := global.DB.Table(group.TableName()).Where(group.Location()).Unscoped().Delete(group)
+	result := global.DB.Table(group.TableName()).Unscoped().Delete(group)
 	e = result.Error
 	if e != nil {
 		return 0, e
@@ -253,7 +253,7 @@ func (repo *groupRepository) GetDataListByWhereMap(query map[string]interface{},
 		}
 		return list, e
 	}
-	db := global.DB.Table(group.TableName()).Where(query)
+	db := global.DB.Model(group).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
@@ -315,7 +315,7 @@ func (repo *groupRepository) GetDataListByWhere(query string, args []interface{}
 		}
 		return list, e
 	}
-	db := global.DB.Table(group.TableName())
+	db := global.DB.Model(group)
 	if query != "" {
 		db = db.Where(query, args...)
 	}
@@ -347,7 +347,7 @@ func (repo *groupRepository) GetDataByWhereMap(group *model.Group, where map[str
 			global.Prome.OrmWithLabelValues(group.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	db := global.DB.Table(group.TableName()).Where(where)
+	db := global.DB.Model(group).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db = db.Preload(v)
