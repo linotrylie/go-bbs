@@ -60,6 +60,7 @@ func Routers() *gin.Engine {
 	}
 
 	PrivateGroup := Router.Group("/")
+	Router.HTMLRender = ginview.Default()
 	PrivateGroup.Use(middleware.JWT())
 	{
 		apiRouter.InitAuthRouter(PrivateGroup)
@@ -69,7 +70,7 @@ func Routers() *gin.Engine {
 		apiRouter.InitPostRouter(PrivateGroup, PublicGroup)   //帖子评论，回复帖子，发表帖子等等
 		commonRouter.InitUploadRouter(PrivateGroup)
 		mw := ginview.NewMiddleware(goview.Config{
-			Root:      "views/backend",
+			Root:      "resource/views/backend",
 			Extension: ".html",
 			Master:    "layouts/master",
 			Partials:  []string{},
@@ -80,8 +81,11 @@ func Routers() *gin.Engine {
 			},
 			DisableCache: true,
 		})
+
 		backend := PrivateGroup.Group("backend", mw)
+		backendWithoutAuth := PublicGroup.Group("backend", mw)
 		backendRouter.InitUserRouter(backend)
+		backendRouter.InitTestRouter(backend, backendWithoutAuth)
 	}
 	Session(PublicGroup)
 	Session(PrivateGroup)

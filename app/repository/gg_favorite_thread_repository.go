@@ -92,7 +92,7 @@ func (repo *ggFavoriteThreadRepository) First(ggFavoriteThread *model.GgFavorite
 	db := global.DB.Table(ggFavoriteThread.TableName())
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	db.First(ggFavoriteThread)
@@ -238,7 +238,7 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhereMap(query map[string]i
 	db := global.DB.Model(ggFavoriteThread).Where(query)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	if val != "" {
@@ -246,23 +246,11 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhereMap(query map[string]i
 		if e != nil {
 			return nil, e
 		}
-		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
-			var count64 int64
-			e = db.Count(&count64).Error
-			count := int(count64)
-			if e != nil {
-				return nil, e
-			}
-			if count != 0 {
-				//Calculate the length of the pagination
-				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
-				} else {
-					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
-				}
-			}
+		e = repo.GetTotalPage(db)
+		if e != nil {
+			return nil, e
 		}
-		return list, e
+		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -276,7 +264,7 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhereMap(query map[string]i
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return list, nil
+	return
 }
 
 func (repo *ggFavoriteThreadRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.GgFavoriteThread, e error) {
@@ -301,36 +289,23 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhere(query string, args []
 			str += Strval(vv)
 		}
 	}
-	redisKey := ggFavoriteThread.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
+	redisKey := ggFavoriteThread.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	val, _ := repo.FindInRedisByKey(redisKey)
 	if val != "" {
 		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-
-		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
-			var count64 int64
-			e = db.Count(&count64).Error
-			count := int(count64)
-			if e != nil {
-				return
-			}
-			if count != 0 {
-				//Calculate the length of the pagination
-				if count%repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
-				} else {
-					repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
-				}
-			}
+		e = repo.GetTotalPage(db)
+		if e != nil {
+			return nil, e
 		}
-		return list, e
+		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -344,7 +319,7 @@ func (repo *ggFavoriteThreadRepository) GetDataListByWhere(query string, args []
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return list, nil
+	return
 }
 
 func (repo *ggFavoriteThreadRepository) GetDataByWhereMap(ggFavoriteThread *model.GgFavoriteThread, where map[string]interface{}, preload []string) (e error) {
@@ -358,7 +333,7 @@ func (repo *ggFavoriteThreadRepository) GetDataByWhereMap(ggFavoriteThread *mode
 	db := global.DB.Model(ggFavoriteThread).Where(where)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	db = db.First(ggFavoriteThread)
@@ -371,9 +346,27 @@ func (repo *ggFavoriteThreadRepository) GetDataByWhereMap(ggFavoriteThread *mode
 }
 
 func (repo *ggFavoriteThreadRepository) Execute(db *gorm.DB, object interface{}) error {
+	e := repo.GetTotalPage(db)
+	if e != nil {
+		return e
+	}
+	orderValue := repo.Pager.FieldsOrder
+	if len(orderValue) > 0 {
+		for _, v := range orderValue {
+			db.Order(v)
+		}
+	}
+	resultDB := db.Find(object)
+	if resultDB.Error != nil {
+		return resultDB.Error
+	}
+	return nil
+}
+
+func (repo *ggFavoriteThreadRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
-		e := db.Count(&count64).Error
+		e = db.Count(&count64).Error
 		count := int(count64)
 		if e != nil {
 			return e
@@ -386,17 +379,6 @@ func (repo *ggFavoriteThreadRepository) Execute(db *gorm.DB, object interface{})
 				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 			}
 		}
-		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
-	}
-	orderValue := repo.Pager.FieldsOrder
-	if len(orderValue) > 0 {
-		for _, v := range orderValue {
-			db = db.Order(v)
-		}
-	}
-	resultDB := db.Find(object)
-	if resultDB.Error != nil {
-		return resultDB.Error
 	}
 	return nil
 }

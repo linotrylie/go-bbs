@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
@@ -11,7 +12,7 @@ import (
 type PostController struct {
 }
 
-// CommentList 获取评论列表
+// CommentList 获取评论列表 生成注释
 func (controller *PostController) CommentList(ctx *gin.Context) {
 	var err error
 	defer func() {
@@ -40,4 +41,15 @@ func (controller *PostController) CommentList(ctx *gin.Context) {
 		List:     postVoList,
 	}, ctx)
 	return
+}
+
+func (controller *PostController) Create(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
+	content := ctx.PostForm("content")
+	fmt.Println(content)
 }

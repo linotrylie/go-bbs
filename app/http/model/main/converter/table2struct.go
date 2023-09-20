@@ -220,7 +220,7 @@ func (repo *%sRepository) First(%s *model.%s, preload []string) (e error) {
 	db := global.DB.Table(%s.TableName())
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	db.First(%s)
@@ -366,7 +366,7 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 	db := global.DB.Model(%s).Where(query)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	if val != "" {
@@ -374,23 +374,11 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 		if e != nil {
 			return nil, e
 		}
-		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
-			var count64 int64
-			e = db.Count(&count64).Error
-			count := int(count64)
-			if e != nil {
-				return nil, e
-			}
-			if count != 0 {
-				//Calculate the length of the pagination
-				if count % repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
-				} else {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
-				}
-			}
+		e = repo.GetTotalPage(db)
+		if e != nil {
+			return nil, e
 		}
-		return list, e
+		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -404,7 +392,7 @@ func (repo *%sRepository) GetDataListByWhereMap(query map[string]interface{}, pr
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return list, nil
+	return
 }
 
 func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.%s, e error) {
@@ -429,36 +417,23 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, p
 			str += Strval(vv)
 		}
 	}
-	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
-	val, _ := repo.FindInRedisByKey(redisKey)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
+	redisKey := %s.TableName() + "_list_"+ strconv.Itoa( repo.Pager.Page ) +"_"+ strconv.Itoa( repo.Pager.PageSize ) +"_" + str;
+	val, _ := repo.FindInRedisByKey(redisKey)
 	if val != "" {
 		e = json.Unmarshal([]byte(val), &list)
 		if e != nil {
 			return nil, e
 		}
-		
-		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
-			var count64 int64
-			e = db.Count(&count64).Error
-			count := int(count64)
-			if e != nil {
-				return
-			}
-			if count != 0 {
-				//Calculate the length of the pagination
-				if count % repo.Pager.PageSize == 0 {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
-				} else {
-					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
-				}
-			}
+		e = repo.GetTotalPage(db)
+		if e != nil {
+			return nil, e
 		}
-		return list, e
+		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -472,7 +447,7 @@ func (repo *%sRepository) GetDataListByWhere(query string, args []interface{}, p
 		return nil, e
 	}
 	repo.SaveInRedisByKey(redisKey, string(marshal))
-	return list, nil
+	return
 }
 
 func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interface{}, preload []string) (e error) {
@@ -486,7 +461,7 @@ func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interf
 	db := global.DB.Model(%s).Where(where)
 	if preload != nil {
 		for _, v := range preload {
-			db = db.Preload(v)
+			db.Preload(v)
 		}
 	}
 	db = db.First(%s)
@@ -499,27 +474,14 @@ func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interf
 }
 
 func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
-	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
-		var count64 int64
-		e := db.Count(&count64).Error
-		count := int(count64)
-		if e != nil {
+	e := repo.GetTotalPage(db)
+	if e != nil {
 			return e
-		}
-		if count != 0 {
-			//Calculate the length of the pagination
-			if count % repo.Pager.PageSize == 0 {
-				repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
-			} else {
-				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
-			}
-		}
-		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
 	}
 	orderValue := repo.Pager.FieldsOrder
 	if len(orderValue) > 0 {
 		for _, v := range orderValue {
-			db = db.Order(v)
+			db.Order(v)
 		}
 	}
 	resultDB := db.Find(object)
@@ -528,6 +490,27 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 	}
 	return nil
 }
+
+func (repo *%sRepository) GetTotalPage(db *gorm.DB) (e error) {
+		if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
+			var count64 int64
+			e = db.Count(&count64).Error
+			count := int(count64)
+			if e != nil {
+				return e
+			}
+			if count != 0 {
+				//Calculate the length of the pagination
+				if count % repo.Pager.PageSize == 0 {
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize)
+				} else {
+					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
+				}
+			}
+		}
+		return nil
+}
+
 `
 	if t.config == nil {
 		t.config = new(T2tConfig)
@@ -578,9 +561,9 @@ func (repo *%sRepository) Execute(db *gorm.DB, object interface{}) error {
 			small, big, small, small, small,
 			small, small, small /*53*/, tableName, small,
 			small, tableName, small, tableName /*59*/, small,
-			small, small, "", small, tableName, small, tableName, /*65*/
-			small, small, small /*70*/, "", small,
-			small, tableName, small, small, small, small,
+			small, small, small, tableName, small /*65*/, tableName, small, small,
+			small, small, small /*70*/, tableName, small,
+			small, small, small, small,
 			small, "",
 		)
 		// 写入文件struct
