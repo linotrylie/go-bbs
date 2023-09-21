@@ -27,7 +27,7 @@ func (c *AuthController) Index(ctx *gin.Context) {
 	repository.GroupRepository.First(group, nil)
 	user.SetCredits(1).SetGolds(1)
 	fmt.Println(user)
-	userEntity := entity.UserEntity{User: *user, Group: group}
+	userEntity := entity.UserEntity{User: user, Group: group}
 
 	pager := repository.Pager{Page: page, PageSize: 5}
 	args := make([]interface{}, 1)

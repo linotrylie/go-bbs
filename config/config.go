@@ -9,8 +9,6 @@ type Server struct {
 	Email   Email   `mapstructure:"email" json:"email" yaml:"email"`
 	System  System  `mapstructure:"system" json:"system" yaml:"system"`
 	Captcha Captcha `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
-	// auto
-	AutoCode Autocode `mapstructure:"autocode" json:"autocode" yaml:"autocode"`
 	// gorm
 	Mysql Database `mapstructure:"Database" json:"Database" yaml:"Database"`
 
@@ -23,9 +21,6 @@ type Server struct {
 	AwsS3      AwsS3      `mapstructure:"aws-s3" json:"aws-s3" yaml:"aws-s3"`
 
 	Excel Excel `mapstructure:"excel" json:"excel" yaml:"excel"`
-	Timer Timer `mapstructure:"timer" json:"timer" yaml:"timer"`
 
 	ElasticSearch config.Elasticsearch `mapstructure:"elasticsearch" json:"elasticsearch" yaml:"elasticsearch"`
-	//// 跨域配置
-	//Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 }
