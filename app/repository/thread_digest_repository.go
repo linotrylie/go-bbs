@@ -85,9 +85,9 @@ func (repo *threadDigestRepository) First(threadDigest *model.ThreadDigest, prel
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(threadDigest)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(threadDigest)
+	if threadDigest != nil {
+		return nil
 	}
 	db := global.DB.Table(threadDigest.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *threadDigestRepository) GetDataByWhereMap(threadDigest *model.Thread
 			global.Prome.OrmWithLabelValues(threadDigest.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(threadDigest)
+	if threadDigest != nil {
+		return nil
+	}
 	db := global.DB.Model(threadDigest).Where(where)
 	if preload != nil {
 		for _, v := range preload {

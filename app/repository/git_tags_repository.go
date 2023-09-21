@@ -85,9 +85,9 @@ func (repo *gitTagsRepository) First(gitTags *model.GitTags, preload []string) (
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(gitTags)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(gitTags)
+	if gitTags != nil {
+		return nil
 	}
 	db := global.DB.Table(gitTags.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *gitTagsRepository) GetDataByWhereMap(gitTags *model.GitTags, where m
 			global.Prome.OrmWithLabelValues(gitTags.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(gitTags)
+	if gitTags != nil {
+		return nil
+	}
 	db := global.DB.Model(gitTags).Where(where)
 	if preload != nil {
 		for _, v := range preload {

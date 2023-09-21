@@ -85,9 +85,9 @@ func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch, prel
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(threadSearch)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(threadSearch)
+	if threadSearch != nil {
+		return nil
 	}
 	db := global.DB.Table(threadSearch.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.Thread
 			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(threadSearch)
+	if threadSearch != nil {
+		return nil
+	}
 	db := global.DB.Model(threadSearch).Where(where)
 	if preload != nil {
 		for _, v := range preload {

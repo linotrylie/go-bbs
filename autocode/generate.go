@@ -22,9 +22,9 @@ func main() {
 	//生成model
 	//GenerateModel(t2t)
 	//生成entity
-	GenerateEntity(t2t)
+	//GenerateEntity(t2t)
 	//生成repository
-	//GenerateRepository(t2t)
+	GenerateRepository(t2t)
 	//生成requests
 	//GenerateRequests(t2t)
 }

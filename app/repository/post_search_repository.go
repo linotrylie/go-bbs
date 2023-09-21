@@ -85,9 +85,9 @@ func (repo *postSearchRepository) First(postSearch *model.PostSearch, preload []
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(postSearch)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(postSearch)
+	if postSearch != nil {
+		return nil
 	}
 	db := global.DB.Table(postSearch.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *postSearchRepository) GetDataByWhereMap(postSearch *model.PostSearch
 			global.Prome.OrmWithLabelValues(postSearch.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(postSearch)
+	if postSearch != nil {
+		return nil
+	}
 	db := global.DB.Model(postSearch).Where(where)
 	if preload != nil {
 		for _, v := range preload {

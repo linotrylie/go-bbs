@@ -85,9 +85,9 @@ func (repo *friendlinkRepository) First(friendlink *model.Friendlink, preload []
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(friendlink)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(friendlink)
+	if friendlink != nil {
+		return nil
 	}
 	db := global.DB.Table(friendlink.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *friendlinkRepository) GetDataByWhereMap(friendlink *model.Friendlink
 			global.Prome.OrmWithLabelValues(friendlink.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(friendlink)
+	if friendlink != nil {
+		return nil
+	}
 	db := global.DB.Model(friendlink).Where(where)
 	if preload != nil {
 		for _, v := range preload {

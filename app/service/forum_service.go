@@ -46,7 +46,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 
 func (serv *forumService) List() ([]*model.Forum, error) {
 	repository.ForumRepository.Pager = &repository.Pager{Page: 0, PageSize: 0}
-	list, err := repository.ForumRepository.GetDataListByWhereMap(nil, nil)
+	list, err := repository.ForumRepository.GetDataListByWhere("fid > ?", []interface{}{0}, nil)
 	if err != nil {
 		return nil, err
 	}

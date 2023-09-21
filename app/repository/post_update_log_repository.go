@@ -85,9 +85,9 @@ func (repo *postUpdateLogRepository) First(postUpdateLog *model.PostUpdateLog, p
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(postUpdateLog)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(postUpdateLog)
+	if postUpdateLog != nil {
+		return nil
 	}
 	db := global.DB.Table(postUpdateLog.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *postUpdateLogRepository) GetDataByWhereMap(postUpdateLog *model.Post
 			global.Prome.OrmWithLabelValues(postUpdateLog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(postUpdateLog)
+	if postUpdateLog != nil {
+		return nil
+	}
 	db := global.DB.Model(postUpdateLog).Where(where)
 	if preload != nil {
 		for _, v := range preload {

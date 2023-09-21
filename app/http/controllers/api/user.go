@@ -73,7 +73,7 @@ func (controller *UserController) Detail(ctx *gin.Context) {
 		}
 	}()
 	var userDetail = &requests.UserDetail{}
-	err = ctx.ShouldBind(userDetail)
+	err = ctx.ShouldBindUri(userDetail)
 	if err != nil {
 		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
 		return

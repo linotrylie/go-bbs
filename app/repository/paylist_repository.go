@@ -85,9 +85,9 @@ func (repo *paylistRepository) First(paylist *model.Paylist, preload []string) (
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(paylist)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(paylist)
+	if paylist != nil {
+		return nil
 	}
 	db := global.DB.Table(paylist.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *paylistRepository) GetDataByWhereMap(paylist *model.Paylist, where m
 			global.Prome.OrmWithLabelValues(paylist.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(paylist)
+	if paylist != nil {
+		return nil
+	}
 	db := global.DB.Model(paylist).Where(where)
 	if preload != nil {
 		for _, v := range preload {

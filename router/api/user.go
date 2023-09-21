@@ -17,7 +17,7 @@ func (tr *UserRouter) InitUserRouter(privateRouter *gin.RouterGroup, publicRoute
 		UserWithoutAuth.POST("register", userContr.Register)
 	}
 	{
-		UserWithAuth.POST("detail", userContr.Detail)
+		UserWithAuth.POST("detail/:uid", userContr.Detail)
 		UserWithAuth.POST("edit", userContr.Edit)
 		UserWithAuth.POST("change_password", userContr.ChangePassword)
 		UserWithAuth.POST("logout", userContr.Logout)

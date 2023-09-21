@@ -27,7 +27,7 @@ func (param *UserLogin) Validate() error {
 }
 
 type UserDetail struct {
-	Uid int `json:"uid" form:"uid"`
+	Uid int `json:"uid" form:"uid" uri:"uid"`
 }
 
 func (param *UserDetail) Validate() error {

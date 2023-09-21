@@ -85,9 +85,9 @@ func (repo *inviteRepository) First(invite *model.Invite, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(invite)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(invite)
+	if invite != nil {
+		return nil
 	}
 	db := global.DB.Table(invite.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *inviteRepository) GetDataByWhereMap(invite *model.Invite, where map[
 			global.Prome.OrmWithLabelValues(invite.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(invite)
+	if invite != nil {
+		return nil
+	}
 	db := global.DB.Model(invite).Where(where)
 	if preload != nil {
 		for _, v := range preload {

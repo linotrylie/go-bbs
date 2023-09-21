@@ -85,9 +85,9 @@ func (repo *forumAccessRepository) First(forumAccess *model.ForumAccess, preload
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(forumAccess)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(forumAccess)
+	if forumAccess != nil {
+		return nil
 	}
 	db := global.DB.Table(forumAccess.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *forumAccessRepository) GetDataByWhereMap(forumAccess *model.ForumAcc
 			global.Prome.OrmWithLabelValues(forumAccess.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(forumAccess)
+	if forumAccess != nil {
+		return nil
+	}
 	db := global.DB.Model(forumAccess).Where(where)
 	if preload != nil {
 		for _, v := range preload {

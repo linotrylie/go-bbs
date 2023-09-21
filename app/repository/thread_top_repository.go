@@ -85,9 +85,9 @@ func (repo *threadTopRepository) First(threadTop *model.ThreadTop, preload []str
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(threadTop)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(threadTop)
+	if threadTop != nil {
+		return nil
 	}
 	db := global.DB.Table(threadTop.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *threadTopRepository) GetDataByWhereMap(threadTop *model.ThreadTop, w
 			global.Prome.OrmWithLabelValues(threadTop.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(threadTop)
+	if threadTop != nil {
+		return nil
+	}
 	db := global.DB.Model(threadTop).Where(where)
 	if preload != nil {
 		for _, v := range preload {

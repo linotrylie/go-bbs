@@ -88,9 +88,9 @@ func (repo *%sRepository) First(%s *model.%s, preload []string) (e error) {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(%s)
-	if e != nil && e != redis.Nil {
-		return e
+	repo.FindInRedis(%s)
+	if %s != nil {
+		return nil
 	}
 	db := global.DB.Table(%s.TableName())
 	if preload != nil {
@@ -333,6 +333,10 @@ func (repo *%sRepository) GetDataByWhereMap(%s *model.%s,where map[string]interf
 			global.Prome.OrmWithLabelValues(%s.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	repo.FindInRedis(%s)
+	if %s != nil {
+		return nil
+	}
 	db := global.DB.Model(%s).Where(where)
 	if preload != nil {
 		for _, v := range preload {
