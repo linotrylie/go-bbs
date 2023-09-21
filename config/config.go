@@ -1,5 +1,7 @@
 package config
 
+import "go-bbs/plugin/elasticsearch/config"
+
 type Server struct {
 	JWT     JWT     `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
 	Zap     Zap     `mapstructure:"zap" json:"zap" yaml:"zap"`
@@ -22,7 +24,8 @@ type Server struct {
 
 	Excel Excel `mapstructure:"excel" json:"excel" yaml:"excel"`
 	Timer Timer `mapstructure:"timer" json:"timer" yaml:"timer"`
-	//
+
+	ElasticSearch config.Elasticsearch `mapstructure:"elasticsearch" json:"elasticsearch" yaml:"elasticsearch"`
 	//// 跨域配置
 	//Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 }
