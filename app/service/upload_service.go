@@ -18,21 +18,9 @@ func newUploadService() *uploadService {
 	return new(uploadService)
 }
 
-//@author: [piexlmax](https://github.com/piexlmax)
-//@function: Upload
-//@description: 创建文件上传记录
-//@param: file model.ExaFileUploadAndDownload
-//@return: error
-
 func (e *uploadService) Upload(file model.Attach) (model.Attach, error) {
 	return file, global.DB.Create(&file).Error
 }
-
-//@author: [piexlmax](https://github.com/piexlmax)
-//@function: FindFile
-//@description: 查询文件记录
-//@param: id uint
-//@return: model.ExaFileUploadAndDownload, error
 
 func (e *uploadService) FindFile(id int) (model.Attach, error) {
 	var file = model.Attach{Aid: id}

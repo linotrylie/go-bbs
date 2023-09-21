@@ -47,7 +47,7 @@ func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.P
 	if err != nil {
 		return nil, nil, err
 	}
-	postVo := ServiceGroupApp.PostService.GetPostTransform(post)
+	postVo := PostService.GetPostTransform(post)
 	go serv.After(thread)
 	return threadVo, postVo, nil
 }

@@ -40,14 +40,14 @@ func (serv *postService) GetPostTransform(post *model.Post) *response.PostVo {
 	pv := transform.TransformPost(post)
 	if post.LastUpdateUser != nil {
 		pv.LastUpdateUser = transform.TransformUser(post.LastUpdateUser)
-		group, _ = ServiceGroupApp.GroupService.Detail(pv.LastUpdateUser.Gid)
+		group, _ = GroupService.Detail(pv.LastUpdateUser.Gid)
 		if group != nil {
 			pv.LastUpdateUser.Group = group
 		}
 	}
 	if post.CreateUser != nil {
 		pv.User = transform.TransformUser(post.CreateUser)
-		group, _ = ServiceGroupApp.GroupService.Detail(pv.User.Gid)
+		group, _ = GroupService.Detail(pv.User.Gid)
 		if group != nil {
 			pv.User.Group = group
 		}

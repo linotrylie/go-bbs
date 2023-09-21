@@ -175,7 +175,7 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 		return nil, nil, "", exceptions.DuplicateUser
 	}
 	//校验验证码
-	//ok := ServiceGroupApp.CaptchaService.VerifyCaptcha(ctx, &userRegister.Captcha, &userRegister.Email)
+	//ok := CaptchaService.VerifyCaptcha(ctx, &userRegister.Captcha, &userRegister.Email)
 	//if !ok {
 	//	return nil, nil, "", exceptions.FailedVerify
 	//}
@@ -207,9 +207,9 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 }
 
 func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {
-	ServiceGroupApp.JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
-	claims := ServiceGroupApp.JwtService.CreateClaims(user)
-	token, e = ServiceGroupApp.JwtService.CreateToken(claims)
+	JwtService.SigningKey = []byte(global.CONFIG.JWT.SigningKey)
+	claims := JwtService.CreateClaims(user)
+	token, e = JwtService.CreateToken(claims)
 	if e != nil {
 		return nil, "", e
 	}

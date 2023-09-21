@@ -29,7 +29,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		}
 		forumModel = forum
 	}
-	list, totalPage, err := ServiceGroupApp.ThreadService.List(fid, page, pageSize, order, sort)
+	list, totalPage, err := ThreadService.List(fid, page, pageSize, order, sort)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -37,7 +37,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 	for _, v := range list {
 		threadVo := transform.TransformThread(v)
 		threadVo.User = transform.TransformUser(&v.User)
-		group, _ := ServiceGroupApp.GroupService.Detail(threadVo.User.Gid)
+		group, _ := GroupService.Detail(threadVo.User.Gid)
 		threadVo.User.Group = group
 		threadVoList = append(threadVoList, threadVo)
 	}

@@ -11,8 +11,8 @@ type CommonGroup struct {
 }
 
 var (
-	emailService   = emailServ.ServiceGroupApp.EmailService
-	userService    = service.ServiceGroupApp.UserService
-	captchaService = service.ServiceGroupApp.CaptchaService
-	uploadService  = service.ServiceGroupApp.UploadService
+	emailService   = emailServ.EmailService
+	userService    = service.UserService
+	captchaService = service.CaptchaService
+	uploadService  = service.UploadService
 )

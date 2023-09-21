@@ -12,6 +12,12 @@ type UploadController struct {
 }
 
 func (controller *UploadController) UploadFile(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	var file model.Attach
 	_, header, err := ctx.Request.FormFile("file")
 	if err != nil {

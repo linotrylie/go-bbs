@@ -2,6 +2,6 @@ package entity
 
 import "go-bbs/app/http/model"
 
-type KamiEntity struct {
-	*model.Kami
+type XnVoteInfoEntity struct {
+	*model.XnVoteInfo
 }

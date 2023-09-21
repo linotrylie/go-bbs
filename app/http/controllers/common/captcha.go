@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"github.com/duke-git/lancet/v2/compare"
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/duke-git/lancet/v2/random"
@@ -21,10 +22,16 @@ var store = base64Captcha.DefaultMemStore
 
 type CaptchaController struct{}
 
-// EmailCaptcha
+// EmailCaptcha 获取邮箱验证码
 func (ca *CaptchaController) EmailCaptcha(c *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	var EmailCaptcha requests.EmailCaptcha
-	err := c.ShouldBindJSON(&EmailCaptcha)
+	err = c.ShouldBindJSON(&EmailCaptcha)
 	if err != nil {
 		response.FailWithMessage("验证码获取失败!", c)
 		return
@@ -63,9 +70,16 @@ func (ca *CaptchaController) EmailCaptcha(c *gin.Context) {
 	return
 }
 
+// EmailCaptchaVerify 邮箱验证码校验
 func (ca *CaptchaController) EmailCaptchaVerify(c *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	var EmailCaptchaVerify requests.EmailCaptchaVerify
-	err := c.ShouldBindJSON(&EmailCaptchaVerify)
+	err = c.ShouldBindJSON(&EmailCaptchaVerify)
 	key := c.ClientIP()
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -105,9 +119,16 @@ func (ca *CaptchaController) EmailCaptchaVerify(c *gin.Context) {
 	return
 }
 
+// PicCaptchaVerify 图片验证码校验
 func (ca *CaptchaController) PicCaptchaVerify(c *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	var CaptchaVerify requests.CaptchaVerify
-	err := c.ShouldBindJSON(&CaptchaVerify)
+	err = c.ShouldBindJSON(&CaptchaVerify)
 	key := c.ClientIP()
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
@@ -137,15 +158,14 @@ func (ca *CaptchaController) PicCaptchaVerify(c *gin.Context) {
 	response.FailWithMessage(exceptions.FailedVerify.Error(), c)
 }
 
-// Captcha
-// @Tags      Common
-// @Summary   生成验证码
-// @Security  ApiKeyAuth
-// @accept    application/json
-// @Produce   application/json
-// @Success   200  {object}  response.Response{data=model.CaptchaResponse,msg=string}  "生成验证码,返回包括随机数id,base64,验证码长度,是否开启验证码"
-// @Router    /common/captcha/pic-captcha [post]
+// Captcha 获取图片验证码
 func (ca *CaptchaController) Captcha(c *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
 	// 判断验证码是否开启
 	openCaptcha := global.CONFIG.Captcha.OpenCaptcha               // 是否开启防爆次数
 	openCaptchaTimeOut := global.CONFIG.Captcha.OpenCaptchaTimeOut // 缓存超时时间
@@ -166,7 +186,7 @@ func (ca *CaptchaController) Captcha(c *gin.Context) {
 	cp := base64Captcha.NewCaptcha(driver, store)
 	id, b64s, err := cp.Generate()
 	if err != nil {
-		global.LOG.Error("验证码获取失败!", zap.Error(err))
+		err = errors.New("验证码获取失败")
 		response.FailWithMessage("验证码获取失败!", c)
 		return
 	}
