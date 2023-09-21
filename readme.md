@@ -27,8 +27,8 @@
       - controllers 控制器目录
       - middleware 中间件
       - model 模型层 只负责数据表的字段、属性、查询条件、返回值的定义
-        - requests  
-      - requests 请求结构体
+        - response 响应结构体VO 
+        - requests 请求结构体PO
     - repository 仓库，负责对外的业务逻辑处理
     - service 服务层
     - transform model与vo的转换层
