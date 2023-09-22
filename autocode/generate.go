@@ -32,7 +32,7 @@ func main() {
 func GenerateModel(t2t *converter.Table2Struct) error {
 	return t2t.
 		// 指定某个表,如果不指定,则默认全部表都迁移
-		//Table("user").
+		Table("operation_log").
 		// 表前缀
 		Prefix("bbs_").
 		// 是否添加json tag
@@ -52,19 +52,25 @@ func GenerateModel(t2t *converter.Table2Struct) error {
 }
 
 func GenerateEntity(t2t *converter.Table2Struct) error {
-	return t2t.Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("./app/entity/").
+	return t2t.
+		Table("operation_log").
+		Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("./app/entity/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunEntity()
 }
 
 func GenerateRepository(t2t *converter.Table2Struct) error {
-	return t2t.Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("./app/repository/").
+	return t2t.
+		//Table("operation_log").
+		Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("./app/repository/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunRepository()
 }
 
 func GenerateRequests(t2t *converter.Table2Struct) error {
-	return t2t.Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("./app./http/model/requests/").
+	return t2t.
+		Table("operation_log").
+		Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("./app./http/model/requests/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunRequest()
 }

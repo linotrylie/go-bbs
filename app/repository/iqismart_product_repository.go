@@ -86,8 +86,8 @@ func (repo *iqismartProductRepository) First(iqismartProduct *model.IqismartProd
 	}
 	//先查询redis缓存
 	e = repo.FindInRedis(iqismartProduct)
-	if e != nil && e != redis.Nil {
-		return e
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(iqismartProduct.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *iqismartProductRepository) GetDataByWhereMap(iqismartProduct *model.
 			global.Prome.OrmWithLabelValues(iqismartProduct.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	e = repo.FindInRedis(iqismartProduct)
+	if e == nil {
+		return
+	}
 	db := global.DB.Model(iqismartProduct).Where(where)
 	if preload != nil {
 		for _, v := range preload {

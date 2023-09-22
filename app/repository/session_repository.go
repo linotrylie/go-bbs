@@ -85,9 +85,9 @@ func (repo *sessionRepository) First(session *model.Session, preload []string) (
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(session)
-	if session != nil {
-		return nil
+	e = repo.FindInRedis(session)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(session.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *sessionRepository) GetDataByWhereMap(session *model.Session, where m
 			global.Prome.OrmWithLabelValues(session.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(session)
-	if session != nil {
-		return nil
+	e = repo.FindInRedis(session)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(session).Where(where)
 	if preload != nil {

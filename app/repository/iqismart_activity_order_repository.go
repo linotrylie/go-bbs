@@ -86,8 +86,8 @@ func (repo *iqismartActivityOrderRepository) First(iqismartActivityOrder *model.
 	}
 	//先查询redis缓存
 	e = repo.FindInRedis(iqismartActivityOrder)
-	if e != nil && e != redis.Nil {
-		return e
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(iqismartActivityOrder.TableName())
 	if preload != nil {
@@ -330,6 +330,10 @@ func (repo *iqismartActivityOrderRepository) GetDataByWhereMap(iqismartActivityO
 			global.Prome.OrmWithLabelValues(iqismartActivityOrder.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
+	e = repo.FindInRedis(iqismartActivityOrder)
+	if e == nil {
+		return
+	}
 	db := global.DB.Model(iqismartActivityOrder).Where(where)
 	if preload != nil {
 		for _, v := range preload {

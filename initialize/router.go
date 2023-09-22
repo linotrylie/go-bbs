@@ -31,7 +31,13 @@ func Routers() *gin.Engine {
 		)
 	}))
 
-	Router.Use(middleware.Cors(), middleware.Recovery(true), middleware.RateLimitMiddleware(), middleware.DefaultLimit())
+	Router.Use(
+		middleware.Cors(),
+		middleware.Recovery(true),
+		middleware.RateLimitMiddleware(),
+		middleware.DefaultLimit(),
+		middleware.PreventDuplication(),
+	)
 
 	///////////普罗米修斯添加到中间件////////////////////
 	global.RegisterPrometheus(global.Prome, "go-bbs", ":8080")
@@ -61,7 +67,7 @@ func Routers() *gin.Engine {
 
 	PrivateGroup := Router.Group("/")
 	Router.HTMLRender = ginview.Default()
-	PrivateGroup.Use(middleware.JWT())
+	PrivateGroup.Use(middleware.JWT(), middleware.RequestLogger())
 	{
 		apiRouter.InitAuthRouter(PrivateGroup)
 		apiRouter.InitUserRouter(PrivateGroup, PublicGroup)   //前端用户

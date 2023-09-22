@@ -85,9 +85,9 @@ func (repo *slideRepository) First(slide *model.Slide, preload []string) (e erro
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(slide)
-	if slide != nil {
-		return nil
+	e = repo.FindInRedis(slide)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(slide.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *slideRepository) GetDataByWhereMap(slide *model.Slide, where map[str
 			global.Prome.OrmWithLabelValues(slide.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(slide)
-	if slide != nil {
-		return nil
+	e = repo.FindInRedis(slide)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(slide).Where(where)
 	if preload != nil {

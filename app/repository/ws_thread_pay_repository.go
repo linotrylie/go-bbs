@@ -85,9 +85,9 @@ func (repo *wsThreadPayRepository) First(wsThreadPay *model.WsThreadPay, preload
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(wsThreadPay)
-	if wsThreadPay != nil {
-		return nil
+	e = repo.FindInRedis(wsThreadPay)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(wsThreadPay.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *wsThreadPayRepository) GetDataByWhereMap(wsThreadPay *model.WsThread
 			global.Prome.OrmWithLabelValues(wsThreadPay.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(wsThreadPay)
-	if wsThreadPay != nil {
-		return nil
+	e = repo.FindInRedis(wsThreadPay)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(wsThreadPay).Where(where)
 	if preload != nil {

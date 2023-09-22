@@ -85,9 +85,9 @@ func (repo *tagRepository) First(tag *model.Tag, preload []string) (e error) {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(tag)
-	if tag != nil {
-		return nil
+	e = repo.FindInRedis(tag)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(tag.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *tagRepository) GetDataByWhereMap(tag *model.Tag, where map[string]in
 			global.Prome.OrmWithLabelValues(tag.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(tag)
-	if tag != nil {
-		return nil
+	e = repo.FindInRedis(tag)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(tag).Where(where)
 	if preload != nil {

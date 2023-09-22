@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/duke-git/lancet/v2/random"
 	"github.com/duke-git/lancet/v2/strutil"
@@ -74,6 +75,8 @@ func (serv *userService) GeneratePassword(user *model.User, password string) {
 
 func (serv *userService) VerifyPassword(user *model.User, password string) bool {
 	str := password + user.Salt
+	fmt.Println(cryptor.Md5String(str))
+	fmt.Println(user.Password)
 	if cryptor.Md5String(str) == user.Password {
 		return true
 	}

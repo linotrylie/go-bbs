@@ -85,9 +85,9 @@ func (repo *cacheRepository) First(cache *model.Cache, preload []string) (e erro
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(cache)
-	if cache != nil {
-		return nil
+	e = repo.FindInRedis(cache)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(cache.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *cacheRepository) GetDataByWhereMap(cache *model.Cache, where map[str
 			global.Prome.OrmWithLabelValues(cache.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(cache)
-	if cache != nil {
-		return nil
+	e = repo.FindInRedis(cache)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(cache).Where(where)
 	if preload != nil {

@@ -85,9 +85,9 @@ func (repo *tableDayRepository) First(tableDay *model.TableDay, preload []string
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(tableDay)
-	if tableDay != nil {
-		return nil
+	e = repo.FindInRedis(tableDay)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(tableDay.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *tableDayRepository) GetDataByWhereMap(tableDay *model.TableDay, wher
 			global.Prome.OrmWithLabelValues(tableDay.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(tableDay)
-	if tableDay != nil {
-		return nil
+	e = repo.FindInRedis(tableDay)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(tableDay).Where(where)
 	if preload != nil {

@@ -85,9 +85,9 @@ func (repo *hayaFavoriteRepository) First(hayaFavorite *model.HayaFavorite, prel
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(hayaFavorite)
-	if hayaFavorite != nil {
-		return nil
+	e = repo.FindInRedis(hayaFavorite)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(hayaFavorite.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *hayaFavoriteRepository) GetDataByWhereMap(hayaFavorite *model.HayaFa
 			global.Prome.OrmWithLabelValues(hayaFavorite.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(hayaFavorite)
-	if hayaFavorite != nil {
-		return nil
+	e = repo.FindInRedis(hayaFavorite)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(hayaFavorite).Where(where)
 	if preload != nil {

@@ -85,9 +85,9 @@ func (repo *xnVoteRepository) First(xnVote *model.XnVote, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(xnVote)
-	if xnVote != nil {
-		return nil
+	e = repo.FindInRedis(xnVote)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(xnVote.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *xnVoteRepository) GetDataByWhereMap(xnVote *model.XnVote, where map[
 			global.Prome.OrmWithLabelValues(xnVote.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(xnVote)
-	if xnVote != nil {
-		return nil
+	e = repo.FindInRedis(xnVote)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(xnVote).Where(where)
 	if preload != nil {

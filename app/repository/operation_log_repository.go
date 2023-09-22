@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type threadTopRepository struct {
+type operationLogRepository struct {
 	Pager *Pager
 }
 
-var ThreadTopRepository = newThreadTopRepository()
+var OperationLogRepository = newOperationLogRepository()
 
-func newThreadTopRepository() *threadTopRepository {
-	return new(threadTopRepository)
+func newOperationLogRepository() *operationLogRepository {
+	return new(operationLogRepository)
 }
 
-func (repo *threadTopRepository) Insert(threadTop *model.ThreadTop) (rowsAffected int64, e error) {
+func (repo *operationLogRepository) Insert(operationLog *model.OperationLog) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(threadTop)
+	result := global.DB.Create(operationLog)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(threadTop)
 	return result.RowsAffected, e
 }
 
-func (repo *threadTopRepository) Update(threadTop *model.ThreadTop) (rowsAffected int64, e error) {
+func (repo *operationLogRepository) Update(operationLog *model.OperationLog) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "Update", e, now)
 		}
 	}()
-	if len(threadTop.Location()) == 0 {
+	if len(operationLog.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := threadTop.GetChanges()
+	updateValues := operationLog.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(threadTop).Updates(updateValues)
+	result := global.DB.Model(operationLog).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(threadTop)
-	repo.First(threadTop, []string{})
+	repo.DeleteInRedis(operationLog)
+	repo.First(operationLog, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *threadTopRepository) First(threadTop *model.ThreadTop, preload []string) (e error) {
+func (repo *operationLogRepository) First(operationLog *model.OperationLog, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "First", e, now)
 		}
 	}()
-	if len(threadTop.Location()) == 0 {
+	if len(operationLog.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(threadTop)
+	e = repo.FindInRedis(operationLog)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(threadTop.TableName())
+	db := global.DB.Table(operationLog.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(threadTop)
+	db.First(operationLog)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(threadTop)
+	repo.SaveInRedis(operationLog)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *threadTopRepository) DeleteByLocation(threadTop *model.ThreadTop) (rowsAffected int64, e error) {
+func (repo *operationLogRepository) DeleteByLocation(operationLog *model.OperationLog) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(threadTop.Location()) == 0 {
+	if len(operationLog.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(threadTop.TableName()).Unscoped().Delete(threadTop)
+	result := global.DB.Table(operationLog.TableName()).Unscoped().Delete(operationLog)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(threadTop)
+	repo.DeleteInRedis(operationLog)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *threadTopRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *operationLogRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,15 @@ func (repo *threadTopRepository) TransactionExecute(fun func() error, opts ...*s
 
 //////////////Redis///////////////////////////
 
-func (repo *threadTopRepository) SaveInRedis(threadTop *model.ThreadTop) (e error) {
+func (repo *operationLogRepository) SaveInRedis(operationLog *model.OperationLog) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	var redisKey string
-	redisKey = threadTop.RedisKey()
-	resByte, e := json.Marshal(threadTop)
+	redisKey = operationLog.RedisKey()
+	resByte, e := json.Marshal(operationLog)
 	if e != nil {
 		return e
 	}
@@ -158,26 +157,26 @@ func (repo *threadTopRepository) SaveInRedis(threadTop *model.ThreadTop) (e erro
 	return nil
 }
 
-func (repo *threadTopRepository) FindInRedis(threadTop *model.ThreadTop) (e error) {
+func (repo *operationLogRepository) FindInRedis(operationLog *model.OperationLog) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	var redisKey string
-	redisKey = threadTop.RedisKey()
+	redisKey = operationLog.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
 	if e != nil && e != redis.Nil {
 		return
 	} else if e == redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), threadTop)
+		e = json.Unmarshal([]byte(redisRes), operationLog)
 	}
 	return nil
 }
 
-func (repo *threadTopRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *operationLogRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
@@ -194,34 +193,34 @@ func (repo *threadTopRepository) FindInRedisByKey(redisKey string) (redisRes str
 	return
 }
 
-func (repo *threadTopRepository) SaveInRedisByKey(redisKey string, data string) {
+func (repo *operationLogRepository) SaveInRedisByKey(redisKey string, data string) {
 	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
 }
 
-func (repo *threadTopRepository) DeleteInRedis(threadTop *model.ThreadTop) (e error) {
+func (repo *operationLogRepository) DeleteInRedis(operationLog *model.OperationLog) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	var redisKey string
-	redisKey = threadTop.RedisKey()
+	redisKey = operationLog.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *threadTopRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.ThreadTop, e error) {
+func (repo *operationLogRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.OperationLog, e error) {
 	now := time.Now()
-	threadTop := &model.ThreadTop{}
+	operationLog := &model.OperationLog{}
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
 	var str string
@@ -233,9 +232,9 @@ func (repo *threadTopRepository) GetDataListByWhereMap(query map[string]interfac
 	for k, vv := range query {
 		str += k + Strval(vv)
 	}
-	redisKey := threadTop.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	redisKey := operationLog.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
 	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(threadTop).Where(query)
+	db := global.DB.Model(operationLog).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
@@ -267,13 +266,13 @@ func (repo *threadTopRepository) GetDataListByWhereMap(query map[string]interfac
 	return
 }
 
-func (repo *threadTopRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.ThreadTop, e error) {
+func (repo *operationLogRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.OperationLog, e error) {
 	now := time.Now()
-	threadTop := &model.ThreadTop{}
+	operationLog := &model.OperationLog{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
@@ -282,7 +281,7 @@ func (repo *threadTopRepository) GetDataListByWhere(query string, args []interfa
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	db := global.DB.Model(threadTop)
+	db := global.DB.Model(operationLog)
 	if query != "" {
 		db = db.Where(query, args...)
 		for _, vv := range args {
@@ -294,7 +293,7 @@ func (repo *threadTopRepository) GetDataListByWhere(query string, args []interfa
 			db.Preload(v)
 		}
 	}
-	redisKey := threadTop.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	redisKey := operationLog.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
 	val, _ := repo.FindInRedisByKey(redisKey)
 	if val != "" {
 		e = json.Unmarshal([]byte(val), &list)
@@ -322,34 +321,34 @@ func (repo *threadTopRepository) GetDataListByWhere(query string, args []interfa
 	return
 }
 
-func (repo *threadTopRepository) GetDataByWhereMap(threadTop *model.ThreadTop, where map[string]interface{}, preload []string) (e error) {
+func (repo *operationLogRepository) GetDataByWhereMap(operationLog *model.OperationLog, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadTop.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(operationLog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(threadTop)
+	e = repo.FindInRedis(operationLog)
 	if e == nil {
 		return
 	}
-	db := global.DB.Model(threadTop).Where(where)
+	db := global.DB.Model(operationLog).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(threadTop)
+	db = db.First(operationLog)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(threadTop)
+	repo.SaveInRedis(operationLog)
 	return nil
 }
 
-func (repo *threadTopRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *operationLogRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -367,7 +366,7 @@ func (repo *threadTopRepository) Execute(db *gorm.DB, object interface{}) error 
 	return nil
 }
 
-func (repo *threadTopRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *operationLogRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

@@ -85,9 +85,9 @@ func (repo *sgSignRepository) First(sgSign *model.SgSign, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(sgSign)
-	if sgSign != nil {
-		return nil
+	e = repo.FindInRedis(sgSign)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(sgSign.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *sgSignRepository) GetDataByWhereMap(sgSign *model.SgSign, where map[
 			global.Prome.OrmWithLabelValues(sgSign.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(sgSign)
-	if sgSign != nil {
-		return nil
+	e = repo.FindInRedis(sgSign)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(sgSign).Where(where)
 	if preload != nil {

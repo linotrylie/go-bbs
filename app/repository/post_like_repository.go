@@ -85,9 +85,9 @@ func (repo *postLikeRepository) First(postLike *model.PostLike, preload []string
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(postLike)
-	if postLike != nil {
-		return nil
+	e = repo.FindInRedis(postLike)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(postLike.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *postLikeRepository) GetDataByWhereMap(postLike *model.PostLike, wher
 			global.Prome.OrmWithLabelValues(postLike.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(postLike)
-	if postLike != nil {
-		return nil
+	e = repo.FindInRedis(postLike)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(postLike).Where(where)
 	if preload != nil {

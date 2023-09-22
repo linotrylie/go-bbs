@@ -85,9 +85,9 @@ func (repo *modlogRepository) First(modlog *model.Modlog, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(modlog)
-	if modlog != nil {
-		return nil
+	e = repo.FindInRedis(modlog)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(modlog.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *modlogRepository) GetDataByWhereMap(modlog *model.Modlog, where map[
 			global.Prome.OrmWithLabelValues(modlog.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(modlog)
-	if modlog != nil {
-		return nil
+	e = repo.FindInRedis(modlog)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(modlog).Where(where)
 	if preload != nil {

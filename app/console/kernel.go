@@ -22,5 +22,9 @@ func InitCrontab() {
 	if err != nil {
 		return
 	}
+	_, err = c.AddFunc("1 * * * * *", InsertOperationLog)
+	if err != nil {
+		return
+	}
 	c.Start()
 }

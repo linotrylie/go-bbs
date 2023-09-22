@@ -85,9 +85,9 @@ func (repo *groupRepository) First(group *model.Group, preload []string) (e erro
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(group)
-	if group != nil {
-		return nil
+	e = repo.FindInRedis(group)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(group.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *groupRepository) GetDataByWhereMap(group *model.Group, where map[str
 			global.Prome.OrmWithLabelValues(group.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(group)
-	if group != nil {
-		return nil
+	e = repo.FindInRedis(group)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(group).Where(where)
 	if preload != nil {

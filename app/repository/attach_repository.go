@@ -85,9 +85,9 @@ func (repo *attachRepository) First(attach *model.Attach, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(attach)
-	if attach != nil {
-		return nil
+	e = repo.FindInRedis(attach)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(attach.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *attachRepository) GetDataByWhereMap(attach *model.Attach, where map[
 			global.Prome.OrmWithLabelValues(attach.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(attach)
-	if attach != nil {
-		return nil
+	e = repo.FindInRedis(attach)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(attach).Where(where)
 	if preload != nil {

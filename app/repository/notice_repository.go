@@ -85,9 +85,9 @@ func (repo *noticeRepository) First(notice *model.Notice, preload []string) (e e
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(notice)
-	if notice != nil {
-		return nil
+	e = repo.FindInRedis(notice)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(notice.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *noticeRepository) GetDataByWhereMap(notice *model.Notice, where map[
 			global.Prome.OrmWithLabelValues(notice.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(notice)
-	if notice != nil {
-		return nil
+	e = repo.FindInRedis(notice)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(notice).Where(where)
 	if preload != nil {

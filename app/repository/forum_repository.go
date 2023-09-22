@@ -85,9 +85,9 @@ func (repo *forumRepository) First(forum *model.Forum, preload []string) (e erro
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(forum)
-	if forum != nil {
-		return nil
+	e = repo.FindInRedis(forum)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(forum.TableName())
 	if preload != nil {
@@ -215,7 +215,9 @@ func (repo *forumRepository) DeleteInRedis(forum *model.Forum) (e error) {
 func (repo *forumRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Forum, e error) {
 	now := time.Now()
 	forum := &model.Forum{}
-
+	if query == nil {
+		return nil, errors.New("无查询条件！")
+	}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
@@ -233,10 +235,7 @@ func (repo *forumRepository) GetDataListByWhereMap(query map[string]interface{},
 	}
 	redisKey := forum.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
 	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(forum)
-	if query != nil {
-		db.Where(query)
-	}
+	db := global.DB.Model(forum).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
@@ -331,9 +330,9 @@ func (repo *forumRepository) GetDataByWhereMap(forum *model.Forum, where map[str
 			global.Prome.OrmWithLabelValues(forum.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(forum)
-	if forum != nil {
-		return nil
+	e = repo.FindInRedis(forum)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(forum).Where(where)
 	if preload != nil {

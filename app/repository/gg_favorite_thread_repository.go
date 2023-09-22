@@ -85,9 +85,9 @@ func (repo *ggFavoriteThreadRepository) First(ggFavoriteThread *model.GgFavorite
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(ggFavoriteThread)
-	if ggFavoriteThread != nil {
-		return nil
+	e = repo.FindInRedis(ggFavoriteThread)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(ggFavoriteThread.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *ggFavoriteThreadRepository) GetDataByWhereMap(ggFavoriteThread *mode
 			global.Prome.OrmWithLabelValues(ggFavoriteThread.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(ggFavoriteThread)
-	if ggFavoriteThread != nil {
-		return nil
+	e = repo.FindInRedis(ggFavoriteThread)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(ggFavoriteThread).Where(where)
 	if preload != nil {

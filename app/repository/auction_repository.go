@@ -85,9 +85,9 @@ func (repo *auctionRepository) First(auction *model.Auction, preload []string) (
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(auction)
-	if auction != nil {
-		return nil
+	e = repo.FindInRedis(auction)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(auction.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *auctionRepository) GetDataByWhereMap(auction *model.Auction, where m
 			global.Prome.OrmWithLabelValues(auction.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(auction)
-	if auction != nil {
-		return nil
+	e = repo.FindInRedis(auction)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(auction).Where(where)
 	if preload != nil {

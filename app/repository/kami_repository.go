@@ -85,9 +85,9 @@ func (repo *kamiRepository) First(kami *model.Kami, preload []string) (e error) 
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	repo.FindInRedis(kami)
-	if kami != nil {
-		return nil
+	e = repo.FindInRedis(kami)
+	if e == nil {
+		return
 	}
 	db := global.DB.Table(kami.TableName())
 	if preload != nil {
@@ -330,9 +330,9 @@ func (repo *kamiRepository) GetDataByWhereMap(kami *model.Kami, where map[string
 			global.Prome.OrmWithLabelValues(kami.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	repo.FindInRedis(kami)
-	if kami != nil {
-		return nil
+	e = repo.FindInRedis(kami)
+	if e == nil {
+		return
 	}
 	db := global.DB.Model(kami).Where(where)
 	if preload != nil {
