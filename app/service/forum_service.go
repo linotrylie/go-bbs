@@ -23,7 +23,7 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 		forumModel.Name = "全部"
 	} else {
 		forum := &model.Forum{Fid: fid}
-		err := repository.ForumRepository.First(forum, nil)
+		err := forumRepo.First(forum, nil)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -45,8 +45,8 @@ func (serv *forumService) ThreadList(fid, page, pageSize int, order, sort string
 }
 
 func (serv *forumService) List() ([]*model.Forum, error) {
-	repository.ForumRepository.Pager = &repository.Pager{Page: 0, PageSize: 0}
-	list, err := repository.ForumRepository.GetDataListByWhere("fid > ?", []interface{}{0}, nil)
+	forumRepo.Pager = &repository.Pager{Page: 0, PageSize: 0}
+	list, err := forumRepo.GetDataListByWhere("fid > ?", []interface{}{0}, nil)
 	if err != nil {
 		return nil, err
 	}

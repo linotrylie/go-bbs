@@ -11,7 +11,6 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
-	"go-bbs/app/repository"
 	"go-bbs/global"
 	"go-bbs/utils"
 	"time"
@@ -31,7 +30,7 @@ func newUserService() *userService {
 func (serv *userService) IsHasUserByUsername(username string, user *model.User) bool {
 	where := make(map[string]interface{})
 	where["username"] = username
-	e := repository.UserRepository.GetDataByWhereMap(user, where, nil)
+	e := userRepo.GetDataByWhereMap(user, where, nil)
 	if e != nil {
 		return false
 	}
@@ -87,7 +86,7 @@ func (serv *userService) LoginAfter(user *model.User, ctx *gin.Context) {
 	user.SetLogins(1).
 		SetLoginDate(time.Now().Unix()).
 		SetLoginIp(utils.Ip2long(ctx.ClientIP()))
-	_, err := repository.UserRepository.Update(user)
+	_, err := userRepo.Update(user)
 	if err != nil {
 		return
 	}
@@ -99,7 +98,7 @@ func (serv *userService) Logout() {
 
 func (serv *userService) Detail(uid int) (*model.User, error) {
 	user := &model.User{Uid: uid}
-	err := repository.UserRepository.First(user, nil)
+	err := userRepo.First(user, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +107,7 @@ func (serv *userService) Detail(uid int) (*model.User, error) {
 
 func (serv *userService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user, nil)
+	err = userRepo.First(user, nil)
 	if err != nil {
 		return
 	}
@@ -118,7 +117,7 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 		return
 	}
 	serv.GeneratePassword(user, userChangePassword.NewPassword)
-	update, err := repository.UserRepository.Update(user)
+	update, err := userRepo.Update(user)
 	if err != nil {
 		return err
 	}
@@ -133,7 +132,7 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 
 func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user, nil)
+	err = userRepo.First(user, nil)
 	if err != nil {
 		return err
 	}
@@ -157,7 +156,7 @@ func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 		user.SetEmail(userEdit.Email)
 	}
 	if &user != nil {
-		var update, e = repository.UserRepository.Update(user)
+		var update, e = userRepo.Update(user)
 		if e != nil {
 			err = e
 			return
@@ -195,7 +194,7 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 		Signature:  "他什么也没留下~",
 	}
 	serv.GeneratePassword(user, userRegister.Password)
-	insert, err := repository.UserRepository.Insert(user)
+	insert, err := userRepo.Insert(user)
 	if err != nil {
 		return nil, nil, "", err
 	}

@@ -41,6 +41,7 @@ func (repo *operationLogRepository) Insert(operationLog *model.OperationLog) (ro
 	if e != nil {
 		return
 	}
+	repo.SaveInRedis(operationLog)
 	return result.RowsAffected, e
 }
 
@@ -382,6 +383,7 @@ func (repo *operationLogRepository) GetTotalPage(db *gorm.DB) (e error) {
 				repo.Pager.TotalPage = int64(count/repo.Pager.PageSize + 1)
 			}
 		}
+		db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
 	}
 	return nil
 }

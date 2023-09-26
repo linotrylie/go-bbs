@@ -16,18 +16,18 @@ func newThreadService() *threadService {
 	return new(threadService)
 }
 func (serv *threadService) List(fid, page, pageSize int, order, sort string) (threadList []*model.Thread, totalPage int64, e error) {
-	repository.ThreadRepository.Pager = &repository.Pager{Page: page, PageSize: pageSize, FieldsOrder: []string{order + " " + sort}}
+	threadRepo.Pager = &repository.Pager{Page: page, PageSize: pageSize, FieldsOrder: []string{order + " " + sort}}
 	var query string
 	if fid < 1 {
 		query = "fid > ?"
 	} else {
 		query = "fid = ?"
 	}
-	threadList, e = repository.ThreadRepository.GetDataListByWhere(query, []interface{}{fid}, []string{"User"})
+	threadList, e = threadRepo.GetDataListByWhere(query, []interface{}{fid}, []string{"User"})
 	if e != nil {
 		return nil, 0, e
 	}
-	return threadList, repository.ThreadRepository.Pager.TotalPage, nil
+	return threadList, threadRepo.Pager.TotalPage, nil
 }
 func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.PostVo, error) {
 	thread := &model.Thread{Fid: fid, Tid: tid}
