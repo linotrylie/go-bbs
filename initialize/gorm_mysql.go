@@ -55,7 +55,9 @@ func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 	)*/
 
 	db, err := gorm.Open(mysql.Open(dbMasterDsn), &gorm.Config{
-		Logger: newLogger.LogMode(logLevel),
+		Logger:                 newLogger.LogMode(logLevel),
+		SkipDefaultTransaction: true,
+		PrepareStmt:            true,
 	})
 	if err != nil {
 		return nil, err
@@ -77,5 +79,6 @@ func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 	sqlDb.SetMaxIdleConns(ds.Master.MaxIdleConns)
 	sqlDb.SetMaxOpenConns(ds.Master.MaxOpenConns)
 	sqlDb.SetConnMaxLifetime(time.Second * 600)
+	sqlDb.SetConnMaxIdleTime(time.Hour)
 	return db, nil
 }
