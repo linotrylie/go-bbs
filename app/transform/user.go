@@ -17,7 +17,7 @@ func TransformUser(user *model.User) (userVo *response.UserVo) {
 	userVo.VipEnd = user.VipEnd
 	userVo.Username = user.Username
 	userVo.Uid = user.Uid
-	userVo.LoginDate = time.Unix(int64(user.LoginDate), 0).Format(time.DateTime)
+	userVo.LoginDate = time.Unix(user.LoginDate, 0).Format(time.DateTime)
 	userVo.Logins = user.Logins
 	userVo.LoginIp = utils.Long2ip(user.LoginIp)
 	var avatar string

@@ -35,7 +35,7 @@ func JWT() gin.HandlerFunc {
 		if token == "" {
 			c.JSON(419, gin.H{
 				"code": 7,
-				"msg":  exceptions.LogBackIn.Error(),
+				"msg":  exceptions.NotLogin.Error(),
 			})
 			c.Abort()
 			return
@@ -65,7 +65,7 @@ func JWT() gin.HandlerFunc {
 		if err != nil || err == redis.Nil {
 			c.JSON(419, gin.H{
 				"code": 7,
-				"msg":  exceptions.LogBackIn.Error(),
+				"msg":  exceptions.NotLogin.Error(),
 			})
 			c.Abort()
 			return

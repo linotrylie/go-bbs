@@ -12,5 +12,6 @@ var (
 	ModifyError   = errors.New("修改失败")
 	CreateError   = errors.New("新增失败")
 	LogBackIn     = errors.New("重新登录")
+	NotLogin      = errors.New("请登录！")
 	NotAuth       = errors.New("没有权限！")
 )

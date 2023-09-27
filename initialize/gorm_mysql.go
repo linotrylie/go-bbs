@@ -58,6 +58,7 @@ func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 		Logger:                 newLogger.LogMode(logLevel),
 		SkipDefaultTransaction: true,
 		PrepareStmt:            true,
+		QueryFields:            true,
 	})
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func NewDBEngine(server *config.Server) (*gorm.DB, error) {
 	}
 	sqlDb.SetMaxIdleConns(ds.Master.MaxIdleConns)
 	sqlDb.SetMaxOpenConns(ds.Master.MaxOpenConns)
-	sqlDb.SetConnMaxLifetime(time.Second * 600)
+	sqlDb.SetConnMaxLifetime(time.Hour * 4)
 	sqlDb.SetConnMaxIdleTime(time.Hour)
 	return db, nil
 }
