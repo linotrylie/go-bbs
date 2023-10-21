@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"go-bbs/app/constants"
 	"go-bbs/app/http/model"
 	"go-bbs/app/service"
@@ -26,6 +27,9 @@ func InsertOperationLog() {
 				return
 			}
 			err = service.OperationLogService.CreateOperationLog(&operationLog)
+			if err != nil {
+				return
+			}
 		}
 	}()
 	return
@@ -35,8 +39,12 @@ func lpop() (string, error) {
 	// 获取队列数据
 	values, err := global.REDIS.LPop(context.Background(), constants.OperationLog).Result()
 	if err != nil {
-		global.LOG.Error(err.Error(), zap.Error(err))
-		return "", err
+		if err == redis.Nil {
+			return "", err
+		} else {
+			global.LOG.Error(err.Error(), zap.Error(err))
+			return "", err
+		}
 	}
 	return values, nil
 }

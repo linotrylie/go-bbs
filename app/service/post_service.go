@@ -23,12 +23,12 @@ func newPostService() *postService {
 }
 
 func (serv *postService) CommentList(tid, page, pageSize int, order, sort string) ([]*response.PostVo, int64, error) {
-	repository.PostRepository.Pager = &repository.Pager{
+	postRepo.Pager = &repository.Pager{
 		Page:        page,
 		PageSize:    pageSize,
 		FieldsOrder: []string{order + " " + sort},
 	}
-	commentList, err := repository.PostRepository.
+	commentList, err := postRepo.
 		GetDataListByWhere("tid = ? and isfirst = ? and deleted = ?", []interface{}{tid, 0, 0}, []string{"CreateUser", "LastUpdateUser"})
 	if err != nil {
 		return nil, 0, err
@@ -38,7 +38,7 @@ func (serv *postService) CommentList(tid, page, pageSize int, order, sort string
 		serv.GetPostTransform(v)
 		postVoList = append(postVoList, serv.GetPostTransform(v))
 	}
-	return postVoList, repository.PostRepository.Pager.TotalPage, nil
+	return postVoList, postRepo.Pager.TotalPage, nil
 }
 
 // CommentCreate 创建评论

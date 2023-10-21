@@ -386,6 +386,7 @@ func (repo *%sRepository) GetTotalPage(db *gorm.DB) (e error) {
 					repo.Pager.TotalPage = int64(count / repo.Pager.PageSize + 1)
 				}
 			}
+			db = db.Offset((repo.Pager.Page - 1) * repo.Pager.PageSize).Limit(repo.Pager.PageSize)
 		}
 		return nil
 }

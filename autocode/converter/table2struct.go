@@ -141,6 +141,8 @@ func (t *Table2Struct) RunRepository() error {
 		return err
 	}
 	// 组装struct
+	enterServiceTemplate := "var %sRepo = repository.%sRepository\n"
+	enterService := ""
 	for tableRealName, _ := range tableColumns {
 		// 去除前缀
 		if t.prefix != "" {
@@ -181,6 +183,7 @@ func (t *Table2Struct) RunRepository() error {
 			small, small, small, small, small,
 			small, "",
 		)
+		enterService += fmt.Sprintf(enterServiceTemplate, small, tableName)
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径
@@ -197,8 +200,19 @@ func (t *Table2Struct) RunRepository() error {
 		sprintf = strings.Replace(sprintf, "%!r(string=)epo", "%repo", -1)
 		f.WriteString(sprintf)
 		exec.Command("gofmt", "-w", filePath).Output()
-
 	}
+	enterService = `
+package service
+import "go-bbs/app/repository"
+` + "\n" + enterService
+	f, err := os.Create("./app/service/enter.go")
+	if err != nil {
+		fmt.Println("Can not write file")
+		return err
+	}
+	defer f.Close()
+	f.WriteString(enterService)
+	exec.Command("gofmt", "-w", "./app/service/enter.go").Output()
 	return nil
 }
 

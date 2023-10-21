@@ -11,9 +11,6 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
-	"go-bbs/app/http/model/response"
-	"go-bbs/app/repository"
-	"go-bbs/app/transform"
 	"go-bbs/global"
 	"go-bbs/utils"
 	"time"
@@ -33,7 +30,7 @@ func newUserService() *userService {
 func (serv *userService) IsHasUserByUsername(username string, user *model.User) bool {
 	where := make(map[string]interface{})
 	where["username"] = username
-	e := repository.UserRepository.GetDataByWhereMap(user, where, nil)
+	e := userRepo.GetDataByWhereMap(user, where, nil)
 	if e != nil {
 		return false
 	}
@@ -89,7 +86,7 @@ func (serv *userService) LoginAfter(user *model.User, ctx *gin.Context) {
 	user.SetLogins(1).
 		SetLoginDate(time.Now().Unix()).
 		SetLoginIp(utils.Ip2long(ctx.ClientIP()))
-	_, err := repository.UserRepository.Update(user)
+	_, err := userRepo.Update(user)
 	if err != nil {
 		return
 	}
@@ -101,7 +98,7 @@ func (serv *userService) Logout() {
 
 func (serv *userService) Detail(uid int) (*model.User, error) {
 	user := &model.User{Uid: uid}
-	err := repository.UserRepository.First(user, nil)
+	err := userRepo.First(user, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +107,7 @@ func (serv *userService) Detail(uid int) (*model.User, error) {
 
 func (serv *userService) ChangesPassword(userChangePassword *requests.UserChangePassword) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user, nil)
+	err = userRepo.First(user, nil)
 	if err != nil {
 		return
 	}
@@ -120,7 +117,7 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 		return
 	}
 	serv.GeneratePassword(user, userChangePassword.NewPassword)
-	update, err := repository.UserRepository.Update(user)
+	update, err := userRepo.Update(user)
 	if err != nil {
 		return err
 	}
@@ -135,7 +132,7 @@ func (serv *userService) ChangesPassword(userChangePassword *requests.UserChange
 
 func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 	user := &model.User{Uid: global.User.Uid}
-	err = repository.UserRepository.First(user, nil)
+	err = userRepo.First(user, nil)
 	if err != nil {
 		return err
 	}
@@ -159,7 +156,7 @@ func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 		user.SetEmail(userEdit.Email)
 	}
 	if &user != nil {
-		var update, e = repository.UserRepository.Update(user)
+		var update, e = userRepo.Update(user)
 		if e != nil {
 			err = e
 			return
@@ -172,12 +169,12 @@ func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 	return nil
 }
 
-func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (*response.UserVo, string, int64, error) {
+func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (*model.User, *JwtCustomClaims, string, error) {
 	//先检查是否存在相同用户名的用户
 	u := model.User{}
 	hasUser := serv.IsHasUserByUsername(userRegister.Username, &u)
 	if hasUser {
-		return nil, "", 0, exceptions.DuplicateUser
+		return nil, nil, "", exceptions.DuplicateUser
 	}
 	//校验验证码
 	//ok := CaptchaService.VerifyCaptcha(ctx, &userRegister.Captcha, &userRegister.Email)
@@ -197,24 +194,18 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 		Signature:  "他什么也没留下~",
 	}
 	serv.GeneratePassword(user, userRegister.Password)
-	insert, err := repository.UserRepository.Insert(user)
+	insert, err := userRepo.Insert(user)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, nil, "", err
 	}
 	if insert < 1 {
-		return nil, "", 0, exceptions.CreateError
+		return nil, nil, "", exceptions.CreateError
 	}
 	jwtCustomClaims, token, err := serv.ReturnUserInfo(user)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, nil, "", err
 	}
-	userVo := transform.TransformUser(user)
-	group, err := GroupService.Detail(user.Gid)
-	if err != nil {
-		return nil, "", 0, err
-	}
-	userVo.Group = group
-	return userVo, token, jwtCustomClaims.ExpiresAt.Unix(), nil
+	return user, jwtCustomClaims, token, nil
 }
 
 func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {
