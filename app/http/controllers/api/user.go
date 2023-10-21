@@ -1,12 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
 	"go-bbs/app/transform"
 	"go-bbs/global"
+	"go-bbs/utils"
 	"go.uber.org/zap"
 )
 
@@ -65,6 +67,7 @@ func (controller *UserController) Login(ctx *gin.Context) {
 	return
 }
 
+// Detail 获取用户详情
 func (controller *UserController) Detail(ctx *gin.Context) {
 	var err error
 	defer func() {
@@ -72,6 +75,9 @@ func (controller *UserController) Detail(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
+	addr, err := utils.GetIpCity("220.197.189.152")
+	fmt.Println("addr", addr)
+	fmt.Println("err", err)
 	var userDetail = &requests.UserDetail{}
 	err = ctx.ShouldBindUri(userDetail)
 	if err != nil {
@@ -190,21 +196,14 @@ func (controller *UserController) Register(ctx *gin.Context) {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	userReturn, jwtCustomClaims, token, err := userService.Register(userRegister, ctx)
+	userVo, token, expiredAt, err := userService.Register(userRegister, ctx)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)
 		return
 	}
-	userVo := transform.TransformUser(userReturn)
-	group, err := groupService.Detail(userReturn.Gid)
-	if err != nil {
-		response.FailWithMessage(err.Error(), ctx)
-		return
-	}
-	userVo.Group = group
 	response.OkWithData(gin.H{
 		"token":      token,
-		"expired_at": jwtCustomClaims.ExpiresAt.Unix(),
+		"expired_at": expiredAt,
 		"user":       userVo,
 	}, ctx)
 	return

@@ -52,6 +52,20 @@ func (serv *threadService) Detail(fid, tid int) (*response.ThreadVo, *response.P
 	return threadVo, postVo, nil
 }
 
+// ExistThread 查询指定帖子是否存在
+func (serv *threadService) ExistThread(tid int) bool {
+	var thread *model.Thread
+	where := map[string]interface{}{"tid": tid, "deleted": 0, "closed": 0}
+	err := repository.ThreadRepository.GetDataByWhereMap(thread, where, nil)
+	if err != nil {
+		return false
+	}
+	if thread == nil {
+		return false
+	}
+	return true
+}
+
 func (serv *threadService) After(thread *model.Thread) {
 	thread.SetViews(1)
 	repository.ThreadRepository.Update(thread)

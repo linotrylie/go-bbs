@@ -2,6 +2,7 @@ package requests
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"go-bbs/app/exceptions"
 	"math"
 )
@@ -66,6 +67,39 @@ func (param *PostList) Validate() error {
 		validation.Field(&param.Sort,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
 			validation.In("desc", "asc").Error(exceptions.ParamInvalid.Error()),
+		),
+	)
+}
+
+// PostCommentCreate 评论
+type PostCommentCreate struct {
+	Tid      int    `json:"tid"`
+	Uid      int    `json:"uid"`
+	Quotepid int    `json:"quotepid"`
+	Message  string `json:"message"`
+}
+
+func (param *PostCommentCreate) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Tid,
+			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
+			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Uid,
+			validation.Required.Error("缺少用户id"),
+			validation.Min(1).Exclusive().Error("用户id不规范"),
+			validation.Max(math.MaxInt).Exclusive().Error("用户id不规范"),
+		),
+		validation.Field(&param.Quotepid,
+			validation.Required.Error("缺少用户id"),
+			validation.Min(1).Exclusive().Error("用户id不规范"),
+			validation.Max(math.MaxInt).Exclusive().Error("用户id不规范"),
+		),
+		validation.Field(&param.Message,
+			validation.Required.Error("没有内容！"),
+			validation.RuneLength(2, 500).Error("内容长度不符合规范！"),
+			is.UTFLetter,
 		),
 	)
 }

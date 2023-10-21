@@ -14,9 +14,10 @@ func (tr *PostRouter) InitPostRouter(privateRouter *gin.RouterGroup, publicRoute
 	postContr := controllers.AllRouterGroupApp.ApiGroup.PostController
 	{
 		postWithoutAuth.GET("comment-list", postContr.CommentList)
-		postWithoutAuth.POST("create", postContr.Create)
+
 	}
 	{
+		postWithoutAuth.POST("comment", postContr.CommentCreate)
 		postWithAuth.POST("detail", postContr.CommentList)
 	}
 }

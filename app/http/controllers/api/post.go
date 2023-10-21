@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
@@ -43,13 +42,20 @@ func (controller *PostController) CommentList(ctx *gin.Context) {
 	return
 }
 
-func (controller *PostController) Create(ctx *gin.Context) {
+func (controller *PostController) CommentCreate(ctx *gin.Context) {
 	var err error
 	defer func() {
 		if err != nil {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	content := ctx.PostForm("content")
-	fmt.Println(content)
+	var request requests.PostCommentCreate
+	if err = ctx.ShouldBindQuery(&request); err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	if err = request.Validate(); err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
 }

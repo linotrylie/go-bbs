@@ -13,4 +13,5 @@ var (
 	CreateError   = errors.New("新增失败")
 	LogBackIn     = errors.New("重新登录")
 	NotAuth       = errors.New("没有权限！")
+	ThreadIsValid = errors.New("帖子不存在或已被关闭！")
 )

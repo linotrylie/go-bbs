@@ -11,7 +11,9 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
+	"go-bbs/app/http/model/response"
 	"go-bbs/app/repository"
+	"go-bbs/app/transform"
 	"go-bbs/global"
 	"go-bbs/utils"
 	"time"
@@ -170,12 +172,12 @@ func (serv *userService) Edit(userEdit *requests.UserEdit) (err error) {
 	return nil
 }
 
-func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (*model.User, *JwtCustomClaims, string, error) {
+func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.Context) (*response.UserVo, string, int64, error) {
 	//先检查是否存在相同用户名的用户
 	u := model.User{}
 	hasUser := serv.IsHasUserByUsername(userRegister.Username, &u)
 	if hasUser {
-		return nil, nil, "", exceptions.DuplicateUser
+		return nil, "", 0, exceptions.DuplicateUser
 	}
 	//校验验证码
 	//ok := CaptchaService.VerifyCaptcha(ctx, &userRegister.Captcha, &userRegister.Email)
@@ -197,16 +199,22 @@ func (serv *userService) Register(userRegister *requests.UserRegister, ctx *gin.
 	serv.GeneratePassword(user, userRegister.Password)
 	insert, err := repository.UserRepository.Insert(user)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, "", 0, err
 	}
 	if insert < 1 {
-		return nil, nil, "", exceptions.CreateError
+		return nil, "", 0, exceptions.CreateError
 	}
 	jwtCustomClaims, token, err := serv.ReturnUserInfo(user)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, "", 0, err
 	}
-	return user, jwtCustomClaims, token, nil
+	userVo := transform.TransformUser(user)
+	group, err := GroupService.Detail(user.Gid)
+	if err != nil {
+		return nil, "", 0, err
+	}
+	userVo.Group = group
+	return userVo, token, jwtCustomClaims.ExpiresAt.Unix(), nil
 }
 
 func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtCustomClaims, token string, e error) {

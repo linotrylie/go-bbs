@@ -1,9 +1,18 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/duke-git/lancet/v2/netutil"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -64,4 +73,89 @@ func DatetimeToUnix(datetime string) int64 {
 		return 0
 	}
 	return parseInLocation.Unix()
+}
+
+func TrimHtml(src string) string {
+	//将HTML标签全转换成小写
+	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
+	src = re.ReplaceAllStringFunc(src, strings.ToLower)
+	//去除STYLE
+	re, _ = regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
+	src = re.ReplaceAllString(src, "")
+	//去除SCRIPT
+	re, _ = regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
+	src = re.ReplaceAllString(src, "")
+	//去除所有尖括号内的HTML代码，并换成换行符
+	re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
+	src = re.ReplaceAllString(src, "\n")
+	//去除连续的换行符
+	re, _ = regexp.Compile("\\s{2,}")
+	src = re.ReplaceAllString(src, "\n")
+	return strings.TrimSpace(src)
+}
+
+func GetIpCity(ip string) (string, error) {
+	if ip == "" {
+		return "", errors.New("invalid target param")
+	}
+	request := &netutil.HttpRequest{
+		RawURL: "https://whois.pconline.com.cn/ipJson.jsp?ip=" + ip,
+		Method: "GET",
+	}
+	httpClient := netutil.NewHttpClient()
+	resp, err := httpClient.SendRequest(request)
+	if err != nil || resp.StatusCode != 200 {
+		return "", errors.New("invalid target param")
+	}
+	if resp == nil {
+		return "", errors.New("invalid target param")
+	}
+	type IpResponse struct {
+		Ip          string `json:"ip,omitempty"`
+		Pro         string `json:"pro,omitempty"`
+		ProCode     string `json:"proCode,omitempty"`
+		City        string `json:"city,omitempty"`
+		CityCode    string `json:"cityCode,omitempty"`
+		Region      string `json:"region,omitempty"`
+		RegionCode  string `json:"regionCode,omitempty"`
+		Addr        string `json:"addr,omitempty"`
+		RegionNames string `json:"regionNames,omitempty"`
+		Err         string `json:"err,omitempty"`
+	}
+	var ipresp IpResponse
+	defer resp.Body.Close()
+	readAll, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	toUtf8, err := GbkToUtf8(readAll)
+	if err != nil {
+		return "", err
+	}
+	str := strings.TrimSpace(string(toUtf8))
+	strN1 := strings.Replace(str, "if(window.IPCallBack) {IPCallBack(", "", 1)
+	strN2 := strings.Replace(strN1, ");}", "", 1)
+	err = json.Unmarshal([]byte(strN2), &ipresp)
+	if err != nil {
+		return "", err
+	}
+	return ipresp.Addr, nil
+}
+
+func GbkToUtf8(s []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
+	d, e := ioutil.ReadAll(reader)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+func Utf8ToGbk(s []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewEncoder())
+	d, e := ioutil.ReadAll(reader)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
 }
