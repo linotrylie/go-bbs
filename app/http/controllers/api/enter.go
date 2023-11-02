@@ -11,14 +11,16 @@ type ApiGroup struct {
 	ForumController
 	ThreadController
 	PostController
+	KaDaoDataController
 }
 
 var (
-	captchaService = service.CaptchaService
-	emailService   = emailServ.EmailService
-	userService    = service.UserService
-	groupService   = service.GroupService
-	forumService   = service.ForumService
-	threadService  = service.ThreadService
-	postService    = service.PostService
+	captchaService   = service.CaptchaService
+	emailService     = emailServ.EmailService
+	userService      = service.UserService
+	groupService     = service.GroupService
+	forumService     = service.ForumService
+	threadService    = service.ThreadService
+	postService      = service.PostService
+	kaDaoDataService = service.KaDaoDataService
 )

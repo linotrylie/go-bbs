@@ -35,7 +35,9 @@ type User struct {
 	EmailV        string `gorm:"column:email_v" json:"email_v"`
 	Digests       int    `gorm:"column:digests" json:"digests"`
 	Digests3      int    `gorm:"column:digests_3" json:"digests_3"`
-	Signature     string `gorm:"column:signature" json:"signature"` // 用户签名
+	Signature     string `gorm:"column:signature" json:"signature"`       // 用户签名
+	MachineCode   string `gorm:"column:machine_code" json:"machine_code"` // 机器码
+	KadaoTime     int64  `gorm:"column:kadao_time" json:"kadao_time"`     // 卡刀时间
 }
 
 func (*User) TableName() string {
@@ -148,22 +150,22 @@ func (obj *User) SetRmbs(val int) *User {
 	return obj
 }
 func (obj *User) SetCreateIp(val uint32) *User {
-	obj.CreateIp += val
+	obj.CreateIp = val
 	obj.Update("create_ip", obj.CreateIp)
 	return obj
 }
 func (obj *User) SetCreateDate(val int64) *User {
-	obj.CreateDate += val
+	obj.CreateDate = val
 	obj.Update("create_date", obj.CreateDate)
 	return obj
 }
 func (obj *User) SetLoginIp(val uint32) *User {
-	obj.LoginIp += val
+	obj.LoginIp = val
 	obj.Update("login_ip", obj.LoginIp)
 	return obj
 }
 func (obj *User) SetLoginDate(val int64) *User {
-	obj.LoginDate += val
+	obj.LoginDate = val
 	obj.Update("login_date", obj.LoginDate)
 	return obj
 }
@@ -220,5 +222,15 @@ func (obj *User) SetDigests3(val int) *User {
 func (obj *User) SetSignature(val string) *User {
 	obj.Signature = val
 	obj.Update("signature", obj.Signature)
+	return obj
+}
+func (obj *User) SetMachineCode(val string) *User {
+	obj.MachineCode = val
+	obj.Update("machine_code", obj.MachineCode)
+	return obj
+}
+func (obj *User) SetKadaoTime(val int64) *User {
+	obj.KadaoTime = val
+	obj.Update("kadao_time", obj.KadaoTime)
 	return obj
 }

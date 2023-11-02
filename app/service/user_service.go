@@ -11,6 +11,8 @@ import (
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model"
 	"go-bbs/app/http/model/requests"
+	"go-bbs/app/http/model/response"
+	"go-bbs/app/transform"
 	"go-bbs/global"
 	"go-bbs/utils"
 	"time"
@@ -226,6 +228,27 @@ func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtC
 		)*time.Second,
 	)
 	return
+}
+
+func (serv *userService) KaDaoUserLogin(kaDaoUserLogin *requests.KaDaoUserLogin, ctx *gin.Context) (*response.UserVo, error) {
+	user := model.User{Username: kaDaoUserLogin.Username}
+	hasUser := serv.IsHasUserByUsername(kaDaoUserLogin.Username, &user)
+	if !hasUser {
+		return nil, exceptions.UserNotFound
+	}
+	ok := serv.VerifyPassword(&user, cryptor.Md5String(kaDaoUserLogin.Password))
+	if !ok {
+		return nil, exceptions.FailedVerify
+	}
+	if user.MachineCode != "" {
+		if user.MachineCode != cryptor.Md5String(kaDaoUserLogin.MachineCode) {
+			return nil, exceptions.FailedVerify
+		}
+	} else {
+		user.SetMachineCode(cryptor.Md5String(kaDaoUserLogin.MachineCode)).SetKadaoTime(time.Now().Unix() + 2*30*24*60*60)
+		userRepo.Update(&user)
+	}
+	return transform.TransformUser(&user), nil
 }
 
 func (serv *userService) name() {

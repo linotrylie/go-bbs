@@ -113,3 +113,25 @@ func (param *UserRegister) Validate() error {
 		validation.Field(&param.Captcha),
 	)
 }
+
+type KaDaoUserLogin struct {
+	Username    string `json:"username,omitempty"`
+	Password    string `json:"password,omitempty"`
+	MachineCode string `json:"machine_code,omitempty"`
+}
+
+func (param *KaDaoUserLogin) Validate() error {
+	return validation.ValidateStruct(param,
+		validation.Field(&param.Username,
+			validation.Required.Error("用户名必填！"),
+			validation.Length(4, 32).Error("用户名超出规定长度"),
+		),
+		validation.Field(&param.Password,
+			validation.Required.Error("请填写新密码！"),
+			validation.Length(8, 32).Error("密码超出规定长度"),
+		),
+		validation.Field(&param.MachineCode,
+			validation.Required.Error("缺少必要字段！"),
+		),
+	)
+}

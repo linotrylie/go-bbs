@@ -50,3 +50,4 @@ var wsThreadPayRepo = repository.WsThreadPayRepository
 var postLikeRepo = repository.PostLikeRepository
 var postUpdateLogRepo = repository.PostUpdateLogRepository
 var queueRepo = repository.QueueRepository
+var kadaoDataRepo = repository.KadaoDataRepository

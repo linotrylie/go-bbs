@@ -148,6 +148,9 @@ func (t *Table2Struct) RunRepository() error {
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
 		}
+		if tableRealName != "kadao_data" {
+			continue
+		}
 		tableName := strutil.CamelCase(tableRealName)
 		switch len(tableName) {
 		case 0:
@@ -243,6 +246,9 @@ func (t *Table2Struct) RunRequest() error {
 		// 去除前缀
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
+		}
+		if tableRealName != "kadao_data" {
+			continue
 		}
 		tableName := strutil.CamelCase(tableRealName)
 		switch len(tableName) {
@@ -383,6 +389,10 @@ func (t *Table2Struct) Run() error {
 		// 去除前缀
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
+		}
+		fmt.Println(tableRealName)
+		if tableRealName != "kadao_data" {
+			continue
 		}
 		tableName := strutil.CamelCase(tableRealName)
 		primaryStructMap := map[string]string{}

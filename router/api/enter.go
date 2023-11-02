@@ -6,4 +6,5 @@ type RouterGroup struct {
 	ForumRouter
 	ThreadRouter
 	PostRouter
+	KaDaoDataRouter
 }

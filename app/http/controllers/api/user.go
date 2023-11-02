@@ -209,6 +209,33 @@ func (controller *UserController) Register(ctx *gin.Context) {
 	return
 }
 
+func (controller *UserController) KaDaoUserLogin(ctx *gin.Context) {
+	var err error
+	defer func() {
+		if err != nil {
+			global.LOG.Error(err.Error(), zap.Error(err))
+		}
+	}()
+	var kaDaoUserLogin = &requests.KaDaoUserLogin{}
+	err = ctx.ShouldBind(kaDaoUserLogin)
+	if err != nil {
+		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
+		return
+	}
+	err = kaDaoUserLogin.Validate()
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	userVo, err := userService.KaDaoUserLogin(kaDaoUserLogin, ctx)
+	if err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
+	response.OkWithData(userVo, ctx)
+	return
+}
+
 func (controller *UserController) name(ctx *gin.Context) {
 
 }

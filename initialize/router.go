@@ -70,10 +70,11 @@ func Routers() *gin.Engine {
 	PrivateGroup.Use(middleware.JWT(), middleware.RequestLogger())
 	{
 		apiRouter.InitAuthRouter(PrivateGroup)
-		apiRouter.InitUserRouter(PrivateGroup, PublicGroup)   //前端用户
-		apiRouter.InitForumRouter(PrivateGroup, PublicGroup)  //版块
-		apiRouter.InitThreadRouter(PrivateGroup, PublicGroup) //帖子
-		apiRouter.InitPostRouter(PrivateGroup, PublicGroup)   //帖子评论，回复帖子，发表帖子等等
+		apiRouter.InitUserRouter(PrivateGroup, PublicGroup)      //前端用户
+		apiRouter.InitForumRouter(PrivateGroup, PublicGroup)     //版块
+		apiRouter.InitThreadRouter(PrivateGroup, PublicGroup)    //帖子
+		apiRouter.InitPostRouter(PrivateGroup, PublicGroup)      //帖子评论，回复帖子，发表帖子等等
+		apiRouter.InitKaDaoDataRouter(PrivateGroup, PublicGroup) //卡刀数据
 		commonRouter.InitUploadRouter(PrivateGroup)
 		mw := ginview.NewMiddleware(goview.Config{
 			Root:      "resource/views/backend",
