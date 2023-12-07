@@ -194,8 +194,14 @@ func (repo *iqismartActivityOrderRepository) FindInRedisByKey(redisKey string) (
 	return
 }
 
-func (repo *iqismartActivityOrderRepository) SaveInRedisByKey(redisKey string, data string) {
-	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
+func (repo *iqismartActivityOrderRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+	var timeSecond time.Duration
+	if timeout > 0 {
+		timeSecond = time.Duration(timeout) * time.Second
+	} else {
+		timeSecond = time.Duration(random.RandInt(7200, 14400)) * time.Second
+	}
+	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
 func (repo *iqismartActivityOrderRepository) DeleteInRedis(iqismartActivityOrder *model.IqismartActivityOrder) (e error) {
@@ -263,7 +269,7 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhereMap(query map[str
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 
@@ -318,7 +324,7 @@ func (repo *iqismartActivityOrderRepository) GetDataListByWhere(query string, ar
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 

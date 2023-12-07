@@ -194,8 +194,14 @@ func (repo *wsThreadPayRepository) FindInRedisByKey(redisKey string) (redisRes s
 	return
 }
 
-func (repo *wsThreadPayRepository) SaveInRedisByKey(redisKey string, data string) {
-	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
+func (repo *wsThreadPayRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+	var timeSecond time.Duration
+	if timeout > 0 {
+		timeSecond = time.Duration(timeout) * time.Second
+	} else {
+		timeSecond = time.Duration(random.RandInt(7200, 14400)) * time.Second
+	}
+	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
 func (repo *wsThreadPayRepository) DeleteInRedis(wsThreadPay *model.WsThreadPay) (e error) {
@@ -263,7 +269,7 @@ func (repo *wsThreadPayRepository) GetDataListByWhereMap(query map[string]interf
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 
@@ -318,7 +324,7 @@ func (repo *wsThreadPayRepository) GetDataListByWhere(query string, args []inter
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 

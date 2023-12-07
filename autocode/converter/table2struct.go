@@ -148,9 +148,6 @@ func (t *Table2Struct) RunRepository() error {
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
 		}
-		if tableRealName != "kadao_data" {
-			continue
-		}
 		tableName := strutil.CamelCase(tableRealName)
 		switch len(tableName) {
 		case 0:

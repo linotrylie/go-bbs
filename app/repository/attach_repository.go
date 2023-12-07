@@ -194,8 +194,14 @@ func (repo *attachRepository) FindInRedisByKey(redisKey string) (redisRes string
 	return
 }
 
-func (repo *attachRepository) SaveInRedisByKey(redisKey string, data string) {
-	global.REDIS.Set(context.Background(), redisKey, data, time.Duration(random.RandInt(7200, 14400))*time.Second)
+func (repo *attachRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+	var timeSecond time.Duration
+	if timeout > 0 {
+		timeSecond = time.Duration(timeout) * time.Second
+	} else {
+		timeSecond = time.Duration(random.RandInt(7200, 14400)) * time.Second
+	}
+	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
 func (repo *attachRepository) DeleteInRedis(attach *model.Attach) (e error) {
@@ -263,7 +269,7 @@ func (repo *attachRepository) GetDataListByWhereMap(query map[string]interface{}
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 
@@ -318,7 +324,7 @@ func (repo *attachRepository) GetDataListByWhere(query string, args []interface{
 	if e != nil {
 		return nil, e
 	}
-	repo.SaveInRedisByKey(redisKey, string(marshal))
+	repo.SaveInRedisByKey(redisKey, string(marshal), 5)
 	return
 }
 

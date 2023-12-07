@@ -20,13 +20,13 @@ func main() {
 	})
 	// 开始迁移转换
 	//生成model
-	GenerateModel(t2t)
+	//GenerateModel(t2t)
 	//生成entity
 	//GenerateEntity(t2t)
 	//生成repository
 	GenerateRepository(t2t)
 	//生成requests
-	GenerateRequests(t2t)
+	//GenerateRequests(t2t)
 }
 
 func GenerateModel(t2t *converter.Table2Struct) error {
@@ -61,7 +61,7 @@ func GenerateEntity(t2t *converter.Table2Struct) error {
 
 func GenerateRepository(t2t *converter.Table2Struct) error {
 	return t2t.
-		Table("kadao_data").
+		//Table("*").
 		Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("./app/repository/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		RunRepository()
