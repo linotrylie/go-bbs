@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/duke-git/lancet/v2/random"
@@ -218,11 +219,12 @@ func (serv *userService) ReturnUserInfo(user *model.User) (jwtCustomClaims *JwtC
 		return nil, "", e
 	}
 	global.User = user
+	marshal, _ := json.Marshal(user)
 	jwtCustomClaims = &claims
 	//将用户登录信息记录在redis中
 	global.REDIS.Set(
 		context.Background(), user.Username,
-		"login",
+		marshal,
 		time.Duration(
 			utils.DatetimeToUnix(claims.ExpiresAt.Format(time.DateTime))-time.Now().Unix(),
 		)*time.Second,

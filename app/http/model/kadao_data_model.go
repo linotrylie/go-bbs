@@ -2,17 +2,20 @@ package model
 
 import (
 	"fmt"
-	"time"
 )
 
 type KadaoData struct {
 	changes    map[string]interface{}
-	Kid        int       `gorm:"primaryKey;column:kid" json:"kid"`
-	Uid        int       `gorm:"column:uid" json:"uid"`
-	Title      string    `gorm:"column:title" json:"title"`
-	Data       string    `gorm:"column:data" json:"data"`
-	IsShare    int       `gorm:"column:is_share" json:"is_share"`
-	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
+	Kid        int    `gorm:"primaryKey;column:kid" json:"kid"`
+	Uid        int    `gorm:"column:uid" json:"uid"`
+	Title      string `gorm:"column:title" json:"title"`
+	Dpi        string `gorm:"column:dpi" json:"dpi"` // 分辨率
+	Data       string `gorm:"column:data" json:"data"`
+	Golds      int    `gorm:"column:golds" json:"golds"` // 加载此方案所需金币数
+	IsShare    int    `gorm:"column:is_share" json:"is_share"`
+	CreateTime int64  `gorm:"column:create_time" json:"create_time"`
+	LoadNums   int    `gorm:"column:load_nums" json:"load_nums"`
+	IsShow     int    `gorm:"column:is_show" json:"is_show"`
 }
 
 func (*KadaoData) TableName() string {
@@ -64,9 +67,19 @@ func (obj *KadaoData) SetTitle(val string) *KadaoData {
 	obj.Update("title", obj.Title)
 	return obj
 }
+func (obj *KadaoData) SetDpi(val string) *KadaoData {
+	obj.Dpi = val
+	obj.Update("dpi", obj.Dpi)
+	return obj
+}
 func (obj *KadaoData) SetData(val string) *KadaoData {
 	obj.Data = val
 	obj.Update("data", obj.Data)
+	return obj
+}
+func (obj *KadaoData) SetGolds(val int) *KadaoData {
+	obj.Golds += val
+	obj.Update("golds", obj.Golds)
 	return obj
 }
 func (obj *KadaoData) SetIsShare(val int) *KadaoData {
@@ -74,8 +87,18 @@ func (obj *KadaoData) SetIsShare(val int) *KadaoData {
 	obj.Update("is_share", obj.IsShare)
 	return obj
 }
-func (obj *KadaoData) SetCreateTime(val time.Time) *KadaoData {
-	obj.CreateTime = val
+func (obj *KadaoData) SetCreateTime(val int64) *KadaoData {
+	obj.CreateTime += val
 	obj.Update("create_time", obj.CreateTime)
+	return obj
+}
+func (obj *KadaoData) SetLoadNums(val int) *KadaoData {
+	obj.LoadNums += val
+	obj.Update("load_nums", obj.LoadNums)
+	return obj
+}
+func (obj *KadaoData) SetIsShow(val int) *KadaoData {
+	obj.IsShow += val
+	obj.Update("is_show", obj.IsShow)
 	return obj
 }

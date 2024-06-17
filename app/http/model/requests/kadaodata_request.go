@@ -3,7 +3,6 @@ package requests
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
 	"go-bbs/app/exceptions"
-	"math"
 )
 
 type KadaoDataRequest struct {
@@ -30,32 +29,35 @@ func (param KadaoDataRequest) Validate() error {
 }
 
 type GetKaDaoDataRequest struct {
-	Username string ` json:"username,omitempty"`
+	Keyword  string ` json:"keyword,omitempty"`
 	Page     int    `json:"page"`
 	PageSize int    `json:"page_size"`
 	Order    string `json:"order"`
 	Sort     string `json:"sort"`
+	Dpi      string `json:"dpi"`
 }
 
 func (param GetKaDaoDataRequest) Validate() error {
 	return validation.ValidateStruct(param,
-		validation.Field(&param.Username,
-			validation.Required.Error("用户名必填！"),
-			validation.Length(1, 128).Error("用户名超出规定长度"),
+		validation.Field(&param.Keyword,
+			validation.Length(0, 128).Error("关键词超出规定长度"),
 		),
 		validation.Field(&param.Page,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+			//validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			//validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
 		),
 		validation.Field(&param.PageSize,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
+			//validation.Min(1).Error(exceptions.ParamInvalid.Error()),
+			//validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
 		),
 		validation.Field(&param.Order,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.In("create_date", "kid", "uid").Error(exceptions.ParamInvalid.Error()),
+			validation.In("create_time", "kid", "uid").Error(exceptions.ParamInvalid.Error()),
+		),
+		validation.Field(&param.Dpi,
+			validation.Required.Error(exceptions.ParamInvalid.Error()),
 		),
 		validation.Field(&param.Sort,
 			validation.Required.Error(exceptions.ParamInvalid.Error()),

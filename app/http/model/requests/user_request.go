@@ -34,7 +34,7 @@ func (param *UserDetail) Validate() error {
 	return validation.ValidateStruct(param,
 		validation.Field(&param.Uid,
 			validation.Required.Error("缺少用户id"),
-			validation.Min(1).Exclusive().Error("用户id不规范"),
+			validation.Min(0).Exclusive().Error("用户id不规范"),
 			validation.Max(math.MaxInt).Exclusive().Error("用户id不规范"),
 		),
 	)

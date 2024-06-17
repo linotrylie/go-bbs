@@ -1,14 +1,12 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-bbs/app/exceptions"
 	"go-bbs/app/http/model/requests"
 	"go-bbs/app/http/model/response"
 	"go-bbs/app/transform"
 	"go-bbs/global"
-	"go-bbs/utils"
 	"go.uber.org/zap"
 )
 
@@ -75,9 +73,9 @@ func (controller *UserController) Detail(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	addr, err := utils.GetIpCity("220.197.189.152")
-	fmt.Println("addr", addr)
-	fmt.Println("err", err)
+	//addr, err := utils.GetIpCity("220.197.189.152")
+	//fmt.Println("addr", addr)
+	//fmt.Println("err", err)
 	var userDetail = &requests.UserDetail{}
 	err = ctx.ShouldBindUri(userDetail)
 	if err != nil {

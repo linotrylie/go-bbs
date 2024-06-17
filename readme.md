@@ -45,3 +45,19 @@
 - storage 缓存目录、日志保存、文件上传下载目录
 - test 单元测试
 - utils 工具库及助手函数
+
+### 项目启动
+- 方式一：原始启动
+```
+go run main.go
+```
+- 方式二：air热加载启动
+```
+下载air
+go install github.com/cosmtrek/air@latest
+然后
+air
+```
+
+### 项目数据库
+本项目中的demo数据库采用的是修罗xiuno-bbs的数据库。而本项目本质就是个脚手架，所以对于使用什么样的数据库什么样的表完全由使用者来决定。

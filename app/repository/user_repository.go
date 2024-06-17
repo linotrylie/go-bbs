@@ -199,7 +199,7 @@ func (repo *userRepository) SaveInRedisByKey(redisKey string, data string, timeo
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
 	} else {
-		timeSecond = time.Duration(random.RandInt(7200, 14400)) * time.Second
+		timeSecond = time.Duration(random.RandInt(5, 60)) * time.Second
 	}
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }

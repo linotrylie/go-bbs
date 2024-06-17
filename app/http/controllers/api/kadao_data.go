@@ -19,14 +19,17 @@ func (controller *KaDaoDataController) GetMyKaDaoData(ctx *gin.Context) {
 			global.LOG.Error(err.Error(), zap.Error(err))
 		}
 	}()
-	var getMyKaDaoDataRequest = &requests.GetKaDaoDataRequest{}
-	err = ctx.ShouldBind(getMyKaDaoDataRequest)
-	if err != nil {
+	var getMyKaDaoDataRequest requests.GetKaDaoDataRequest
+	if err = ctx.ShouldBind(&getMyKaDaoDataRequest); err != nil {
 		response.FailWithMessage(exceptions.ParamInvalid.Error(), ctx)
 		return
 	}
+	if err = getMyKaDaoDataRequest.Validate(); err != nil {
+		response.FailWithMessage(err.Error(), ctx)
+		return
+	}
 	list, totalPage, err := kaDaoDataService.GetKaDaoDataList(
-		getMyKaDaoDataRequest.Username, getMyKaDaoDataRequest.Sort, getMyKaDaoDataRequest.Order,
+		getMyKaDaoDataRequest.Keyword, getMyKaDaoDataRequest.Dpi, getMyKaDaoDataRequest.Sort, getMyKaDaoDataRequest.Order,
 		getMyKaDaoDataRequest.Page, getMyKaDaoDataRequest.PageSize)
 	if err != nil {
 		response.FailWithMessage(err.Error(), ctx)

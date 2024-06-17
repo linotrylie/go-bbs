@@ -20,11 +20,11 @@ func main() {
 	})
 	// 开始迁移转换
 	//生成model
-	//GenerateModel(t2t)
+	GenerateModel(t2t)
 	//生成entity
 	//GenerateEntity(t2t)
 	//生成repository
-	GenerateRepository(t2t)
+	//GenerateRepository(t2t)
 	//生成requests
 	//GenerateRequests(t2t)
 }
