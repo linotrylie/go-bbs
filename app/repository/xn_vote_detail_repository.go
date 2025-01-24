@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type xnVoteDetailRepository struct {
+type XnVoteDetailRepository struct {
 	Pager *Pager
 }
 
-var XnVoteDetailRepository = newXnVoteDetailRepository()
+var xnVoteDetailRepository = newXnVoteDetailRepository()
 
-func newXnVoteDetailRepository() *xnVoteDetailRepository {
-	return new(xnVoteDetailRepository)
+func newXnVoteDetailRepository() *XnVoteDetailRepository {
+	return new(XnVoteDetailRepository)
 }
 
-func (repo *xnVoteDetailRepository) Insert(xnVoteDetail *model.XnVoteDetail) (rowsAffected int64, e error) {
+func (repo *XnVoteDetailRepository) Insert(m *model.XnVoteDetail) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(xnVoteDetail)
+	result := global.DB.Create(m)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(xnVoteDetail)
 	return result.RowsAffected, e
 }
 
-func (repo *xnVoteDetailRepository) Update(xnVoteDetail *model.XnVoteDetail) (rowsAffected int64, e error) {
+func (repo *XnVoteDetailRepository) Update(m *model.XnVoteDetail) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Update", e, now)
 		}
 	}()
-	if len(xnVoteDetail.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := xnVoteDetail.GetChanges()
+	updateValues := m.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(xnVoteDetail).Updates(updateValues)
+	result := global.DB.Model(m).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(xnVoteDetail)
-	repo.First(xnVoteDetail, []string{})
+	repo.DeleteInRedis(m)
+	repo.First(m, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *xnVoteDetailRepository) First(xnVoteDetail *model.XnVoteDetail, preload []string) (e error) {
+func (repo *XnVoteDetailRepository) First(m *model.XnVoteDetail, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "First", e, now)
 		}
 	}()
-	if len(xnVoteDetail.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(xnVoteDetail)
+	e = repo.FindInRedis(m)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(xnVoteDetail.TableName())
+	db := global.DB.Table(m.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(xnVoteDetail)
+	db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(xnVoteDetail)
+	repo.SaveInRedis(m)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *xnVoteDetailRepository) DeleteByLocation(xnVoteDetail *model.XnVoteDetail) (rowsAffected int64, e error) {
+func (repo *XnVoteDetailRepository) DeleteByLocation(m *model.XnVoteDetail) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(xnVoteDetail.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(xnVoteDetail.TableName()).Unscoped().Delete(xnVoteDetail)
+	result := global.DB.Table(m.TableName()).Unscoped().Delete(m)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(xnVoteDetail)
+	repo.DeleteInRedis(m)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *xnVoteDetailRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *XnVoteDetailRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,18 @@ func (repo *xnVoteDetailRepository) TransactionExecute(fun func() error, opts ..
 
 //////////////Redis///////////////////////////
 
-func (repo *xnVoteDetailRepository) SaveInRedis(xnVoteDetail *model.XnVoteDetail) (e error) {
+func (repo *XnVoteDetailRepository) SaveInRedis(m *model.XnVoteDetail) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = xnVoteDetail.RedisKey()
-	resByte, e := json.Marshal(xnVoteDetail)
+	redisKey = m.RedisKey()
+	resByte, e := json.Marshal(m)
 	if e != nil {
 		return e
 	}
@@ -158,43 +160,42 @@ func (repo *xnVoteDetailRepository) SaveInRedis(xnVoteDetail *model.XnVoteDetail
 	return nil
 }
 
-func (repo *xnVoteDetailRepository) FindInRedis(xnVoteDetail *model.XnVoteDetail) (e error) {
+func (repo *XnVoteDetailRepository) FindInRedis(m *model.XnVoteDetail) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = xnVoteDetail.RedisKey()
+	redisKey = m.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
+	if e != nil || e != redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), xnVoteDetail)
+		e = json.Unmarshal([]byte(redisRes), m)
 	}
 	return nil
 }
 
-func (repo *xnVoteDetailRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *XnVoteDetailRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
-		return
+	if e != nil || e != redis.Nil {
+		return "", nil
 	} else {
-		return
+		return "", nil
 	}
-	return
+	return "", nil
 }
 
-func (repo *xnVoteDetailRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+func (repo *XnVoteDetailRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
 	var timeSecond time.Duration
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
@@ -204,59 +205,62 @@ func (repo *xnVoteDetailRepository) SaveInRedisByKey(redisKey string, data strin
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
-func (repo *xnVoteDetailRepository) DeleteInRedis(xnVoteDetail *model.XnVoteDetail) (e error) {
+func (repo *XnVoteDetailRepository) DeleteInRedis(m *model.XnVoteDetail) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = xnVoteDetail.RedisKey()
+	redisKey = m.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *xnVoteDetailRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.XnVoteDetail, e error) {
+func (repo *XnVoteDetailRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.XnVoteDetail, e error) {
+	m := &model.XnVoteDetail{}
 	now := time.Now()
-	xnVoteDetail := &model.XnVoteDetail{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhereMap", e, now)
+		}
+	}()
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
 	var str string
 	if repo.Pager.FieldsOrder != nil {
 		for _, v := range repo.Pager.FieldsOrder {
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	for k, vv := range query {
-		str += k + Strval(vv)
+	for kk, vv := range query {
+		str += kk + Strval(vv)
 	}
-	redisKey := xnVoteDetail.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(xnVoteDetail).Where(query)
+	var redisKey string
+	redisKey = m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	//如果模型是缓存类则先查询缓存内的数据
+	if m.IsCache() {
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+	//缓存内没有则查询数据库
+	db := global.DB.Model(m).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
-	}
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -265,6 +269,7 @@ func (repo *xnVoteDetailRepository) GetDataListByWhereMap(query map[string]inter
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	//将本次查询结果缓存起来
 	marshal, e := json.Marshal(list)
 	if e != nil {
 		return nil, e
@@ -273,45 +278,46 @@ func (repo *xnVoteDetailRepository) GetDataListByWhereMap(query map[string]inter
 	return
 }
 
-func (repo *xnVoteDetailRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.XnVoteDetail, e error) {
+func (repo *XnVoteDetailRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.XnVoteDetail, e error) {
 	now := time.Now()
-	xnVoteDetail := &model.XnVoteDetail{}
+	m := &model.XnVoteDetail{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
-	if repo.Pager.FieldsOrder != nil {
-		for _, v := range repo.Pager.FieldsOrder {
-			str += strings.Replace(v, " ", "", -1)
+	var redisKey string
+	if m.IsCache() {
+		if repo.Pager.FieldsOrder != nil {
+			for _, v := range repo.Pager.FieldsOrder {
+				str += strings.Replace(v, " ", "", -1)
+			}
+		}
+		if query != "" {
+			for _, vv := range args {
+				str += Strval(vv)
+			}
+		}
+		redisKey := m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+			return
 		}
 	}
-	db := global.DB.Model(xnVoteDetail)
+	db := global.DB.Model(m)
+	if preload != nil {
+		for _, v := range preload {
+			db.Preload(v)
+		}
+	}
 	if query != "" {
 		db = db.Where(query, args...)
-		for _, vv := range args {
-			str += Strval(vv)
-		}
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db.Preload(v)
-		}
-	}
-	redisKey := xnVoteDetail.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -328,34 +334,36 @@ func (repo *xnVoteDetailRepository) GetDataListByWhere(query string, args []inte
 	return
 }
 
-func (repo *xnVoteDetailRepository) GetDataByWhereMap(xnVoteDetail *model.XnVoteDetail, where map[string]interface{}, preload []string) (e error) {
+func (repo *XnVoteDetailRepository) GetDataByWhereMap(m *model.XnVoteDetail, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(xnVoteDetail.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(xnVoteDetail)
-	if e == nil {
-		return
+	if m.IsCache() {
+		e = repo.FindInRedis(m)
+		if e == nil {
+			return
+		}
 	}
-	db := global.DB.Model(xnVoteDetail).Where(where)
+	db := global.DB.Model(m).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(xnVoteDetail)
+	db = db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(xnVoteDetail)
+	repo.SaveInRedis(m)
 	return nil
 }
 
-func (repo *xnVoteDetailRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *XnVoteDetailRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -373,7 +381,7 @@ func (repo *xnVoteDetailRepository) Execute(db *gorm.DB, object interface{}) err
 	return nil
 }
 
-func (repo *xnVoteDetailRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *XnVoteDetailRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

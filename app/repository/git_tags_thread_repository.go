@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type gitTagsThreadRepository struct {
+type GitTagsThreadRepository struct {
 	Pager *Pager
 }
 
-var GitTagsThreadRepository = newGitTagsThreadRepository()
+var gitTagsThreadRepository = newGitTagsThreadRepository()
 
-func newGitTagsThreadRepository() *gitTagsThreadRepository {
-	return new(gitTagsThreadRepository)
+func newGitTagsThreadRepository() *GitTagsThreadRepository {
+	return new(GitTagsThreadRepository)
 }
 
-func (repo *gitTagsThreadRepository) Insert(gitTagsThread *model.GitTagsThread) (rowsAffected int64, e error) {
+func (repo *GitTagsThreadRepository) Insert(m *model.GitTagsThread) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(gitTagsThread)
+	result := global.DB.Create(m)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(gitTagsThread)
 	return result.RowsAffected, e
 }
 
-func (repo *gitTagsThreadRepository) Update(gitTagsThread *model.GitTagsThread) (rowsAffected int64, e error) {
+func (repo *GitTagsThreadRepository) Update(m *model.GitTagsThread) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Update", e, now)
 		}
 	}()
-	if len(gitTagsThread.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := gitTagsThread.GetChanges()
+	updateValues := m.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(gitTagsThread).Updates(updateValues)
+	result := global.DB.Model(m).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(gitTagsThread)
-	repo.First(gitTagsThread, []string{})
+	repo.DeleteInRedis(m)
+	repo.First(m, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *gitTagsThreadRepository) First(gitTagsThread *model.GitTagsThread, preload []string) (e error) {
+func (repo *GitTagsThreadRepository) First(m *model.GitTagsThread, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "First", e, now)
 		}
 	}()
-	if len(gitTagsThread.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(gitTagsThread)
+	e = repo.FindInRedis(m)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(gitTagsThread.TableName())
+	db := global.DB.Table(m.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(gitTagsThread)
+	db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(gitTagsThread)
+	repo.SaveInRedis(m)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *gitTagsThreadRepository) DeleteByLocation(gitTagsThread *model.GitTagsThread) (rowsAffected int64, e error) {
+func (repo *GitTagsThreadRepository) DeleteByLocation(m *model.GitTagsThread) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(gitTagsThread.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(gitTagsThread.TableName()).Unscoped().Delete(gitTagsThread)
+	result := global.DB.Table(m.TableName()).Unscoped().Delete(m)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(gitTagsThread)
+	repo.DeleteInRedis(m)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *gitTagsThreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *GitTagsThreadRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,18 @@ func (repo *gitTagsThreadRepository) TransactionExecute(fun func() error, opts .
 
 //////////////Redis///////////////////////////
 
-func (repo *gitTagsThreadRepository) SaveInRedis(gitTagsThread *model.GitTagsThread) (e error) {
+func (repo *GitTagsThreadRepository) SaveInRedis(m *model.GitTagsThread) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = gitTagsThread.RedisKey()
-	resByte, e := json.Marshal(gitTagsThread)
+	redisKey = m.RedisKey()
+	resByte, e := json.Marshal(m)
 	if e != nil {
 		return e
 	}
@@ -158,43 +160,42 @@ func (repo *gitTagsThreadRepository) SaveInRedis(gitTagsThread *model.GitTagsThr
 	return nil
 }
 
-func (repo *gitTagsThreadRepository) FindInRedis(gitTagsThread *model.GitTagsThread) (e error) {
+func (repo *GitTagsThreadRepository) FindInRedis(m *model.GitTagsThread) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = gitTagsThread.RedisKey()
+	redisKey = m.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
+	if e != nil || e != redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), gitTagsThread)
+		e = json.Unmarshal([]byte(redisRes), m)
 	}
 	return nil
 }
 
-func (repo *gitTagsThreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *GitTagsThreadRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
-		return
+	if e != nil || e != redis.Nil {
+		return "", nil
 	} else {
-		return
+		return "", nil
 	}
-	return
+	return "", nil
 }
 
-func (repo *gitTagsThreadRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+func (repo *GitTagsThreadRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
 	var timeSecond time.Duration
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
@@ -204,59 +205,62 @@ func (repo *gitTagsThreadRepository) SaveInRedisByKey(redisKey string, data stri
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
-func (repo *gitTagsThreadRepository) DeleteInRedis(gitTagsThread *model.GitTagsThread) (e error) {
+func (repo *GitTagsThreadRepository) DeleteInRedis(m *model.GitTagsThread) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = gitTagsThread.RedisKey()
+	redisKey = m.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *gitTagsThreadRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.GitTagsThread, e error) {
+func (repo *GitTagsThreadRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.GitTagsThread, e error) {
+	m := &model.GitTagsThread{}
 	now := time.Now()
-	gitTagsThread := &model.GitTagsThread{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhereMap", e, now)
+		}
+	}()
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
 	var str string
 	if repo.Pager.FieldsOrder != nil {
 		for _, v := range repo.Pager.FieldsOrder {
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	for k, vv := range query {
-		str += k + Strval(vv)
+	for kk, vv := range query {
+		str += kk + Strval(vv)
 	}
-	redisKey := gitTagsThread.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(gitTagsThread).Where(query)
+	var redisKey string
+	redisKey = m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	//如果模型是缓存类则先查询缓存内的数据
+	if m.IsCache() {
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+	//缓存内没有则查询数据库
+	db := global.DB.Model(m).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
-	}
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -265,6 +269,7 @@ func (repo *gitTagsThreadRepository) GetDataListByWhereMap(query map[string]inte
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	//将本次查询结果缓存起来
 	marshal, e := json.Marshal(list)
 	if e != nil {
 		return nil, e
@@ -273,45 +278,46 @@ func (repo *gitTagsThreadRepository) GetDataListByWhereMap(query map[string]inte
 	return
 }
 
-func (repo *gitTagsThreadRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.GitTagsThread, e error) {
+func (repo *GitTagsThreadRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.GitTagsThread, e error) {
 	now := time.Now()
-	gitTagsThread := &model.GitTagsThread{}
+	m := &model.GitTagsThread{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
-	if repo.Pager.FieldsOrder != nil {
-		for _, v := range repo.Pager.FieldsOrder {
-			str += strings.Replace(v, " ", "", -1)
+	var redisKey string
+	if m.IsCache() {
+		if repo.Pager.FieldsOrder != nil {
+			for _, v := range repo.Pager.FieldsOrder {
+				str += strings.Replace(v, " ", "", -1)
+			}
+		}
+		if query != "" {
+			for _, vv := range args {
+				str += Strval(vv)
+			}
+		}
+		redisKey := m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+			return
 		}
 	}
-	db := global.DB.Model(gitTagsThread)
+	db := global.DB.Model(m)
+	if preload != nil {
+		for _, v := range preload {
+			db.Preload(v)
+		}
+	}
 	if query != "" {
 		db = db.Where(query, args...)
-		for _, vv := range args {
-			str += Strval(vv)
-		}
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db.Preload(v)
-		}
-	}
-	redisKey := gitTagsThread.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -328,34 +334,36 @@ func (repo *gitTagsThreadRepository) GetDataListByWhere(query string, args []int
 	return
 }
 
-func (repo *gitTagsThreadRepository) GetDataByWhereMap(gitTagsThread *model.GitTagsThread, where map[string]interface{}, preload []string) (e error) {
+func (repo *GitTagsThreadRepository) GetDataByWhereMap(m *model.GitTagsThread, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(gitTagsThread.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(gitTagsThread)
-	if e == nil {
-		return
+	if m.IsCache() {
+		e = repo.FindInRedis(m)
+		if e == nil {
+			return
+		}
 	}
-	db := global.DB.Model(gitTagsThread).Where(where)
+	db := global.DB.Model(m).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(gitTagsThread)
+	db = db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(gitTagsThread)
+	repo.SaveInRedis(m)
 	return nil
 }
 
-func (repo *gitTagsThreadRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *GitTagsThreadRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -373,7 +381,7 @@ func (repo *gitTagsThreadRepository) Execute(db *gorm.DB, object interface{}) er
 	return nil
 }
 
-func (repo *gitTagsThreadRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *GitTagsThreadRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

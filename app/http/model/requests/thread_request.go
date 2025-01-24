@@ -1,11 +1,5 @@
 package requests
 
-import (
-	validation "github.com/go-ozzo/ozzo-validation"
-	"go-bbs/app/exceptions"
-	"math"
-)
-
 type ThreadRequest struct {
 	Fid            int    ` json:"fid"`
 	Tid            int    ` json:"tid"`
@@ -37,24 +31,14 @@ type ThreadRequest struct {
 	OfferStatus    int    ` json:"offerstatus"`
 	Tagids         string ` json:"tagids"`
 	TagidsTime     int    ` json:"tagidstime"`
-}
-
-type ThreadList struct {
-	Fid int `form:"fid"`
-	Tid int `form:"tid"`
-}
-
-func (param *ThreadList) Validate() error {
-	return validation.ValidateStruct(param,
-		validation.Field(&param.Tid,
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		),
-		validation.Field(&param.Fid,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		),
-	)
+	IsVote         int    ` json:"isvote"`
+	AttachGolds    int    ` json:"attachgolds"`
+	ContentGolds   int    ` json:"contentgolds"`
+	AdExpireTime   int    ` json:"adexpiretime"`
+	IsAd           int    ` json:"isad"`
+	AdDays         int    ` json:"addays"`
+	IsRaffle       int    ` json:"israffle"`
+	RaffleTime     int    ` json:"raffletime"` // 开奖时间
+	RaffleUid      string ` json:"raffleuid"`  // 预设中奖用户
+	RaffleNums     int    ` json:"rafflenums"` // 中奖用户数
 }

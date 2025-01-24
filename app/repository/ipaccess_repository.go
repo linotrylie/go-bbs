@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type ipaccessRepository struct {
+type IpaccessRepository struct {
 	Pager *Pager
 }
 
-var IpaccessRepository = newIpaccessRepository()
+var ipaccessRepository = newIpaccessRepository()
 
-func newIpaccessRepository() *ipaccessRepository {
-	return new(ipaccessRepository)
+func newIpaccessRepository() *IpaccessRepository {
+	return new(IpaccessRepository)
 }
 
-func (repo *ipaccessRepository) Insert(ipaccess *model.Ipaccess) (rowsAffected int64, e error) {
+func (repo *IpaccessRepository) Insert(m *model.Ipaccess) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(ipaccess)
+	result := global.DB.Create(m)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(ipaccess)
 	return result.RowsAffected, e
 }
 
-func (repo *ipaccessRepository) Update(ipaccess *model.Ipaccess) (rowsAffected int64, e error) {
+func (repo *IpaccessRepository) Update(m *model.Ipaccess) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Update", e, now)
 		}
 	}()
-	if len(ipaccess.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := ipaccess.GetChanges()
+	updateValues := m.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(ipaccess).Updates(updateValues)
+	result := global.DB.Model(m).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(ipaccess)
-	repo.First(ipaccess, []string{})
+	repo.DeleteInRedis(m)
+	repo.First(m, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *ipaccessRepository) First(ipaccess *model.Ipaccess, preload []string) (e error) {
+func (repo *IpaccessRepository) First(m *model.Ipaccess, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "First", e, now)
 		}
 	}()
-	if len(ipaccess.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(ipaccess)
+	e = repo.FindInRedis(m)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(ipaccess.TableName())
+	db := global.DB.Table(m.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(ipaccess)
+	db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(ipaccess)
+	repo.SaveInRedis(m)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *ipaccessRepository) DeleteByLocation(ipaccess *model.Ipaccess) (rowsAffected int64, e error) {
+func (repo *IpaccessRepository) DeleteByLocation(m *model.Ipaccess) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(ipaccess.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(ipaccess.TableName()).Unscoped().Delete(ipaccess)
+	result := global.DB.Table(m.TableName()).Unscoped().Delete(m)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(ipaccess)
+	repo.DeleteInRedis(m)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *ipaccessRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *IpaccessRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,18 @@ func (repo *ipaccessRepository) TransactionExecute(fun func() error, opts ...*sq
 
 //////////////Redis///////////////////////////
 
-func (repo *ipaccessRepository) SaveInRedis(ipaccess *model.Ipaccess) (e error) {
+func (repo *IpaccessRepository) SaveInRedis(m *model.Ipaccess) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = ipaccess.RedisKey()
-	resByte, e := json.Marshal(ipaccess)
+	redisKey = m.RedisKey()
+	resByte, e := json.Marshal(m)
 	if e != nil {
 		return e
 	}
@@ -158,43 +160,42 @@ func (repo *ipaccessRepository) SaveInRedis(ipaccess *model.Ipaccess) (e error) 
 	return nil
 }
 
-func (repo *ipaccessRepository) FindInRedis(ipaccess *model.Ipaccess) (e error) {
+func (repo *IpaccessRepository) FindInRedis(m *model.Ipaccess) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = ipaccess.RedisKey()
+	redisKey = m.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
+	if e != nil || e != redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), ipaccess)
+		e = json.Unmarshal([]byte(redisRes), m)
 	}
 	return nil
 }
 
-func (repo *ipaccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *IpaccessRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
-		return
+	if e != nil || e != redis.Nil {
+		return "", nil
 	} else {
-		return
+		return "", nil
 	}
-	return
+	return "", nil
 }
 
-func (repo *ipaccessRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+func (repo *IpaccessRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
 	var timeSecond time.Duration
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
@@ -204,59 +205,62 @@ func (repo *ipaccessRepository) SaveInRedisByKey(redisKey string, data string, t
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
-func (repo *ipaccessRepository) DeleteInRedis(ipaccess *model.Ipaccess) (e error) {
+func (repo *IpaccessRepository) DeleteInRedis(m *model.Ipaccess) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = ipaccess.RedisKey()
+	redisKey = m.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Ipaccess, e error) {
+func (repo *IpaccessRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.Ipaccess, e error) {
+	m := &model.Ipaccess{}
 	now := time.Now()
-	ipaccess := &model.Ipaccess{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhereMap", e, now)
+		}
+	}()
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
 	var str string
 	if repo.Pager.FieldsOrder != nil {
 		for _, v := range repo.Pager.FieldsOrder {
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	for k, vv := range query {
-		str += k + Strval(vv)
+	for kk, vv := range query {
+		str += kk + Strval(vv)
 	}
-	redisKey := ipaccess.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(ipaccess).Where(query)
+	var redisKey string
+	redisKey = m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	//如果模型是缓存类则先查询缓存内的数据
+	if m.IsCache() {
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+	//缓存内没有则查询数据库
+	db := global.DB.Model(m).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
-	}
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -265,6 +269,7 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	//将本次查询结果缓存起来
 	marshal, e := json.Marshal(list)
 	if e != nil {
 		return nil, e
@@ -273,45 +278,46 @@ func (repo *ipaccessRepository) GetDataListByWhereMap(query map[string]interface
 	return
 }
 
-func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Ipaccess, e error) {
+func (repo *IpaccessRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.Ipaccess, e error) {
 	now := time.Now()
-	ipaccess := &model.Ipaccess{}
+	m := &model.Ipaccess{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
-	if repo.Pager.FieldsOrder != nil {
-		for _, v := range repo.Pager.FieldsOrder {
-			str += strings.Replace(v, " ", "", -1)
+	var redisKey string
+	if m.IsCache() {
+		if repo.Pager.FieldsOrder != nil {
+			for _, v := range repo.Pager.FieldsOrder {
+				str += strings.Replace(v, " ", "", -1)
+			}
+		}
+		if query != "" {
+			for _, vv := range args {
+				str += Strval(vv)
+			}
+		}
+		redisKey := m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+			return
 		}
 	}
-	db := global.DB.Model(ipaccess)
+	db := global.DB.Model(m)
+	if preload != nil {
+		for _, v := range preload {
+			db.Preload(v)
+		}
+	}
 	if query != "" {
 		db = db.Where(query, args...)
-		for _, vv := range args {
-			str += Strval(vv)
-		}
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db.Preload(v)
-		}
-	}
-	redisKey := ipaccess.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -328,34 +334,36 @@ func (repo *ipaccessRepository) GetDataListByWhere(query string, args []interfac
 	return
 }
 
-func (repo *ipaccessRepository) GetDataByWhereMap(ipaccess *model.Ipaccess, where map[string]interface{}, preload []string) (e error) {
+func (repo *IpaccessRepository) GetDataByWhereMap(m *model.Ipaccess, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(ipaccess.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(ipaccess)
-	if e == nil {
-		return
+	if m.IsCache() {
+		e = repo.FindInRedis(m)
+		if e == nil {
+			return
+		}
 	}
-	db := global.DB.Model(ipaccess).Where(where)
+	db := global.DB.Model(m).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(ipaccess)
+	db = db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(ipaccess)
+	repo.SaveInRedis(m)
 	return nil
 }
 
-func (repo *ipaccessRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *IpaccessRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -373,7 +381,7 @@ func (repo *ipaccessRepository) Execute(db *gorm.DB, object interface{}) error {
 	return nil
 }
 
-func (repo *ipaccessRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *IpaccessRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

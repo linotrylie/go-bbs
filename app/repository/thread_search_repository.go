@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type threadSearchRepository struct {
+type ThreadSearchRepository struct {
 	Pager *Pager
 }
 
-var ThreadSearchRepository = newThreadSearchRepository()
+var threadSearchRepository = newThreadSearchRepository()
 
-func newThreadSearchRepository() *threadSearchRepository {
-	return new(threadSearchRepository)
+func newThreadSearchRepository() *ThreadSearchRepository {
+	return new(ThreadSearchRepository)
 }
 
-func (repo *threadSearchRepository) Insert(threadSearch *model.ThreadSearch) (rowsAffected int64, e error) {
+func (repo *ThreadSearchRepository) Insert(m *model.ThreadSearch) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(threadSearch)
+	result := global.DB.Create(m)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(threadSearch)
 	return result.RowsAffected, e
 }
 
-func (repo *threadSearchRepository) Update(threadSearch *model.ThreadSearch) (rowsAffected int64, e error) {
+func (repo *ThreadSearchRepository) Update(m *model.ThreadSearch) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Update", e, now)
 		}
 	}()
-	if len(threadSearch.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := threadSearch.GetChanges()
+	updateValues := m.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(threadSearch).Updates(updateValues)
+	result := global.DB.Model(m).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(threadSearch)
-	repo.First(threadSearch, []string{})
+	repo.DeleteInRedis(m)
+	repo.First(m, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *threadSearchRepository) First(threadSearch *model.ThreadSearch, preload []string) (e error) {
+func (repo *ThreadSearchRepository) First(m *model.ThreadSearch, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "First", e, now)
 		}
 	}()
-	if len(threadSearch.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(threadSearch)
+	e = repo.FindInRedis(m)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(threadSearch.TableName())
+	db := global.DB.Table(m.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(threadSearch)
+	db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(threadSearch)
+	repo.SaveInRedis(m)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *threadSearchRepository) DeleteByLocation(threadSearch *model.ThreadSearch) (rowsAffected int64, e error) {
+func (repo *ThreadSearchRepository) DeleteByLocation(m *model.ThreadSearch) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(threadSearch.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(threadSearch.TableName()).Unscoped().Delete(threadSearch)
+	result := global.DB.Table(m.TableName()).Unscoped().Delete(m)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(threadSearch)
+	repo.DeleteInRedis(m)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *threadSearchRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *ThreadSearchRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,18 @@ func (repo *threadSearchRepository) TransactionExecute(fun func() error, opts ..
 
 //////////////Redis///////////////////////////
 
-func (repo *threadSearchRepository) SaveInRedis(threadSearch *model.ThreadSearch) (e error) {
+func (repo *ThreadSearchRepository) SaveInRedis(m *model.ThreadSearch) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = threadSearch.RedisKey()
-	resByte, e := json.Marshal(threadSearch)
+	redisKey = m.RedisKey()
+	resByte, e := json.Marshal(m)
 	if e != nil {
 		return e
 	}
@@ -158,43 +160,42 @@ func (repo *threadSearchRepository) SaveInRedis(threadSearch *model.ThreadSearch
 	return nil
 }
 
-func (repo *threadSearchRepository) FindInRedis(threadSearch *model.ThreadSearch) (e error) {
+func (repo *ThreadSearchRepository) FindInRedis(m *model.ThreadSearch) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = threadSearch.RedisKey()
+	redisKey = m.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
+	if e != nil || e != redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), threadSearch)
+		e = json.Unmarshal([]byte(redisRes), m)
 	}
 	return nil
 }
 
-func (repo *threadSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *ThreadSearchRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
-		return
+	if e != nil || e != redis.Nil {
+		return "", nil
 	} else {
-		return
+		return "", nil
 	}
-	return
+	return "", nil
 }
 
-func (repo *threadSearchRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+func (repo *ThreadSearchRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
 	var timeSecond time.Duration
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
@@ -204,59 +205,62 @@ func (repo *threadSearchRepository) SaveInRedisByKey(redisKey string, data strin
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
-func (repo *threadSearchRepository) DeleteInRedis(threadSearch *model.ThreadSearch) (e error) {
+func (repo *ThreadSearchRepository) DeleteInRedis(m *model.ThreadSearch) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = threadSearch.RedisKey()
+	redisKey = m.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.ThreadSearch, e error) {
+func (repo *ThreadSearchRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.ThreadSearch, e error) {
+	m := &model.ThreadSearch{}
 	now := time.Now()
-	threadSearch := &model.ThreadSearch{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhereMap", e, now)
+		}
+	}()
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
 	var str string
 	if repo.Pager.FieldsOrder != nil {
 		for _, v := range repo.Pager.FieldsOrder {
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	for k, vv := range query {
-		str += k + Strval(vv)
+	for kk, vv := range query {
+		str += kk + Strval(vv)
 	}
-	redisKey := threadSearch.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(threadSearch).Where(query)
+	var redisKey string
+	redisKey = m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	//如果模型是缓存类则先查询缓存内的数据
+	if m.IsCache() {
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+	//缓存内没有则查询数据库
+	db := global.DB.Model(m).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
-	}
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -265,6 +269,7 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	//将本次查询结果缓存起来
 	marshal, e := json.Marshal(list)
 	if e != nil {
 		return nil, e
@@ -273,45 +278,46 @@ func (repo *threadSearchRepository) GetDataListByWhereMap(query map[string]inter
 	return
 }
 
-func (repo *threadSearchRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.ThreadSearch, e error) {
+func (repo *ThreadSearchRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.ThreadSearch, e error) {
 	now := time.Now()
-	threadSearch := &model.ThreadSearch{}
+	m := &model.ThreadSearch{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
-	if repo.Pager.FieldsOrder != nil {
-		for _, v := range repo.Pager.FieldsOrder {
-			str += strings.Replace(v, " ", "", -1)
+	var redisKey string
+	if m.IsCache() {
+		if repo.Pager.FieldsOrder != nil {
+			for _, v := range repo.Pager.FieldsOrder {
+				str += strings.Replace(v, " ", "", -1)
+			}
+		}
+		if query != "" {
+			for _, vv := range args {
+				str += Strval(vv)
+			}
+		}
+		redisKey := m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+			return
 		}
 	}
-	db := global.DB.Model(threadSearch)
+	db := global.DB.Model(m)
+	if preload != nil {
+		for _, v := range preload {
+			db.Preload(v)
+		}
+	}
 	if query != "" {
 		db = db.Where(query, args...)
-		for _, vv := range args {
-			str += Strval(vv)
-		}
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db.Preload(v)
-		}
-	}
-	redisKey := threadSearch.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -328,34 +334,36 @@ func (repo *threadSearchRepository) GetDataListByWhere(query string, args []inte
 	return
 }
 
-func (repo *threadSearchRepository) GetDataByWhereMap(threadSearch *model.ThreadSearch, where map[string]interface{}, preload []string) (e error) {
+func (repo *ThreadSearchRepository) GetDataByWhereMap(m *model.ThreadSearch, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(threadSearch.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(threadSearch)
-	if e == nil {
-		return
+	if m.IsCache() {
+		e = repo.FindInRedis(m)
+		if e == nil {
+			return
+		}
 	}
-	db := global.DB.Model(threadSearch).Where(where)
+	db := global.DB.Model(m).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(threadSearch)
+	db = db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(threadSearch)
+	repo.SaveInRedis(m)
 	return nil
 }
 
-func (repo *threadSearchRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *ThreadSearchRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -373,7 +381,7 @@ func (repo *threadSearchRepository) Execute(db *gorm.DB, object interface{}) err
 	return nil
 }
 
-func (repo *threadSearchRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *ThreadSearchRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

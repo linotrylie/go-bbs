@@ -1,11 +1,5 @@
 package requests
 
-import (
-	validation "github.com/go-ozzo/ozzo-validation"
-	"go-bbs/app/exceptions"
-	"math"
-)
-
 type ForumRequest struct {
 	Fid           int    ` json:"fid"`
 	Name          string ` json:"name"`
@@ -28,39 +22,4 @@ type ForumRequest struct {
 	PostCredits   int    ` json:"postcredits"`
 	PostGolds     int    ` json:"postgolds"`
 	AllowOffer    int    ` json:"allowoffer"`
-}
-type ForumThreadList struct {
-	Fid      int    `form:"fid"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
-	Order    string `form:"order"`
-	Sort     string `form:"sort"`
-}
-
-func (param *ForumThreadList) Validate() error {
-	return validation.ValidateStruct(param,
-		validation.Field(&param.Fid,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		),
-		validation.Field(&param.Page,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		),
-		validation.Field(&param.PageSize,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.Min(1).Error(exceptions.ParamInvalid.Error()),
-			validation.Max(math.MaxInt).Error(exceptions.ParamInvalid.Error()),
-		),
-		validation.Field(&param.Order,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.In("create_date", "last_date", "posts", "views").Error(exceptions.ParamInvalid.Error()),
-		),
-		validation.Field(&param.Sort,
-			validation.Required.Error(exceptions.ParamInvalid.Error()),
-			validation.In("desc", "asc").Error(exceptions.ParamInvalid.Error()),
-		),
-	)
 }

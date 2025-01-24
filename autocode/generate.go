@@ -22,17 +22,17 @@ func main() {
 	//生成model
 	GenerateModel(t2t)
 	//生成entity
-	//GenerateEntity(t2t)
+	GenerateEntity(t2t)
 	//生成repository
-	//GenerateRepository(t2t)
+	GenerateRepository(t2t)
 	//生成requests
-	//GenerateRequests(t2t)
+	GenerateRequests(t2t)
 }
 
 func GenerateModel(t2t *converter.Table2Struct) error {
 	return t2t.
 		// 指定某个表,如果不指定,则默认全部表都迁移
-		Table("kadao_data").
+		//Table("*").
 		// 表前缀
 		Prefix("bbs_").
 		// 是否添加json tag
@@ -48,29 +48,29 @@ func GenerateModel(t2t *converter.Table2Struct) error {
 		// 数据库dsn,这里可以使用 t2t.DB() 代替,参数为 *sql.DB 对象
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
 		// 执行
-		Run()
+		RunGenerateModel()
 }
 
 func GenerateEntity(t2t *converter.Table2Struct) error {
 	return t2t.
-		Table("operation_log").
+		//Table("operation_log").
 		Prefix("bbs_").PackageName("entity").RealNameMethod("TableName").SavePath("./app/entity/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
-		RunEntity()
+		RunGenerateEntity()
 }
 
 func GenerateRepository(t2t *converter.Table2Struct) error {
 	return t2t.
-		//Table("*").
+		//Table("User").
 		Prefix("bbs_").PackageName("repository").RealNameMethod("TableName").SavePath("./app/repository/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
-		RunRepository()
+		RunGenerateRepository()
 }
 
 func GenerateRequests(t2t *converter.Table2Struct) error {
 	return t2t.
-		Table("kadao_data").
+		//Table("kadao_data").
 		Prefix("bbs_").PackageName("requests").RealNameMethod("TableName").SavePath("./app./http/model/requests/").
 		Dsn("root:root@tcp(localhost:3306)/freebns?charset=utf8").
-		RunRequest()
+		RunGenerateRequest()
 }

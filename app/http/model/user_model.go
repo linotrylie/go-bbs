@@ -44,6 +44,10 @@ func (*User) TableName() string {
 	return "bbs_user"
 }
 
+func (obj *User) IsCache() bool {
+	return true
+}
+
 // Location .
 func (obj *User) Location() map[string]interface{} {
 	return map[string]interface{}{"uid": obj.Uid}

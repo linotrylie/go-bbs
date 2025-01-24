@@ -18,115 +18,114 @@ import (
 	"time"
 )
 
-type sgSignSetRepository struct {
+type SgSignSetRepository struct {
 	Pager *Pager
 }
 
-var SgSignSetRepository = newSgSignSetRepository()
+var sgSignSetRepository = newSgSignSetRepository()
 
-func newSgSignSetRepository() *sgSignSetRepository {
-	return new(sgSignSetRepository)
+func newSgSignSetRepository() *SgSignSetRepository {
+	return new(SgSignSetRepository)
 }
 
-func (repo *sgSignSetRepository) Insert(sgSignSet *model.SgSignSet) (rowsAffected int64, e error) {
+func (repo *SgSignSetRepository) Insert(m *model.SgSignSet) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "Insert", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Insert", e, now)
 		}
 	}()
-	result := global.DB.Create(sgSignSet)
+	result := global.DB.Create(m)
 	e = result.Error
 	if e != nil {
 		return
 	}
-	repo.SaveInRedis(sgSignSet)
 	return result.RowsAffected, e
 }
 
-func (repo *sgSignSetRepository) Update(sgSignSet *model.SgSignSet) (rowsAffected int64, e error) {
+func (repo *SgSignSetRepository) Update(m *model.SgSignSet) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "Update", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "Update", e, now)
 		}
 	}()
-	if len(sgSignSet.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新条件！")
 	}
-	updateValues := sgSignSet.GetChanges()
+	updateValues := m.GetChanges()
 	if len(updateValues) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Model(sgSignSet).Updates(updateValues)
+	result := global.DB.Model(m).Updates(updateValues)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
 	//更新完成后，重新缓存
-	repo.DeleteInRedis(sgSignSet)
-	repo.First(sgSignSet, []string{})
+	repo.DeleteInRedis(m)
+	repo.First(m, []string{})
 	e = result.Error
 	rowsAffected = result.RowsAffected
 	return
 }
 
-func (repo *sgSignSetRepository) First(sgSignSet *model.SgSignSet, preload []string) (e error) {
+func (repo *SgSignSetRepository) First(m *model.SgSignSet, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "First", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "First", e, now)
 		}
 	}()
-	if len(sgSignSet.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return errors.New("无更新字段！")
 	}
 	//先查询redis缓存
-	e = repo.FindInRedis(sgSignSet)
+	e = repo.FindInRedis(m)
 	if e == nil {
 		return
 	}
-	db := global.DB.Table(sgSignSet.TableName())
+	db := global.DB.Table(m.TableName())
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db.First(sgSignSet)
+	db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(sgSignSet)
+	repo.SaveInRedis(m)
 	return nil
 }
 
 // DeleteByLocation 此方法为硬删除 慎用
-func (repo *sgSignSetRepository) DeleteByLocation(sgSignSet *model.SgSignSet) (rowsAffected int64, e error) {
+func (repo *SgSignSetRepository) DeleteByLocation(m *model.SgSignSet) (rowsAffected int64, e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "DeleteByLocation", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "DeleteByLocation", e, now)
 		}
 	}()
-	if len(sgSignSet.Location()) == 0 {
+	if len(m.Location()) == 0 {
 		return 0, errors.New("无更新字段！")
 	}
-	result := global.DB.Table(sgSignSet.TableName()).Unscoped().Delete(sgSignSet)
+	result := global.DB.Table(m.TableName()).Unscoped().Delete(m)
 	e = result.Error
 	if e != nil {
 		return 0, e
 	}
-	repo.DeleteInRedis(sgSignSet)
+	repo.DeleteInRedis(m)
 	return result.RowsAffected, nil
 }
 
 // 事务
-func (repo *sgSignSetRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
+func (repo *SgSignSetRepository) TransactionExecute(fun func() error, opts ...*sql.TxOptions) (e error) {
 	return global.DB.Transaction(func(tx *gorm.DB) (e error) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,15 +140,18 @@ func (repo *sgSignSetRepository) TransactionExecute(fun func() error, opts ...*s
 
 //////////////Redis///////////////////////////
 
-func (repo *sgSignSetRepository) SaveInRedis(sgSignSet *model.SgSignSet) (e error) {
+func (repo *SgSignSetRepository) SaveInRedis(m *model.SgSignSet) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = sgSignSet.RedisKey()
-	resByte, e := json.Marshal(sgSignSet)
+	redisKey = m.RedisKey()
+	resByte, e := json.Marshal(m)
 	if e != nil {
 		return e
 	}
@@ -158,43 +160,42 @@ func (repo *sgSignSetRepository) SaveInRedis(sgSignSet *model.SgSignSet) (e erro
 	return nil
 }
 
-func (repo *sgSignSetRepository) FindInRedis(sgSignSet *model.SgSignSet) (e error) {
+func (repo *SgSignSetRepository) FindInRedis(m *model.SgSignSet) (e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = sgSignSet.RedisKey()
+	redisKey = m.RedisKey()
 	redisRes, e := global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
+	if e != nil || e != redis.Nil {
 		return
 	} else {
-		e = json.Unmarshal([]byte(redisRes), sgSignSet)
+		e = json.Unmarshal([]byte(redisRes), m)
 	}
 	return nil
 }
 
-func (repo *sgSignSetRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
+func (repo *SgSignSetRepository) FindInRedisByKey(redisKey string) (redisRes string, e error) {
 	defer func() {
 		if e != nil && e != redis.Nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
 	redisRes, e = global.REDIS.Get(context.Background(), redisKey).Result()
-	if e != nil && e != redis.Nil {
-		return
-	} else if e == redis.Nil {
-		return
+	if e != nil || e != redis.Nil {
+		return "", nil
 	} else {
-		return
+		return "", nil
 	}
-	return
+	return "", nil
 }
 
-func (repo *sgSignSetRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
+func (repo *SgSignSetRepository) SaveInRedisByKey(redisKey string, data string, timeout int) {
 	var timeSecond time.Duration
 	if timeout > 0 {
 		timeSecond = time.Duration(timeout) * time.Second
@@ -204,59 +205,62 @@ func (repo *sgSignSetRepository) SaveInRedisByKey(redisKey string, data string, 
 	global.REDIS.Set(context.Background(), redisKey, data, timeSecond)
 }
 
-func (repo *sgSignSetRepository) DeleteInRedis(sgSignSet *model.SgSignSet) (e error) {
+func (repo *SgSignSetRepository) DeleteInRedis(m *model.SgSignSet) (e error) {
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
 		}
 	}()
+	if m.IsCache() {
+		return nil
+	}
 	var redisKey string
-	redisKey = sgSignSet.RedisKey()
+	redisKey = m.RedisKey()
 	e = global.REDIS.Del(context.Background(), redisKey).Err()
 	if e != nil {
 		return e
 	}
 	return nil
 }
-func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.SgSignSet, e error) {
+func (repo *SgSignSetRepository) GetDataListByWhereMap(query map[string]interface{}, preload []string) (list []*model.SgSignSet, e error) {
+	m := &model.SgSignSet{}
 	now := time.Now()
-	sgSignSet := &model.SgSignSet{}
+	defer func() {
+		if e != nil {
+			global.LOG.Error(e.Error(), zap.Error(e))
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhereMap", e, now)
+		}
+	}()
 	if query == nil {
 		return nil, errors.New("无查询条件！")
 	}
-	defer func() {
-		if e != nil {
-			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "DeleteByLocation", e, now)
-		}
-	}()
 	var str string
 	if repo.Pager.FieldsOrder != nil {
 		for _, v := range repo.Pager.FieldsOrder {
 			str += strings.Replace(v, " ", "", -1)
 		}
 	}
-	for k, vv := range query {
-		str += k + Strval(vv)
+	for kk, vv := range query {
+		str += kk + Strval(vv)
 	}
-	redisKey := sgSignSet.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	db := global.DB.Model(sgSignSet).Where(query)
+	var redisKey string
+	redisKey = m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+	//如果模型是缓存类则先查询缓存内的数据
+	if m.IsCache() {
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+	//缓存内没有则查询数据库
+	db := global.DB.Model(m).Where(query)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
-	}
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -265,6 +269,7 @@ func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interfac
 	if len(list) == 0 {
 		return nil, exceptions.NotFoundData
 	}
+	//将本次查询结果缓存起来
 	marshal, e := json.Marshal(list)
 	if e != nil {
 		return nil, e
@@ -273,45 +278,46 @@ func (repo *sgSignSetRepository) GetDataListByWhereMap(query map[string]interfac
 	return
 }
 
-func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.SgSignSet, e error) {
+func (repo *SgSignSetRepository) GetDataListByWhere(query string, args []interface{}, preload []string) (list []*model.SgSignSet, e error) {
 	now := time.Now()
-	sgSignSet := &model.SgSignSet{}
+	m := &model.SgSignSet{}
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "GetDataListByWhere", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataListByWhere", e, now)
 		}
 	}()
 	var str string
-	if repo.Pager.FieldsOrder != nil {
-		for _, v := range repo.Pager.FieldsOrder {
-			str += strings.Replace(v, " ", "", -1)
+	var redisKey string
+	if m.IsCache() {
+		if repo.Pager.FieldsOrder != nil {
+			for _, v := range repo.Pager.FieldsOrder {
+				str += strings.Replace(v, " ", "", -1)
+			}
+		}
+		if query != "" {
+			for _, vv := range args {
+				str += Strval(vv)
+			}
+		}
+		redisKey := m.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
+		val, _ := repo.FindInRedisByKey(redisKey)
+		if val != "" {
+			e = json.Unmarshal([]byte(val), &list)
+			if e != nil {
+				return nil, e
+			}
+			return
 		}
 	}
-	db := global.DB.Model(sgSignSet)
+	db := global.DB.Model(m)
+	if preload != nil {
+		for _, v := range preload {
+			db.Preload(v)
+		}
+	}
 	if query != "" {
 		db = db.Where(query, args...)
-		for _, vv := range args {
-			str += Strval(vv)
-		}
-	}
-	if preload != nil {
-		for _, v := range preload {
-			db.Preload(v)
-		}
-	}
-	redisKey := sgSignSet.TableName() + "_list_" + strconv.Itoa(repo.Pager.Page) + "_" + strconv.Itoa(repo.Pager.PageSize) + "_" + str
-	val, _ := repo.FindInRedisByKey(redisKey)
-	if val != "" {
-		e = json.Unmarshal([]byte(val), &list)
-		if e != nil {
-			return nil, e
-		}
-		e = repo.GetTotalPage(db)
-		if e != nil {
-			return nil, e
-		}
-		return
 	}
 	e = repo.Execute(db, &list)
 	if e != nil {
@@ -328,34 +334,36 @@ func (repo *sgSignSetRepository) GetDataListByWhere(query string, args []interfa
 	return
 }
 
-func (repo *sgSignSetRepository) GetDataByWhereMap(sgSignSet *model.SgSignSet, where map[string]interface{}, preload []string) (e error) {
+func (repo *SgSignSetRepository) GetDataByWhereMap(m *model.SgSignSet, where map[string]interface{}, preload []string) (e error) {
 	now := time.Now()
 	defer func() {
 		if e != nil {
 			global.LOG.Error(e.Error(), zap.Error(e))
-			global.Prome.OrmWithLabelValues(sgSignSet.TableName(), "GetDataByWhereMap", e, now)
+			global.Prome.OrmWithLabelValues(m.TableName(), "GetDataByWhereMap", e, now)
 		}
 	}()
-	e = repo.FindInRedis(sgSignSet)
-	if e == nil {
-		return
+	if m.IsCache() {
+		e = repo.FindInRedis(m)
+		if e == nil {
+			return
+		}
 	}
-	db := global.DB.Model(sgSignSet).Where(where)
+	db := global.DB.Model(m).Where(where)
 	if preload != nil {
 		for _, v := range preload {
 			db.Preload(v)
 		}
 	}
-	db = db.First(sgSignSet)
+	db = db.First(m)
 	e = db.Error
 	if e != nil {
 		return e
 	}
-	repo.SaveInRedis(sgSignSet)
+	repo.SaveInRedis(m)
 	return nil
 }
 
-func (repo *sgSignSetRepository) Execute(db *gorm.DB, object interface{}) error {
+func (repo *SgSignSetRepository) Execute(db *gorm.DB, object interface{}) error {
 	e := repo.GetTotalPage(db)
 	if e != nil {
 		return e
@@ -373,7 +381,7 @@ func (repo *sgSignSetRepository) Execute(db *gorm.DB, object interface{}) error 
 	return nil
 }
 
-func (repo *sgSignSetRepository) GetTotalPage(db *gorm.DB) (e error) {
+func (repo *SgSignSetRepository) GetTotalPage(db *gorm.DB) (e error) {
 	if repo.Pager.Page != 0 && repo.Pager.PageSize != 0 {
 		var count64 int64
 		e = db.Count(&count64).Error

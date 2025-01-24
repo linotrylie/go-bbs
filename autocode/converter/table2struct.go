@@ -1,11 +1,13 @@
 package converter
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/duke-git/lancet/v2/strutil"
 	_ "github.com/go-sql-driver/mysql"
+	"html/template"
 	"os"
 	"os/exec"
 	"strings"
@@ -125,7 +127,7 @@ func (t *Table2Struct) Config(c *T2tConfig) *Table2Struct {
 	return t
 }
 
-func (t *Table2Struct) RunRepository() error {
+func (t *Table2Struct) RunGenerateRepository() error {
 	formatStr := GetRepositoryTemplate()
 	if t.config == nil {
 		t.config = new(T2tConfig)
@@ -143,7 +145,7 @@ func (t *Table2Struct) RunRepository() error {
 	// 组装struct
 	enterServiceTemplate := "var %sRepo = repository.%sRepository\n"
 	enterService := ""
-	for tableRealName, _ := range tableColumns {
+	for tableRealName := range tableColumns {
 		// 去除前缀
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
@@ -157,39 +159,27 @@ func (t *Table2Struct) RunRepository() error {
 			// 字符长度大于1时
 			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
-		//fmt.Println(tableName)
-		/*if tableRealName == "user" || tableRealName == "group" || tableRealName == "forum" || tableRealName == "thread" {
-			continue
-		}*/
-		// newTableName forumAccess tableName ForumAccess tableRealName forum_access
 		newTableName := strings.ToLower(tableName[0:1]) + tableName[1:]
 		big := tableName
 		small := newTableName
-		sprintf := fmt.Sprintf(formatStr,
-			small, tableName, tableName, tableName, small,
-			small, small, small, tableName, small,
-			small, small, small, small, tableName,
-			small, small, small, small, small, small,
-			small, small, tableName, small, small,
-			small, small, small /*27*/, small,
-			small, small, tableName, small, small,
-			small, small, small, small, small,
-			small, tableName, small, small, small,
-			small, big, small, small, small,
-			small, small /*51*/, small, tableName, small,
-			small, tableName, small /*58*/, tableName, small,
-			small, small, small, tableName /*64*/, small, tableName, small, small,
-			small, small /*69*/, small, tableName, small,
-			small, small, small, small, small,
-			small, "",
-		)
-		enterService += fmt.Sprintf(enterServiceTemplate, small, tableName)
+		data := map[string]interface{}{
+			"ModelName": tableName,
+			"VarName":   small,
+			"RepoName":  tableName,
+		}
+		var buf bytes.Buffer
+		temp, _ := template.New(tableName + "Repository").Parse(formatStr)
+		if err != nil {
+			return err
+		}
+		if err := temp.Execute(&buf, data); err != nil {
+			return err
+		}
+		enterService += fmt.Sprintf(enterServiceTemplate, small, big)
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径
-		//if savePath == "" {
 		savePath += strings.ToLower(tableRealName) + "_repository.go"
-		//}
 		filePath := fmt.Sprintf("%s", savePath)
 		f, err := os.Create(filePath)
 		if err != nil {
@@ -197,8 +187,8 @@ func (t *Table2Struct) RunRepository() error {
 			return err
 		}
 		defer f.Close()
-		sprintf = strings.Replace(sprintf, "%!r(string=)epo", "%repo", -1)
-		f.WriteString(sprintf)
+		//sprintf = strings.Replace(sprintf, "%!r(string=)epo", "%repo", -1)
+		f.WriteString(buf.String())
 		exec.Command("gofmt", "-w", filePath).Output()
 	}
 	enterService = `
@@ -216,7 +206,7 @@ import "go-bbs/app/repository"
 	return nil
 }
 
-func (t *Table2Struct) RunRequest() error {
+func (t *Table2Struct) RunGenerateRequest() error {
 	if t.config == nil {
 		t.config = new(T2tConfig)
 	}
@@ -244,9 +234,6 @@ func (t *Table2Struct) RunRequest() error {
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
 		}
-		if tableRealName != "kadao_data" {
-			continue
-		}
 		tableName := strutil.CamelCase(tableRealName)
 		switch len(tableName) {
 		case 0:
@@ -272,9 +259,7 @@ func (t *Table2Struct) RunRequest() error {
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径
-		//if savePath == "" {
-		savePath += strings.ToLower(tableName) + "_request.go"
-		//}
+		savePath += strings.ToLower(tableRealName) + "_request.go"
 		filePath := fmt.Sprintf("%s", savePath)
 		f, err := os.Create(filePath)
 		if err != nil {
@@ -290,7 +275,7 @@ func (t *Table2Struct) RunRequest() error {
 	return nil
 }
 
-func (t *Table2Struct) RunEntity() error {
+func (t *Table2Struct) RunGenerateEntity() error {
 	if t.config == nil {
 		t.config = new(T2tConfig)
 	}
@@ -299,15 +284,11 @@ func (t *Table2Struct) RunEntity() error {
 	if t.err != nil {
 		return t.err
 	}
-
 	// 获取表和字段的shcema
 	tableColumns, err := t.getColumns()
 	if err != nil {
 		return err
 	}
-
-	//fmt.Println(tableColumns)
-
 	// 包名
 	var packageName string
 	if t.packageName == "" {
@@ -319,7 +300,7 @@ func (t *Table2Struct) RunEntity() error {
 	packageName += "\n"
 	// 组装struct
 	var structContent string
-	for tableRealName, _ := range tableColumns {
+	for tableRealName := range tableColumns {
 		// 去除前缀
 		if t.prefix != "" {
 			tableRealName = tableRealName[len(t.prefix):]
@@ -339,9 +320,7 @@ func (t *Table2Struct) RunEntity() error {
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径
-		//if savePath == "" {
 		savePath += strings.ToLower(tableRealName) + "_entity.go"
-		//}
 		filePath := fmt.Sprintf("%s", savePath)
 		fmt.Println(filePath)
 		f, err := os.Create(filePath)
@@ -357,7 +336,7 @@ func (t *Table2Struct) RunEntity() error {
 	return nil
 }
 
-func (t *Table2Struct) Run() error {
+func (t *Table2Struct) RunGenerateModel() error {
 	if t.config == nil {
 		t.config = new(T2tConfig)
 	}
@@ -366,7 +345,6 @@ func (t *Table2Struct) Run() error {
 	if t.err != nil {
 		return t.err
 	}
-
 	// 获取表和字段的shcema
 	tableColumns, err := t.getColumns()
 	if err != nil {
@@ -405,8 +383,6 @@ func (t *Table2Struct) Run() error {
 		structContent += "type " + tableName + " struct {\n"
 		structContent += "changes   map[string]interface{}\n"
 		for _, v := range item {
-			//structContent += tab(depth) + v.ColumnName + " " + v.Type + " " + v.Json + "\n"
-			//column := v.Tag
 			if v.Primary == "PRI" {
 				primaryStructMap[v.ColumnName] = v.ColumnName
 				v.Tag = "`" + `gorm:"primaryKey;column:` + strings.ToLower(v.Tag) + `"` + ` json:"` + strings.ToLower(v.Tag) + `"` + "`"
@@ -459,7 +435,6 @@ func (t *Table2Struct) Run() error {
 		}
 		structContent += fmt.Sprintf(`return map[string]interface{}{%s}`+"\n", locationStr)
 		structContent += "}\n"
-
 		structContent += "// Redis Key .\n"
 		structContent += fmt.Sprintf("func (obj *%s) RedisKey() string {\n", tableName)
 		redisKeyStr := " obj.TableName() "
@@ -476,13 +451,15 @@ func (t *Table2Struct) Run() error {
 		redisKeyStr += "\n"
 		structContent += fmt.Sprintf("return %s", redisKeyStr)
 		structContent += "}\n"
-
+		structContent += fmt.Sprintf("func (obj *%s) IsCache() bool {\n", tableName)
+		redisKeyStr += "\n"
+		structContent += "return true\n"
+		structContent += "}\n"
 		structContent += fmt.Sprintf("// GetChanges .\nfunc (obj *%s) GetChanges() map[string]interface{} {\n\tif obj.changes == nil {\n\t\treturn nil\n\t}\n\tresult := make(map[string]interface{})\n\tfor k, v := range obj.changes {\n\t\tresult[k] = v\n\t}\n\tobj.changes = nil\n\treturn result\n}\n\n// Update .\nfunc (obj *%s) Update(name string, value interface{}) {\n\tif obj.changes == nil {\n\t\tobj.changes = make(map[string]interface{})\n\t}\n\tobj.changes[name] = value\n}", tableName, tableName)
 		fmt.Println(structContent)
 		//return nil
 		// 如果有引入 time.Time, 则需要引入 time 包
 		var importContent string
-
 		if strings.Contains(structContent, "time.Time") {
 			importContent = "import (\"fmt\"\n\"time\"\n)\n"
 		} else if strings.Contains(structContent, "time.Now()") {
@@ -527,7 +504,6 @@ func (obj *%s) Set%s(val %s) *%s {
 
 			}
 		}
-
 		// 写入文件struct
 		var savePath = t.savePath
 		// 是否指定保存路径
@@ -546,32 +522,6 @@ func (obj *%s) Set%s(val %s) *%s {
 		structContent = ""
 		importContent = ""
 	}
-
-	/*// 如果有引入 time.Time, 则需要引入 time 包
-	var importContent string
-	if strings.Contains(structContent, "time.Time") {
-		importContent = "import \"time\"\n\n"
-	}
-
-	// 写入文件struct
-	var savePath = t.savePath
-	// 是否指定保存路径
-	if savePath == "" {
-		savePath = "model.go"
-	}
-	filePath := fmt.Sprintf("%s", savePath)
-	f, err := os.Create(filePath)
-	if err != nil {
-		fmt.Println("Can not write file")
-		return err
-	}
-	defer f.Close()
-
-	f.WriteString(packageName + importContent + structContent)
-
-	cmd := exec.Command("gofmt", "-w", filePath)
-	cmd.Run()*/
-
 	return nil
 }
 

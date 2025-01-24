@@ -31,6 +31,9 @@ func (obj *KadaoData) Location() map[string]interface{} {
 func (obj *KadaoData) RedisKey() string {
 	return obj.TableName() + "_" + fmt.Sprintf("%v", obj.Kid)
 }
+func (obj *KadaoData) IsCache() bool {
+	return true
+}
 
 // GetChanges .
 func (obj *KadaoData) GetChanges() map[string]interface{} {

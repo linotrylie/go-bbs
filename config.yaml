@@ -35,7 +35,7 @@ email:
 
 # system configuration
 system:
-  env: develop1 # Change to "develop" to skip authentication for development mode
+  env: develop # Change to "develop" to skip authentication for development mode
   addr: 8080
   host: http://localhost:8080
   db-type: mysql
